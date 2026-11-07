@@ -57,8 +57,12 @@ uv run fin ingest daily                   # the daily snapshot job (ephemeral so
   unofficial source is never silently promoted to primary. Tier-U facts enter only as candidates or cross-checks.
 - **Explicit over clever** in the data layer: typed contracts (`fin/schema.py`), `Decimal`/rationals for money,
   ratios, rates; small pure functions; named checks.
-- **Small, test-backed changes.** Run the relevant tests before calling a step done; plan mode for changes to
-  §3 invariants or the canonical schema.
+- **Small, test-backed changes.** Run the relevant tests before calling a step done. Engineering is delegated
+  (owner, 2026-11-07): schema and design changes need no approval; record them as ADRs. A change to a §3 invariant
+  is still reported to the owner in plain words.
+- **Storage stays lean** (owner): no functionally redundant copies. A re-sent file that barely changed is stored as
+  a delta of its previous version; staging keeps rows by their content, not one copy per raw file; caches are keyed
+  on the processed content, never on the raw bytes alone.
 - **Owner-facing text is pt-BR** with Brazilian market terms; code, identifiers and internal docs are English.
 - **Ask the owner only for owner decisions** (PLAN §12, OPEN_QUESTIONS) and personal documents; decide
   engineering defaults, record them as ADRs.
