@@ -12,8 +12,8 @@ Day one (2026-11-07).
 - **Stage A passes its exit criteria.** **Stage B** has a note for every registered source (51). **Stage C** has
   started: COTAHIST 1986–2026, Tesouro Direto prices/rates 2004–, FII distributions (Fundos.NET) and company
   statements (CVM DFP 2010–, ITR 2011–: 66.8 million account lines, 1,224 companies) are parsed to staging; SGS, Ipeadata,
-  SIDRA, Tesouro VNA, US Treasury, NY Fed, Cboe, ECB, BIS and OECD are parsed into core `series_observation`
-  (1,091 series, 511,948 values, every row with its unit; ADR-0013). VNA NTN-B reproduces from IBGE's IPCA on 315 of 316 months.
+  SIDRA, Tesouro VNA, US Treasury, NY Fed, Cboe, ECB, BIS, OECD, World Bank, EIA and IMF are parsed into core
+  `series_observation` (1,174 series, 585,075 values, every row with its unit; ADR-0013). VNA NTN-B reproduces from IBGE's IPCA on 315 of 316 months.
 - **Data gaps are mapped and ranked** ([gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md)). Everything
   priority 1 needs has a free route.
 
@@ -44,7 +44,7 @@ Day one (2026-11-07).
   - free FRED and Tiingo tokens (OQ-23);
   - paid sources (OQ-10); PLAN §12 OQ-11 and OQ-14 to OQ-16.
 - **Engineering:**
-  - parsers for the other archived payloads (ADR-0007): World Bank, IMF, EIA, CFTC, Focus, Copom, CEPEA, ANP;
+  - parsers for the other archived payloads (ADR-0007): CFTC, Focus, Copom, CEPEA, ANP, ANBIMA IMA;
     then the B3 snapshots, CVM FCA/FRE/IPE and the ANBIMA files;
   - fundamentals: `fundamental_fact` from `statement_line` (scale applied, accounts mapped per sector);
   - the mirror-vs-ANBIMA overlap check; calendar 1986–2000 (OQ-22);

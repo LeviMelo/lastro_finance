@@ -415,7 +415,7 @@ institution = "US Energy Information Administration"
 access = "XLS files"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/context_global.md"
 
 [worldbank_cmo]
@@ -424,7 +424,7 @@ institution = "World Bank"
 access = "XLSX linked from a page"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/context_global.md"
 
 [imf]
@@ -433,7 +433,7 @@ institution = "International Monetary Fund"
 access = "SDMX 2.1, keyless"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/context_global.md"
 
 [oecd]

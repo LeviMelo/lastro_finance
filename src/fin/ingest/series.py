@@ -847,6 +847,214 @@ def _sdmx(source: str) -> Any:
     return payload
 
 
+# ------------------------------------------------------------------------------------------------ World Bank
+# Pink Sheet `CMO-Historical-Data-Monthly.xlsx`, sheet "Monthly Prices": a title block, a row of commodity names,
+# a row of units (`($/bbl)`), then one row per month (`1960M01`); `…` marks a month without a price. The index sheet
+# (hierarchical headers, 2010=100) is not parsed yet.
+
+WB_MISSING = {m: f"World Bank '{m}': not available" for m in ("…", "...", "..")}
+
+
+def _slug_code(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", text.lower().replace("*", "")).strip("_")
+
+
+def parse_worldbank_cmo(blob: bytes, row: dict[str, Any]) -> tuple[pl.DataFrame, pl.DataFrame]:
+    import io
+
+    import openpyxl
+
+    wb = openpyxl.load_workbook(io.BytesIO(blob), data_only=True, read_only=True)
+    if "Monthly Prices" not in wb.sheetnames:
+        raise LayoutError(f"Pink Sheet: no 'Monthly Prices' sheet in {wb.sheetnames}")
+    ws = wb["Monthly Prices"]
+    rows = list(ws.iter_rows(values_only=True))
+    first = next(
+        (i for i, r in enumerate(rows) if r and isinstance(r[0], str) and re.fullmatch(r"\d{4}M\d\d", r[0])), None
+    )
+    if first is None or first < 2:
+        raise LayoutError("Pink Sheet: no monthly rows (YYYYMmm)")
+    names, units = rows[first - 2], rows[first - 1]
+    cols: dict[int, tuple[str, str, str]] = {}
+    for j in range(1, len(names)):
+        name = names[j]
+        if name is None:
+            continue
+        unit = units[j] if j < len(units) else None
+        if not (isinstance(unit, str) and unit.startswith("(")):
+            raise LayoutError(f"Pink Sheet: column {name!r} has no unit cell ({unit!r})")
+        cols[j] = (f"worldbank_cmo:{_slug_code(str(name))}", str(name).strip(), unit.strip("()"))
+    if len({c[0] for c in cols.values()}) != len(cols):
+        raise LayoutError("Pink Sheet: two commodity columns share a name")
+    obs: list[dict[str, Any]] = []
+    for i, r in enumerate(rows[first:], start=first + 1):
+        if not r or r[0] is None:
+            continue
+        if not (isinstance(r[0], str) and re.fullmatch(r"\d{4}M\d\d", r[0])):
+            raise LayoutError(f"Pink Sheet row {i}: period {r[0]!r}")
+        y, mo = r[0].split("M")
+        for j, (sid, _, _) in cols.items():
+            v = r[j] if j < len(r) else None
+            text, norm = _xlsx_number(v)
+            obs.append(
+                {
+                    "series_id": sid,
+                    "vt_date": date(int(y), int(mo), 1),
+                    "vt_until": None,
+                    "period_text": r[0],
+                    "value_text": text,
+                    "value_norm": norm if v is None or isinstance(v, int | float) else None,
+                    "missing_reason": WB_MISSING.get(text),
+                    "raw_locator": f"Monthly Prices!R{i}C{j + 1}",
+                }
+            )
+    defs = [
+        {
+            "series_id": sid,
+            "source_code": name,
+            "name": name,
+            "frequency": "M",
+            "frequency_text": "monthly (YYYYMmm)",
+            "unit": unit,
+            "raw_locator": f"Monthly Prices!R{first - 1}C{j + 1}",
+        }
+        for j, (sid, name, unit) in cols.items()
+    ]
+    return _observations(obs, row), _frame(defs, row, _DEF_IN)
+
+
+def _worldbank(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+    if str(row["dataset_id"]) != "cmo_historical_monthly":
+        return  # the commodity-markets page only carries the link to the workbook
+    obs, defs = parse_worldbank_cmo(blob, row)
+    yield Parsed("observation", "cmo_historical_monthly", obs)
+    yield Parsed("definition", "cmo_historical_monthly", defs)
+
+
+# ------------------------------------------------------------------------------------------------ EIA
+# `hist_xls/<KEY>.xls`: sheet "Data 1" = a title row, `Sourcekey | <KEY>`, `Date | <name (unit)>`, then one row per
+# date: an Excel date serial and a value. The unit is the parenthesis at the end of the name.
+
+
+def parse_eia(blob: bytes, row: dict[str, Any]) -> tuple[pl.DataFrame, pl.DataFrame]:
+    import xlrd  # pyright: ignore[reportMissingTypeStubs]
+
+    wb = xlrd.open_workbook(file_contents=blob)
+    sh = wb.sheet_by_name("Data 1")
+    rows = [sh.row_values(i) for i in range(sh.nrows)]
+    if len(rows) < 4 or rows[1][0] != "Sourcekey" or rows[2][0] != "Date":
+        raise LayoutError(f"EIA: unexpected header rows {rows[:3]}")
+    obs: list[dict[str, Any]] = []
+    defs: list[dict[str, Any]] = []
+    for j in range(1, sh.ncols):
+        key, name = str(rows[1][j]), str(rows[2][j])
+        unit = re.search(r"\(([^()]*)\)\s*$", name)
+        if not key or unit is None:
+            raise LayoutError(f"EIA: column {j} without key or unit: {key!r} {name!r}")
+        sid = f"eia:{key}"
+        defs.append(
+            {
+                "series_id": sid,
+                "source_code": key,
+                "name": name,
+                "frequency": "D",
+                "frequency_text": "daily (one row per published date)",
+                "unit": unit.group(1),
+                "raw_locator": f"Data 1!R3C{j + 1}",
+            }
+        )
+        for i in range(3, sh.nrows):
+            if sh.cell_type(i, 0) != xlrd.XL_CELL_DATE:  # pyright: ignore[reportUnknownMemberType]
+                raise LayoutError(f"EIA row {i + 1}: date cell type {sh.cell_type(i, 0)}")
+            day = xlrd.xldate_as_datetime(float(rows[i][0]), wb.datemode).date()  # pyright: ignore[reportUnknownMemberType]
+            v = rows[i][j]
+            if v == "":
+                continue  # no price that day in this column
+            text, norm = _xlsx_number(v)
+            obs.append(
+                {
+                    "series_id": sid,
+                    "vt_date": day,
+                    "vt_until": None,
+                    "period_text": day.isoformat(),
+                    "value_text": text,
+                    "value_norm": norm,
+                    "raw_locator": f"Data 1!R{i + 1}C{j + 1}",
+                }
+            )
+    return _observations(obs, row), _frame(defs, row, _DEF_IN)
+
+
+# ------------------------------------------------------------------------------------------------ IMF
+# PCPS in SDMX-ML structure-specific data: <Series COUNTRY INDICATOR DATA_TRANSFORMATION FREQUENCY SCALE> holding
+# <Obs TIME_PERIOD="2010-M05" OBS_VALUE=…>. The payload names no unit: the indicator code is the unit code, labelled
+# from IMF's CL_PCPS_INDICATOR (e.g. "Beef, US cents per pound, Unit prices").
+
+
+def _imf_period(text: str, freq: str) -> date:
+    if freq == "M":
+        y, m = text.split("-M")
+        return date(int(y), int(m), 1)
+    if freq == "Q":
+        y, q = text.split("-Q")
+        return date(int(y), 3 * int(q) - 2, 1)
+    if freq == "A":
+        return date(int(text), 1, 1)
+    raise LayoutError(f"IMF period {text!r} of frequency {freq}")
+
+
+def parse_imf(blob: bytes, row: dict[str, Any]) -> tuple[pl.DataFrame, pl.DataFrame]:
+    import xml.etree.ElementTree as ET
+
+    root = ET.fromstring(blob)
+    obs: list[dict[str, Any]] = []
+    defs: list[dict[str, Any]] = []
+    flow = re.search(r"/data/([A-Z_]+)/", _url(row))
+    for n, s in enumerate((e for e in root.iter() if e.tag.split("}")[-1] == "Series"), start=1):
+        a = s.attrib
+        need = ("COUNTRY", "INDICATOR", "DATA_TRANSFORMATION", "FREQUENCY")
+        if any(k not in a for k in need) or a["FREQUENCY"] not in SDMX_FREQ:
+            raise LayoutError(f"IMF series {n}: attributes {a}")
+        code = ".".join([flow.group(1) if flow else "IMF", *(a[k] for k in need)])
+        sid = f"imf:{code}"
+        unit = a["INDICATOR"] + ("" if a.get("SCALE", "0") == "0" else f" x10^{a['SCALE']}")
+        defs.append(
+            {
+                "series_id": sid,
+                "source_code": code,
+                "name": f"{a['INDICATOR']} ({a['COUNTRY']}, {a['DATA_TRANSFORMATION']})",
+                "frequency": SDMX_FREQ[a["FREQUENCY"]],
+                "frequency_text": a["FREQUENCY"],
+                "unit": unit,
+                "raw_locator": f"Series[{n}]",
+            }
+        )
+        for k, o in enumerate(s, start=1):
+            obs.append(
+                {
+                    "series_id": sid,
+                    "vt_date": _imf_period(o.attrib["TIME_PERIOD"], a["FREQUENCY"]),
+                    "vt_until": None,
+                    "period_text": o.attrib["TIME_PERIOD"],
+                    "value_text": o.attrib.get("OBS_VALUE", ""),
+                    "raw_locator": f"Series[{n}]/Obs[{k}]",
+                }
+            )
+    if not defs:
+        raise LayoutError("IMF: no Series in the payload")
+    return _observations(obs, row), _frame(defs, row, _DEF_IN)
+
+
+def _imf(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+    ds = str(row["dataset_id"])
+    if ds.startswith("codelist_"):
+        yield Parsed("unit_label", ds, parse_sdmx_codelist(blob, row, "CL_PCPS_INDICATOR"))
+        return
+    obs, defs = parse_imf(blob, row)
+    yield Parsed("observation", ds, obs)
+    yield Parsed("definition", ds, defs)
+
+
 def _pair(parse: Any) -> Any:
     def payload(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
         obs, defs = parse(blob, row)
@@ -861,6 +1069,9 @@ CATALOGUE_PARSERS: dict[str, Any] = {
     "us_treasury": _pair(parse_us_treasury),
     "nyfed": _pair(parse_nyfed),
     "cboe": _pair(parse_cboe),
+    "worldbank_cmo": _worldbank,
+    "eia": _pair(parse_eia),
+    "imf": _imf,
     "ecb": _sdmx("ecb"),
     "bis": _sdmx("bis"),
     "oecd": _sdmx("oecd"),

@@ -1,0 +1,594 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<mes:Structure xmlns:mes="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message" xmlns:str="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/structure" xmlns:com="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/common" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xml="http://www.w3.org/XML/1998/namespace" xsi:schemaLocation="http://www.sdmx.org/resources/sdmxml/schemas/v2_1/message ../../schemas/SDMXMessage.xsd">
+  <mes:Header>
+    <mes:ID>IDREF3530</mes:ID>
+    <mes:Test>false</mes:Test>
+    <mes:Prepared>2026-11-07T21:04:17.632692102Z</mes:Prepared>
+    <mes:Sender id="IMF"/>
+  </mes:Header>
+  <mes:Structures>
+    <str:Codelists>
+      <str:Codelist urn="urn:sdmx:org.sdmx.infomodel.codelist.Codelist=IMF.RES:CL_PCPS_INDICATOR(3.0.0)" agencyID="IMF.RES" id="CL_PCPS_INDICATOR" version="3.0.0" isFinal="true" isExternalReference="false" isPartial="false">
+        <com:Annotations>
+          <com:Annotation id="origin"/>
+          <com:Annotation id="isFinal"/>
+          <com:Annotation id="lastUpdatedAt"/>
+        </com:Annotations>
+        <com:Name xml:lang="en">Primary Commodity Price System (PCPS) Indicator</com:Name>
+        <str:Code id="BARLEY" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).BARLEY">
+          <com:Name xml:lang="en">Barley Mpls Terminal prices, US dollars per bushel, Unit prices</com:Name>
+          <com:Description xml:lang="en">Barley Mpls Terminal prices U$/Bushel Price or cost in US dollars per bushel. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="LMICS" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).LMICS">
+          <com:Name xml:lang="en">Low and Middle Income Commodity Index (World Bank), Index,Unit prices, 1990=100</com:Name>
+          <com:Description xml:lang="en">World Bank Non-Energy Commodities Price Index for Lower Middle Income Countries, 1990 = 100 A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ The unitary price of an item or commodity. 1990=100.</com:Description>
+        </str:Code>
+        <str:Code id="PAGRI" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PAGRI">
+          <com:Name xml:lang="en">Agriculture, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Agriculture Price Index, 2016 = 100, includes Food and Beverages and Agriculture Raw Materials Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PALLFNF" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PALLFNF">
+          <com:Name xml:lang="en">All index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">All Commodity Price Index, 2016 = 100, includes both Fuel and Non-Fuel Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PALLMETA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PALLMETA">
+          <com:Name xml:lang="en">All Metals Index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">All Metals Index, 2016 = 100: includes Metal Price Index (Base Metals) and Precious Metals Index A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PALUM" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PALUM">
+          <com:Name xml:lang="en">Aluminum, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Aluminum, 99.5% minimum purity, LME spot price, CIF UK ports, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PAPPLE" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PAPPLE">
+          <com:Name xml:lang="en">Non-Citrus Fruit, Apple, Euro per kilogram, Unit prices</com:Name>
+          <com:Description xml:lang="en">Monthly average consumer prices in metropolitan France - Apples (1 Kg), EUR Price or cost in Euros per kilogram. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PBANSOP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PBANSOP">
+          <com:Name xml:lang="en">Bananas, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Bananas, Central American and Ecuador, FOB U.S. Ports, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PBARL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PBARL">
+          <com:Name xml:lang="en">Barley, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Barley, Canadian no.1 Western Barley, spot price, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PBEEF" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PBEEF">
+          <com:Name xml:lang="en">Beef, US cents per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Beef, Australian and New Zealand 85% lean fores, CIF U.S. import price, US cents per pound Price or cost in US cents per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PBEVE" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PBEVE">
+          <com:Name xml:lang="en">Beverages index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Beverage Price Index, 2016 = 100, includes Coffee, Tea, and Cocoa A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PCERE" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PCERE">
+          <com:Name xml:lang="en">Cereal index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Cereals Price Index, 2016 = 100, includes Barley, Maize (Corn), Oats, Rice, Sorghum and Wheat A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PCHANA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PCHANA">
+          <com:Name xml:lang="en">Legumes, Chickpea, INR/100 Kgs, Unit prices</com:Name>
+          <com:Description xml:lang="en">MCX India Chana Spot, INR/100 Kgs INR/100 Kgs The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PCHROM" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PCHROM">
+          <com:Name xml:lang="en">Chromium, 99.2%, Coarse particle, Unit prices</com:Name>
+          <com:Description xml:lang="en">Chromium =99.2%, Coarse Particle This refers to a material with a specific particle size distribution where 99.2% of the particles are larger than a certain size threshold, indicating a coarse or granular material. The exact size threshold would depend on the context and the specific material being described. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PCOAL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PCOAL">
+          <com:Name xml:lang="en">Coal index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Coal Price Index, 2016 = 100, includes Australian and South African Coal A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PCOALAU" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PCOALAU">
+          <com:Name xml:lang="en">Coal, Australia, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Coal, Australian thermal coal, 12,000- btu/pound, less than 1% sulfur, 14% ash, FOB Newcastle/Port Kembla, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PCOALSA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PCOALSA">
+          <com:Name xml:lang="en">Coal, South Africa, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Coal, South African export price, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PCOBA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PCOBA">
+          <com:Name xml:lang="en">Cobalt, US dollars per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Cobalt, minimum 99.80% purity, LME spot price, USD/ton Price or cost in US dollars per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PCOCO" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PCOCO">
+          <com:Name xml:lang="en">Cocoa, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Cocoa beans, International Cocoa Organization cash price, CIF US and European ports, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PCOFF" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PCOFF">
+          <com:Name xml:lang="en">Coffee index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Coffee Price Index, 2016 = 100, includes Other Mild Arabicas and Robusta A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PCOFFAVG" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PCOFFAVG">
+          <com:Name xml:lang="en">Coffee, Average of OFECPAR and COFECPRB, US cents per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Coffee, Average of Arabica, Other Milds, and Robusta Price or cost in US cents per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PCOFFOTM" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PCOFFOTM">
+          <com:Name xml:lang="en">Coffee, Other Mild Arabica, US cents per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Coffee, Other Mild Arabicas, International Coffee Organization New York cash price, ex-dock New York, US cents per pound Price or cost in US cents per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PCOFFROB" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PCOFFROB">
+          <com:Name xml:lang="en">Coffee, Robustas, US cents per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Coffee, Robusta, International Coffee Organization New York cash price, ex-dock New York, US cents per pound Price or cost in US cents per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PCOIL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PCOIL">
+          <com:Name xml:lang="en">Coconut Oil, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Coconut Oil, Philippine/Indonesia origin, CIF Rotterdam, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PCOPP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PCOPP">
+          <com:Name xml:lang="en">Copper, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Copper, grade A cathode, LME spot price, CIF European ports, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PCOTTIND" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PCOTTIND">
+          <com:Name xml:lang="en">Cotton, US cents per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Cotton, Cotton Outlook 'A Index', Middling 1-3/32 inch staple, CIF Liverpool, US cents per pound Price or cost in US cents per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PDAP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PDAP">
+          <com:Name xml:lang="en">Diammonium phosphate, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">US Gulf NOLA DAP Export Spot Price per MT, USD/metric tonne Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PENTM" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PENTM">
+          <com:Name xml:lang="en">Energy Transition Metal Index, Index, Unit prices</com:Name>
+          <com:Description xml:lang="en">Energy Transition Metal Index A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PEXGALL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PEXGALL">
+          <com:Name xml:lang="en">Commodities for Index: All, excluding Gold, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Commodities for Index: All, excluding Gold, 2016 = 100 A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PEXGMETA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PEXGMETA">
+          <com:Name xml:lang="en">All Metals EX GOLD Index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">All Metals EX GOLD Index, 2016 = 100: includes Metal Price Index (Base Metals) and ONLY Silver, Palladium, Platinum A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PFANDB" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PFANDB">
+          <com:Name xml:lang="en">Food and beverage index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Food and Beverage Price Index, 2016 = 100, includes Food and Beverage Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PFERT" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PFERT">
+          <com:Name xml:lang="en">Fertlizer, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Fertilizer Index, 2016 = 100, includes DAP, Potash, UREA A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PFOOD" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PFOOD">
+          <com:Name xml:lang="en">Food index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Food Price Index, 2016 = 100, includes Cereal, Vegetable Oils, Meat, Seafood, Sugar, and Other Food (Apple (non-citrus fruit), Bananas, Chana (legumes), Fishmeal, Groundnuts, Milk (dairy), Tomato (veg)) Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PFSHMEAL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PFSHMEAL">
+          <com:Name xml:lang="en">Fish Meal, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Fishmeal, Peru Fish meal/pellets 65% protein, CIF, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PGASO" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PGASO">
+          <com:Name xml:lang="en">Gasoline, US cents per gallon, Unit prices</com:Name>
+          <com:Description xml:lang="en">Gasoline, Regular, unleaded, US Gulf, US cents per gallon Price or cost in US cents per gallon. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PGNUTS" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PGNUTS">
+          <com:Name xml:lang="en">Groundnuts, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Groundnuts (peanuts), 40/50 (40 to 50 count per ounce), cif Argentina, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PGOLD" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PGOLD">
+          <com:Name xml:lang="en">Gold, US dollars per troy ounce of gold, Unit prices</com:Name>
+          <com:Description xml:lang="en">Gold, Fixing Committee of the London Bullion Market Association, London 3 PM fixed price, US$ per troy ounce Price or cost in US dollars per troy ounce of gold. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PHARD" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PHARD">
+          <com:Name xml:lang="en">Hardwood index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Hardwood Price Index, 2016 = 100, includes Hardwood Logs and Hardwood Sawn Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PHEATOIL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PHEATOIL">
+          <com:Name xml:lang="en">Heating Oil, US cents per gallon, Unit prices</com:Name>
+          <com:Description xml:lang="en">Heating Oil; US New York Harbor Price or cost in US cents per gallon. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PHIDE" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PHIDE">
+          <com:Name xml:lang="en">Hides, US cents per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Hides, Heavy native steers, over 53 pounds, wholesale dealer's price, US, Chicago, fob Shipping Point, US cents per pound Price or cost in US cents per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PINDU" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PINDU">
+          <com:Name xml:lang="en">Industrial Materials index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Industrial Inputs Price Index, 2016 = 100, includes Agricultural Raw Materials and Base Metals Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PIORECR" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PIORECR">
+          <com:Name xml:lang="en">Iron Ore, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">China import Iron Ore Fines 62% FE spot (CFR Tianjin port), US dollars per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PLAMB" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PLAMB">
+          <com:Name xml:lang="en">Lamb, US cents per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Lamb, frozen carcass Smithfield London, US cents per pound Price or cost in US cents per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PLAMB_L" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PLAMB_L">
+          <com:Name xml:lang="en">Leg of lamb, US cents per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Leg of lamb Price or cost in US cents per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PLEAD" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PLEAD">
+          <com:Name xml:lang="en">Lead, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Lead, 99.97% pure, LME spot price, CIF European Ports, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PLITH" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PLITH">
+          <com:Name xml:lang="en">Lithium, 99%, Battery Grade, Unit prices</com:Name>
+          <com:Description xml:lang="en">Lithium Metal =99%, Battery Grade This refers to a material or substance that has a purity level of 99% and is suitable for use in batteries. The term "Battery Grade" indicates that the material meets the specific quality and performance requirements for battery applications, such as electrochemical stability, high energy density, and long cycle life. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PLMMODY" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PLMMODY">
+          <com:Name xml:lang="en">Molybdenum, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Molybdenum, 57 to 63% purity contained in roasted molybdenum concentrate, LME spot price, USD/ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PLOGORE" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PLOGORE">
+          <com:Name xml:lang="en">Soft Logs, US dollars per cubic meter, Unit prices</com:Name>
+          <com:Description xml:lang="en">Soft Logs, Average Export price from the U.S. for Douglas Fir, US$ per cubic meter Price or cost in US dollars per cubic meter. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PLOGSK" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PLOGSK">
+          <com:Name xml:lang="en">Hard Logs, Import Price Japan, US dollars per cubic meter, Unit prices</com:Name>
+          <com:Description xml:lang="en">Hard Logs, Best quality Malaysian meranti, import price Japan, US$ per cubic meter Price or cost in US dollars per cubic meter. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PMAIZMT" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PMAIZMT">
+          <com:Name xml:lang="en">Corn, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Maize (corn), U.S. No.2 Yellow, FOB Gulf of Mexico, U.S. price, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PMANGELE" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PMANGELE">
+          <com:Name xml:lang="en">Manganese, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Manganese Electro CIF NWE (US$/MT) Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PMEAT" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PMEAT">
+          <com:Name xml:lang="en">Meat Index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Meat Price Index, 2016 = 100, includes Beef, Lamb, Swine (pork), and Poultry Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PMETA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PMETA">
+          <com:Name xml:lang="en">Base Metals index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Base Metals Price Index, 2016 = 100, includes Aluminum, Cobalt, Copper, Iron Ore, Lead, Molybdenum, Nickel, Tin, Uranium and Zinc Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PMILK" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PMILK">
+          <com:Name xml:lang="en">Dairy Products, Milk, US cents per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">USDA Class 3 (formerly known as Basic Formula) Milk Spot Price, USD/cwt Price or cost in US cents per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PNFUEL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PNFUEL">
+          <com:Name xml:lang="en">Non-Fuel index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Non-Fuel Price Index, 2016 = 100, includes Precious Metal, Food and Beverages and Industrial Inputs Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PNGAS" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PNGAS">
+          <com:Name xml:lang="en">Natural gas index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Natural Gas Price Index, 2016 = 100, includes European, Japanese, and American Natural Gas Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PNGASEU" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PNGASEU">
+          <com:Name xml:lang="en">Natural gas, EU, US dollars per million metric British thermal units of gas, Unit prices</com:Name>
+          <com:Description xml:lang="en">Natural Gas, Netherlands TTF Natural Gas Forward Day Ahead, US$ per Million Metric British Thermal Unit Price in US dollars per million British thermal units of gas. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PNGASJP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PNGASJP">
+          <com:Name xml:lang="en">LNG, Asia, US dollars per million metric British thermal units of gas, Unit prices</com:Name>
+          <com:Description xml:lang="en">Natural Gas, Indonesian Liquefied Natural Gas in Japan, US$ per Million Metric British Thermal Unit Price in US dollars per million British thermal units of gas. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PNGASUS" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PNGASUS">
+          <com:Name xml:lang="en">Natural Gas, US Henry Hub Gas, US dollars per million metric British thermal units of gas, Unit prices</com:Name>
+          <com:Description xml:lang="en">Natural Gas, Natural Gas spot price at the Henry Hub terminal in Louisiana, US$ per Million Metric British Thermal Unit Price in US dollars per million British thermal units of gas. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PNICK" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PNICK">
+          <com:Name xml:lang="en">Nickel, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Nickel, melting grade, LME spot price, CIF European ports, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PNRG" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PNRG">
+          <com:Name xml:lang="en">Energy index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Fuel (Energy) Index, 2016 = 100, includes Crude oil (petroleum), Natural Gas, Coal Price and Propane Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="POATS" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).POATS">
+          <com:Name xml:lang="en">Oats, US dollars per bushel, Unit prices</com:Name>
+          <com:Description xml:lang="en">Generic 1st 'O ' Future, USD/bushel Price or cost in US dollars per bushel. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="POILAPSP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).POILAPSP">
+          <com:Name xml:lang="en">APSP crude oil($/bbl), US dollars per barrel,Unit prices, 2016=100</com:Name>
+          <com:Description xml:lang="en">Crude Oil (petroleum), Price index, 2016 = 100, simple average of three spot prices; Dated Brent, West Texas Intermediate, and the Dubai Fateh Price or cost in US dollars per barrel. The unitary price of an item or commodity. 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="POILBRE" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).POILBRE">
+          <com:Name xml:lang="en">Brent Crude, US dollars per barrel, Unit prices</com:Name>
+          <com:Description xml:lang="en">Crude Oil (petroleum),  Dated Brent, light blend 38 API, fob U.K., US$ per barrel Price or cost in US dollars per barrel. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="POILDUB" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).POILDUB">
+          <com:Name xml:lang="en">Dubai Crude, US dollars per barrel, Unit prices</com:Name>
+          <com:Description xml:lang="en">Crude Oil (petroleum), Dubai Fateh Fateh 32 API, US$ per barrel Price or cost in US dollars per barrel. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="POILWTI" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).POILWTI">
+          <com:Name xml:lang="en">WTI Crude, US dollars per barrel, Unit prices</com:Name>
+          <com:Description xml:lang="en">Crude Oil (petroleum), West Texas Intermediate 40 API, Midland Texas, US$ per barrel Price or cost in US dollars per barrel. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="POLVOIL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).POLVOIL">
+          <com:Name xml:lang="en">Olive Oil, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Olive Oil, extra virgin less than 1% free fatty acid, ex-tanker price U.K., US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="POPEC" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).POPEC">
+          <com:Name xml:lang="en">OPEC Basket Crude Oil, US dollars per barrel, Unit prices</com:Name>
+          <com:Description xml:lang="en">OPEC basket($/bbl) Price or cost in US dollars per barrel. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PORANG" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PORANG">
+          <com:Name xml:lang="en">Orange, US dollars per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Generic 1st 'JO' Future, USD/lb Price or cost in US dollars per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PPALLA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PPALLA">
+          <com:Name xml:lang="en">Palladium, US dollars per troy ounce of gold, Unit prices</com:Name>
+          <com:Description xml:lang="en">Palladium, LME spot price, USD/ troy ounce Price or cost in US dollars per troy ounce of gold. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PPIAPPLE" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PPIAPPLE">
+          <com:Name xml:lang="en">Apple French PPI, Producer price index (PPI)</com:Name>
+          <com:Description xml:lang="en">Apple backward index The Producer Price Index (PPI) is a key economic indicator that measures the average change over time in the selling prices received by domestic producers for their output. A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.</com:Description>
+        </str:Code>
+        <str:Code id="PPIMILK" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PPIMILK">
+          <com:Name xml:lang="en">Milk US PPI, Producer price index (PPI)</com:Name>
+          <com:Description xml:lang="en">Milk backward index The Producer Price Index (PPI) is a key economic indicator that measures the average change over time in the selling prices received by domestic producers for their output. A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.</com:Description>
+        </str:Code>
+        <str:Code id="PPIPEA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PPIPEA">
+          <com:Name xml:lang="en">PEA French PPI, Producer price index (PPI)</com:Name>
+          <com:Description xml:lang="en">PEA backward index The Producer Price Index (PPI) is a key economic indicator that measures the average change over time in the selling prices received by domestic producers for their output. A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.</com:Description>
+        </str:Code>
+        <str:Code id="PPITOMATO" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PPITOMATO">
+          <com:Name xml:lang="en">Tomato French PPI, Producer price index (PPI)</com:Name>
+          <com:Description xml:lang="en">Tomato backward index The Producer Price Index (PPI) is a key economic indicator that measures the average change over time in the selling prices received by domestic producers for their output. A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.</com:Description>
+        </str:Code>
+        <str:Code id="PPLAT" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PPLAT">
+          <com:Name xml:lang="en">Platinum, US dollars per troy ounce of gold, Unit prices</com:Name>
+          <com:Description xml:lang="en">Platinum, LME spot price, USD/troy ounce Price or cost in US dollars per troy ounce of gold. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PPLYMAL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PPLYMAL">
+          <com:Name xml:lang="en">Plywood, Malaysian, US dollars per cubic meter, Unit prices</com:Name>
+          <com:Description xml:lang="en">Plywood; Tokyo, Lauan, type 1, 12mm Price or cost in US dollars per cubic meter. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PPMETA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PPMETA">
+          <com:Name xml:lang="en">Precious Metals Price Index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Precious Metals Price Index, 2016 = 100, includes Gold, Silver, Palladium and Platinum Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PPOIL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PPOIL">
+          <com:Name xml:lang="en">Palm Oil, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Palm oil, Malaysia Palm Oil Futures (first contract forward) 4-5 percent FFA, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PPORK" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PPORK">
+          <com:Name xml:lang="en">Swine, US cents per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Swine (pork), 51-52% lean Hogs, U.S. price, US cents per pound. Price or cost in US cents per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PPOTASH" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PPOTASH">
+          <com:Name xml:lang="en">Potassium Fertilizer, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Potassium Chloride (Muriate of Potash) Standard Grade: FOB Vancouver Spot Price, USD/metric tonne Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PPOULT" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PPOULT">
+          <com:Name xml:lang="en">Poultry, US cents per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Poultry (chicken), Whole bird spot price, Ready-to-cook, whole, iced, Georgia docks, US cents per pound Price or cost in US cents per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PPROPANE" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PPROPANE">
+          <com:Name xml:lang="en">Propane, US cents per gallon, Unit prices</com:Name>
+          <com:Description xml:lang="en">North American Spot LPG Propane Price/Mont Belvieu LST Price or cost in US cents per gallon. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PRAWM" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PRAWM">
+          <com:Name xml:lang="en">Agr. Raw Material Index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Agricultural Raw Materials Index, 2016 = 100, includes Timber, Cotton, Wool, Rubber, and Hides Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PREODOM" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PREODOM">
+          <com:Name xml:lang="en">Rare Earth Elements, Rare earth carbonate REO 42-45 Dom, Unit prices</com:Name>
+          <com:Description xml:lang="en">Rare Earth Carbonate REO 42-45 Dom. Specific rare earth carbonate material with a defined range of Rare Earth Oxide (REO) content. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PRICENPQ" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PRICENPQ">
+          <com:Name xml:lang="en">Rice, Thailand, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Rice, 5 percent broken milled white rice, Thailand nominal price quote, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PROIL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PROIL">
+          <com:Name xml:lang="en">Rapeseed Oil, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Rapeseed oil, crude, fob Rotterdam, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PRUBB" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PRUBB">
+          <com:Name xml:lang="en">Rubber, US cents per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Rubber, Singapore Commodity Exchange, No. 3 Rubber Smoked Sheets, 1st contract, US cents per pound Price or cost in US cents per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PSALM" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSALM">
+          <com:Name xml:lang="en">Fish, US dollars per kilogram, Unit prices</com:Name>
+          <com:Description xml:lang="en">Fish (salmon), Farm Bred Norwegian Salmon, export price, US$ per kilogram Price or cost in US dollars per kilogram. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PSAWMAL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSAWMAL">
+          <com:Name xml:lang="en">Hard Sawnwood, Dark Red Meranti, US dollars per cubic meter, Unit prices</com:Name>
+          <com:Description xml:lang="en">Hard Sawnwood, Dark Red Meranti, select and better quality, C&amp;F U.K port, US$ per cubic meter Price or cost in US dollars per cubic meter. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PSAWORE" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSAWORE">
+          <com:Name xml:lang="en">Soft Sawnwood, Average of Softwoods, US dollars per cubic meter, Unit prices</com:Name>
+          <com:Description xml:lang="en">Soft Sawnwood, average export price of Douglas Fir, U.S. Price, US$ per cubic meter Price or cost in US dollars per cubic meter. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PSEAF" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSEAF">
+          <com:Name xml:lang="en">Seafood index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Seafood Index, 2016 = 100, includes Fish (salmon) and Shrimp Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PSHRI" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSHRI">
+          <com:Name xml:lang="en">Shrimp, Thai baht, Unit prices</com:Name>
+          <com:Description xml:lang="en">Thailand Whiteleg Shrimp 70 Shrimps/Kg Spot Price The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PSILLUMP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSILLUMP">
+          <com:Name xml:lang="en">Silicon, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Silicon Lumps CIF NWE (US$/MT) Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PSILVER" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSILVER">
+          <com:Name xml:lang="en">Silver, US dollars per troy ounce of gold, Unit prices</com:Name>
+          <com:Description xml:lang="en">Silver, London Bullion Market Association, USD/troy ounce Price or cost in US dollars per troy ounce of gold. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PSMEA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSMEA">
+          <com:Name xml:lang="en">Soybean Meal, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Soybean Meal, Chicago Soybean Meal Futures (first contract forward) Minimum 48 percent protein, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PSOFT" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSOFT">
+          <com:Name xml:lang="en">Softwood index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Softwood Index, 2016 = 100, includes Softwood Sawn and Softwood Logs Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PSOIL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSOIL">
+          <com:Name xml:lang="en">Soybeans Oil, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Soybean Oil, Chicago Soybean Oil Futures (first contract forward) exchange approved grades, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PSORG" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSORG">
+          <com:Name xml:lang="en">Sorghum, US dollars per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Sorghum; U.S., Number 2 yellow, fob Gulf of Mexico, US cents per pound Price or cost in US dollars per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PSOYB" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSOYB">
+          <com:Name xml:lang="en">Soybeans, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Soybeans, U.S. soybeans, Chicago Soybean futures contract (first contract forward) No. 2 yellow and par, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PSUGA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSUGA">
+          <com:Name xml:lang="en">Sugar index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Sugar Index, 2016 = 100, includes Free market, and U.S. Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PSUGAISA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSUGAISA">
+          <com:Name xml:lang="en">Sugar, No. 11, World, US cents per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Sugar, Free Market, Coffee Sugar and Cocoa Exchange (CSCE) contract no.11 nearest future position, US cents per pound Price or cost in US cents per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PSUGAUSA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSUGAUSA">
+          <com:Name xml:lang="en">Sugar, No. 16, US, US cents per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Sugar, U.S. import price, contract no.14 nearest futures position, US cents per pound (Footnote: No. 14 revised to No. 16) Price or cost in US cents per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PSUNO" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PSUNO">
+          <com:Name xml:lang="en">Sunflower Oil, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Sunflower oil, Sunflower Oil, US export price from Gulf of Mexico, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PTEA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PTEA">
+          <com:Name xml:lang="en">Tea, Kenyan, US cents per kilogram, Unit prices</com:Name>
+          <com:Description xml:lang="en">Tea, Mombasa, Kenya, Auction Price, US cents per kilogram, From July 1998,Kenya auctions, Best Pekoe Fannings. Prior, London auctions, c.i.f. U.K. warehouses Price or cost in US cents per kilogram. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PTEAINDIA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PTEAINDIA">
+          <com:Name xml:lang="en">Tea, Kolkata, US cents per kilogram, Unit prices</com:Name>
+          <com:Description xml:lang="en">Kolkata(cts/Kg) Price or cost in US cents per kilogram. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PTEAMOM" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PTEAMOM">
+          <com:Name xml:lang="en">Tea, Mombasa, US cents per kilogram, Unit prices</com:Name>
+          <com:Description xml:lang="en">Tea; Mombasa Auction price Price or cost in US cents per kilogram. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PTEASL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PTEASL">
+          <com:Name xml:lang="en">Tea, Colombo, US cents per kilogram, Unit prices</com:Name>
+          <com:Description xml:lang="en">Colombo(cts/Kg) Price or cost in US cents per kilogram. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PTIMB" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PTIMB">
+          <com:Name xml:lang="en">Timber index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Timber Index, 2016 = 100, includes Hardwood and Softwood Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PTIN" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PTIN">
+          <com:Name xml:lang="en">Tin, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Tin, standard grade, LME spot price, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PTOMATO" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PTOMATO">
+          <com:Name xml:lang="en">Vegetables, Tomato, Euro per kilogram, Unit prices</com:Name>
+          <com:Description xml:lang="en">Monthly average consumer prices in metropolitan France - Tomatoes (1 Kg), EUR Price or cost in Euros per kilogram. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PURAN" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PURAN">
+          <com:Name xml:lang="en">Uranium, US dollars per pound, Unit prices</com:Name>
+          <com:Description xml:lang="en">Uranium, NUEXCO, Restricted Price, Nuexco exchange spot, US$ per pound Price or cost in US dollars per pound. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PUREA" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PUREA">
+          <com:Name xml:lang="en">Urea, USD/ST, Unit prices</com:Name>
+          <com:Description xml:lang="en">US Gulf NOLA Urea Granular Spot Price, USD/ST USD/ST The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PVANPENT" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PVANPENT">
+          <com:Name xml:lang="en">Vanadium, Cost, insurance, and freight Northwest Europe (CIF NWE), Unit prices</com:Name>
+          <com:Description xml:lang="en">Vanadium Pentoxide CIF NWE CIF NWE (Cost, Insurance, and Freight Northwest Europe) is a pricing term used in the oil and petroleum industry. It indicates that the seller is responsible for the costs, insurance, and freight of delivering the product to a port in Northwest Europe. sumes responsibility for the goods once they are loaded onto the ship at the port of origin. NEW likely refers to a specific geographic region or port, but without further context, it's difficult to be certain. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PVOIL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PVOIL">
+          <com:Name xml:lang="en">Vegetable oil index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Vegetable Oil Index, 2016 = 100, includes Soybean, Soybean Meal, Soybean Oil, Coconut Oil, Palm Oil, Sunflower Oil and Olive Oil Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PWHEAMT" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PWHEAMT">
+          <com:Name xml:lang="en">Wheat, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Wheat, No.1 Hard Red Winter, ordinary protein, Kansas City, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PWOOL" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PWOOL">
+          <com:Name xml:lang="en">Wool index, Commodity price index, Index, 2016=100</com:Name>
+          <com:Description xml:lang="en">Wool Index, 2016 = 100, includes Coarse and Fine Wool Price Indices A commodity price index is a measurement tool that tracks the average price changes of a basket of commodities over time. These commodities can include various raw materials or primary agricultural products A statistical measure that expresses the relative change in a variable in the current period compared to the index reference period.
+ 2016=100.</com:Description>
+        </str:Code>
+        <str:Code id="PWOOLC" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PWOOLC">
+          <com:Name xml:lang="en">Wool, Coarse, US cents per kilogram, Unit prices</com:Name>
+          <com:Description xml:lang="en">Wool, coarse, 23 micron, Australian Wool Exchange spot quote, US cents per kilogram Price or cost in US cents per kilogram. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PWOOLF" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PWOOLF">
+          <com:Name xml:lang="en">Wool, Fine, US cents per kilogram, Unit prices</com:Name>
+          <com:Description xml:lang="en">Wool, fine, 19 micron, Australian Wool Exchange spot quote, US cents per kilogram Price or cost in US cents per kilogram. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PWPULP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PWPULP">
+          <com:Name xml:lang="en">Wood Pulp, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Wood Pulp($/MT) Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="PZINC" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).PZINC">
+          <com:Name xml:lang="en">Zinc, US dollars per metric tonne, Unit prices</com:Name>
+          <com:Description xml:lang="en">Zinc, high grade 98% pure, US$ per metric ton Price or cost in US dollars per metric tonne. The unitary price of an item or commodity.</com:Description>
+        </str:Code>
+        <str:Code id="T111ESN" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T111ESN">
+          <com:Name xml:lang="en">US dollar, SDR per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Exchange rate indicating how many Special Drawing Rights (SDRs) are equivalent to one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+        <str:Code id="T112EREP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T112EREP">
+          <com:Name xml:lang="en">Pound sterling, Domestic currency per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Domestic Currency per US Dollar refers to the exchange rate between a country's domestic currency and the US dollar. It indicates how much of the domestic currency is needed to buy one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+        <str:Code id="T132EREP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T132EREP">
+          <com:Name xml:lang="en">French franc, Domestic currency per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Domestic Currency per US Dollar refers to the exchange rate between a country's domestic currency and the US dollar. It indicates how much of the domestic currency is needed to buy one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+        <str:Code id="T134EREP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T134EREP">
+          <com:Name xml:lang="en">Deutsche mark, Domestic currency per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Domestic Currency per US Dollar refers to the exchange rate between a country's domestic currency and the US dollar. It indicates how much of the domestic currency is needed to buy one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+        <str:Code id="T142EREP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T142EREP">
+          <com:Name xml:lang="en">Norwegian krone, Domestic currency per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Domestic Currency per US Dollar refers to the exchange rate between a country's domestic currency and the US dollar. It indicates how much of the domestic currency is needed to buy one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+        <str:Code id="T144EREP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T144EREP">
+          <com:Name xml:lang="en">Swedish krona, Domestic currency per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Domestic Currency per US Dollar refers to the exchange rate between a country's domestic currency and the US dollar. It indicates how much of the domestic currency is needed to buy one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+        <str:Code id="T156EREP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T156EREP">
+          <com:Name xml:lang="en">Canadian dollar, Domestic currency per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Domestic Currency per US Dollar refers to the exchange rate between a country's domestic currency and the US dollar. It indicates how much of the domestic currency is needed to buy one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+        <str:Code id="T158EREP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T158EREP">
+          <com:Name xml:lang="en">Japanese yen, Domestic currency per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Domestic Currency per US Dollar refers to the exchange rate between a country's domestic currency and the US dollar. It indicates how much of the domestic currency is needed to buy one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+        <str:Code id="T163EREP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T163EREP">
+          <com:Name xml:lang="en">Euro, Domestic currency per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Domestic Currency per US Dollar refers to the exchange rate between a country's domestic currency and the US dollar. It indicates how much of the domestic currency is needed to buy one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+        <str:Code id="T193EREP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T193EREP">
+          <com:Name xml:lang="en">Australian dollar, Domestic currency per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Domestic Currency per US Dollar refers to the exchange rate between a country's domestic currency and the US dollar. It indicates how much of the domestic currency is needed to buy one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+        <str:Code id="T196EREP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T196EREP">
+          <com:Name xml:lang="en">New Zealand dollar, Domestic currency per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Domestic Currency per US Dollar refers to the exchange rate between a country's domestic currency and the US dollar. It indicates how much of the domestic currency is needed to buy one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+        <str:Code id="T524EREP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T524EREP">
+          <com:Name xml:lang="en">Sri Lankan rupee, Domestic currency per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Domestic Currency per US Dollar refers to the exchange rate between a country's domestic currency and the US dollar. It indicates how much of the domestic currency is needed to buy one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+        <str:Code id="T534EREP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T534EREP">
+          <com:Name xml:lang="en">Indian rupee, Domestic currency per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Domestic Currency per US Dollar refers to the exchange rate between a country's domestic currency and the US dollar. It indicates how much of the domestic currency is needed to buy one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+        <str:Code id="T548EREP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T548EREP">
+          <com:Name xml:lang="en">Malaysian ringgit, Domestic currency per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Domestic Currency per US Dollar refers to the exchange rate between a country's domestic currency and the US dollar. It indicates how much of the domestic currency is needed to buy one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+        <str:Code id="T576EREP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T576EREP">
+          <com:Name xml:lang="en">Singapore dollar, Domestic currency per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Domestic Currency per US Dollar refers to the exchange rate between a country's domestic currency and the US dollar. It indicates how much of the domestic currency is needed to buy one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+        <str:Code id="T924EREP" urn="urn:sdmx:org.sdmx.infomodel.codelist.Code=IMF.RES:CL_PCPS_INDICATOR(3.0.0).T924EREP">
+          <com:Name xml:lang="en">Chinese yuan renminbi, Domestic currency per US dollar, Period average</com:Name>
+          <com:Description xml:lang="en">Domestic Currency per US Dollar refers to the exchange rate between a country's domestic currency and the US dollar. It indicates how much of the domestic currency is needed to buy one US dollar. This refers to the arithmetic mean (average) value of a data series calculated over a specified period, such as a month, quarter, or year. It provides a representative value for the entire period, smoothing out any short-term fluctuations.</com:Description>
+        </str:Code>
+      </str:Codelist>
+    </str:Codelists>
+  </mes:Structures>
+</mes:Structure>

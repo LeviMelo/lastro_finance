@@ -126,3 +126,9 @@ Recommendation: `httpx` + `polars` for the CSV/SDMX-CSV routes (all verified abo
   - OECD `rest/datastructure/OECD.SDD.STES/DSD_STES/4.1?references=codelist` (1.6 MB;
     `rest/codelist/OECD.SDD.STES/CL_UNIT_MEASURE` answers 404).
   ECB frequency `B` (business days) is read as daily.
+- **worldbank_cmo:** sheet "Monthly Prices" only: 71 commodities 1960-01→, units from the units row (`$/bbl`, `$/mt`);
+  `…`/`...` = not available; 4 `#VALUE!` cells (Rice, Thai 25%) quarantined. The index sheet is not parsed yet.
+- **eia:** `eia:RBRTE`, `eia:RWTC`, unit from the name's parenthesis (Dollars per Barrel); Excel date serials.
+- **imf:** `imf:PCPS.G001.<indicator>.USD.M`; units from IMF's `CL_PCPS_INDICATOR` (archived monthly).
+- **Cross-check 1992-01→ (417 months):** IMF vs World Bank gold and copper agree (median 0.05 %, max 1.2 %); Brent
+  does not (median 0.64 %, max 15 %): IMF "Dated Brent" and the World Bank's "UK Brent 38 API" are different series.

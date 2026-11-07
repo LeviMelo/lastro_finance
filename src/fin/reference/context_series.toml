@@ -224,6 +224,14 @@ ext = "xml"
 every_days = 7
 about = "IMF primary commodity prices, monthly USD, 1992-: Brent, WTI, iron ore, copper, gold, soy, maize, coffee, sugar, beef"
 
+
+[[file]]
+source = "imf"
+dataset = "codelist_cl_pcps_indicator"
+url = "https://api.imf.org/external/sdmx/2.1/codelist/IMF.RES/CL_PCPS_INDICATOR"
+ext = "xml"
+every_days = 30
+about = "IMF PCPS indicator codelist (SDMX 2.1 structure): names with units (Beef, US cents per pound, Unit prices)"
 [[file]]
 source = "oecd"
 dataset = "cli"

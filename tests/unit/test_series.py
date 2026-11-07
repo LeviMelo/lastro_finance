@@ -275,3 +275,38 @@ def test_unit_codes_get_the_sources_labels() -> None:
     defs = pl.DataFrame({"series_id": ["a", "b", "c"], "unit": ["368", "882 x10^3", "ZZZ"]})
     out = series.label_units(defs, bis)
     assert out["unit"].to_list() == ["Per cent per year (368)", "Index, 2020 = 100 (882) x10^3", "ZZZ"]
+
+
+def test_pink_sheet_units_markers_and_excel_errors() -> None:
+    blob = (FIX / "worldbank_cmo/CMO-Historical-Data-Monthly.xlsx").read_bytes()
+    obs, defs = series.parse_worldbank_cmo(blob, _row("cmo_historical_monthly"))
+    units = dict(defs.select("series_id", "unit").iter_rows())
+    assert units["worldbank_cmo:crude_oil_brent"] == "$/bbl" and units["worldbank_cmo:gold"] == "$/troy oz"
+    good, bad = series.OBSERVATION.split(obs)
+    assert set(bad["value_text"]) == {"#VALUE!"} and bad.height == 4
+    jan60 = good.filter(pl.col("series_id") == "worldbank_cmo:crude_oil_brent", pl.col("vt_date") == date(1960, 1, 1))
+    assert jan60["value"][0] == Decimal("1.6")
+    wti = good.filter(pl.col("series_id") == "worldbank_cmo:crude_oil_wti", pl.col("vt_date") == date(1960, 1, 1))
+    assert wti["missing_reason"][0] == "World Bank '…': not available"
+
+
+def test_eia_unit_from_the_name_and_excel_dates() -> None:
+    obs, defs = series.parse_eia((FIX / "eia/RWTCd.xls").read_bytes(), _row("rwtcd"))
+    assert defs.row(0, named=True)["series_id"] == "eia:RWTC" and defs["unit"][0] == "Dollars per Barrel"
+    first = _ok(series.OBSERVATION, obs).row(0, named=True)
+    assert first["vt_date"] == date(1986, 1, 2) and first["value"] == Decimal("25.56")
+
+
+def test_imf_series_and_indicator_units() -> None:
+    url = "https://api.imf.org/external/sdmx/2.1/data/PCPS/G001.POILBRE.USD.M"
+    obs, defs = series.parse_imf((FIX / "imf/PCPS_G001_10_commodities_USD_M.xml").read_bytes(), _row("pcps", url))
+    obs = _ok(series.OBSERVATION, obs)
+    assert "imf:PCPS.G001.PBEEF.USD.M" in set(defs["series_id"]) and set(defs["frequency"]) == {"M"}
+    beef = obs.filter(pl.col("series_id") == "imf:PCPS.G001.PBEEF.USD.M").sort("vt_date")
+    assert beef["vt_date"][0] == date(2010, 5, 1) and beef["value"][0] == Decimal("157.75")
+    labels = series.parse_sdmx_codelist(
+        (FIX / "imf/codelist_CL_PCPS_INDICATOR.xml").read_bytes(), _row("c"), "CL_PCPS_INDICATOR"
+    )
+    out = series.label_units(defs.select("series_id", "unit"), labels)
+    unit = dict(out.iter_rows())["imf:PCPS.G001.PBEEF.USD.M"]
+    assert unit == "Beef, US cents per pound, Unit prices (PBEEF)"
