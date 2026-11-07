@@ -1,0 +1,5 @@
+CNPJ_Companhia;Data_Referencia;Versao;ID_Documento;Nome_Empresarial;Valor_Mobiliario;Sigla_Classe_Acao_Preferencial;Classe_Acao_Preferencial;Codigo_Negociacao;Composicao_BDR_Unit;Mercado;Sigla_Entidade_Administradora;Entidade_Administradora;Data_Inicio_Negociacao;Data_Fim_Negociacao;Segmento;Data_Inicio_Listagem;Data_Fim_Listagem
+01.838.723/0001-27;2010-01-01;1;378;BRF - BRASIL FOODS SA;Ações Ordinárias;;;;;Bolsa;BM&FBOVESPA;BM&FBOVESPA S.A. - Bolsa de Valores, Mercadorias e Futuros;2006-04-12;;Nível 1 de Governança Corporativa;1997-06-24;
+33.000.167/0001-01;2010-01-01;2;1762;PETRÓLEO BRASILEIRO S.A. - PETROBRAS;Ações Ordinárias;;;;;Bolsa;BM&FBOVESPA;BM&FBOVESPA S.A. - Bolsa de Valores, Mercadorias e Futuros;1980-08-08;;Nível 2 de Governança Corporativa;1980-08-08;
+33.000.167/0001-01;2010-01-01;2;1762;PETRÓLEO BRASILEIRO S.A. - PETROBRAS;Debêntures;;;;;Bolsa;BM&FBOVESPA;BM&FBOVESPA S.A. - Bolsa de Valores, Mercadorias e Futuros;2002-08-01;;;2002-08-01;
+60.872.504/0001-23;2010-01-01;2;1836;ITAÚ UNIBANCO HOLDING S.A.;Ações Ordinárias;;;;;Bolsa;BM&FBOVESPA;BM&FBOVESPA S.A. - Bolsa de Valores, Mercadorias e Futuros;2001-06-22;;Bovespa Mais;1944-10-20;

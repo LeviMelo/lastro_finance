@@ -1,0 +1,11 @@
+ANBIMA - Associação Brasileira das Entidades dos Mercados Financeiro e de Capitais
+VNA ANDIMA
+Fonte: ANBIMA
+Observação: (F) Índice Fechado , (P) Projeção do Comitê de Acompanhamento Macroeconômico.
+* Tendo em vista a padronização dos critérios de cálculo dos títulos públicos federais, o cálculo do VNA para NTN-B e NTN-C levará em consideração a variação mês oficial truncada com 16 casas decimais.
+Data de Referência :  30/10/2026
+
+Titulo;Código Selic;VNA;Índice;Ref;Válido a partir de
+NTN-B;760199;4.771,575461;0,21;P;26/10/2026
+NTN-C;770100;6.765,022425;1,47;F;29/10/2026
+LFT;210100;20.201,049997;13,65

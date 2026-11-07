@@ -1,0 +1,4 @@
+# Fixtures: b3_instruments (fetched 2026-11-07 ~08:38 UTC)
+| file | source | how cut | sha256 of the full original |
+|---|---|---|---|
+| InstrumentsConsolidatedFile_20261106_excerpt.csv | `GET https://arquivos.b3.com.br/api/download/requestname?fileName=InstrumentsConsolidatedFile&date=2026-11-06` -> JSON `{redirectUrl, token}`; then `GET https://arquivos.b3.com.br/api/download/?token=<token>` (Content-Disposition: `InstrumentsConsolidatedFile_20261106_1.csv`, 20,091,058 bytes, 89,146 lines) | the 2 header lines (status line + column header), then the first 3 rows of each of the 10 `SgmtNm` values, then 7 rows grepped by ticker (BOVA11, DI1F27, HGLG11, ITUB4, PETR4, WINZ26 ...). Whole lines, byte-exact, Latin-1 (ISO-8859-1), LF line ends. | faa45c3125ca2ee94a441a00c1b26875439ecad5aa017c001727620fb9104792 |

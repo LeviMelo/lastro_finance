@@ -1,0 +1,60 @@
+[project]
+name = "lastro-fin"
+version = "0.1.0"
+description = "LASTRO: local, owner-controlled Brazilian personal-investment data and analysis system"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "duckdb>=1.1",
+    "polars>=1.10",
+    "pyarrow>=17",
+    "httpx>=0.27",
+    "typer>=0.12",
+    "xlrd>=2.0",
+    "tzdata>=2024.1",
+]
+
+[project.scripts]
+fin = "fin.cli:app"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "hypothesis>=6.100",
+    "ruff>=0.6",
+    "pyright>=1.1.380",
+    "pyarrow-stubs>=20.0.0.20260819",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fin"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF", "DTZ"]
+ignore = ["RUF001", "RUF002", "RUF003", "B027"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["DTZ"]
+
+[tool.pyright]
+include = ["src"]
+typeCheckingMode = "strict"
+pythonVersion = "3.12"
+reportMissingTypeStubs = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUnknownArgumentType = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["network: touches a live external source"]
+addopts = "-m 'not network'"

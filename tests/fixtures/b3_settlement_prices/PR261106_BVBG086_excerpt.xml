@@ -1,0 +1,389 @@
+<!-- excerpt: whole <PricRpt> elements, byte-exact, from the first XML of the zip; separators are added comments -->
+<!-- file: BVBG.086.01_BV000328202611060328000001839488043.xml -->
+<PricRpt>
+            <TradDt>
+              <Dt>2026-11-06</Dt>
+            </TradDt>
+            <SctyId>
+              <TckrSymb>DI1F27</TckrSymb>
+            </SctyId>
+            <FinInstrmId>
+              <OthrId>
+                <Id>409606</Id>
+                <Tp>
+                  <Prtry>8</Prtry>
+                </Tp>
+              </OthrId>
+              <PlcOfListg>
+                <MktIdrCd>BVMF</MktIdrCd>
+              </PlcOfListg>
+            </FinInstrmId>
+            <TradDtls>
+              <TradQty>14025</TradQty>
+            </TradDtls>
+            <FinInstrmAttrbts>
+              <MktDataStrmId>E</MktDataStrmId>
+              <NtlFinVol Ccy="BRL">51260388907.12</NtlFinVol>
+              <IntlFinVol Ccy="USD">9317868305.14</IntlFinVol>
+              <OpnIntrst>8219135</OpnIntrst>
+              <FinInstrmQty>522599</FinInstrmQty>
+              <BestBidPric Ccy="BRL">13.662</BestBidPric>
+              <BestAskPric Ccy="BRL">13.664</BestAskPric>
+              <FrstPric Ccy="BRL">13.66</FrstPric>
+              <MinPric Ccy="BRL">13.658</MinPric>
+              <MaxPric Ccy="BRL">13.665</MaxPric>
+              <TradAvrgPric Ccy="BRL">13.662</TradAvrgPric>
+              <LastPric Ccy="BRL">13.662</LastPric>
+              <RglrTxsQty>14025</RglrTxsQty>
+              <RglrTraddCtrcts>522599</RglrTraddCtrcts>
+              <NtlRglrVol Ccy="BRL">51260388907.12</NtlRglrVol>
+              <IntlRglrVol Ccy="USD">9317868305.14</IntlRglrVol>
+              <AdjstdQt Ccy="BRL">98087.22</AdjstdQt>
+              <AdjstdQtTax Ccy="BRL">13.664</AdjstdQtTax>
+              <AdjstdQtStin>F</AdjstdQtStin>
+              <PrvsAdjstdQt Ccy="BRL">98087.69</PrvsAdjstdQt>
+              <PrvsAdjstdQtTax Ccy="BRL">13.66</PrvsAdjstdQtTax>
+              <PrvsAdjstdQtStin>U</PrvsAdjstdQtStin>
+              <OscnPctg>0.01</OscnPctg>
+              <VartnPts Ccy="BRL">-0.47</VartnPts>
+              <AdjstdValCtrct Ccy="BRL">-0.47</AdjstdValCtrct>
+              <MaxTradLmt Ccy="BRL">13.98</MaxTradLmt>
+              <MinTradLmt Ccy="BRL">13.41</MinTradLmt>
+            </FinInstrmAttrbts>
+          </PricRpt>
+<!-- file: BVBG.086.01_BV000328202611060328000001839488043.xml -->
+<PricRpt>
+            <TradDt>
+              <Dt>2026-11-06</Dt>
+            </TradDt>
+            <SctyId>
+              <TckrSymb>BOVA11</TckrSymb>
+            </SctyId>
+            <FinInstrmId>
+              <OthrId>
+                <Id>200003162198</Id>
+                <Tp>
+                  <Prtry>8</Prtry>
+                </Tp>
+              </OthrId>
+              <PlcOfListg>
+                <MktIdrCd>BVMF</MktIdrCd>
+              </PlcOfListg>
+            </FinInstrmId>
+            <TradDtls>
+              <TradQty>91926</TradQty>
+            </TradDtls>
+            <FinInstrmAttrbts>
+              <MktDataStrmId>E</MktDataStrmId>
+              <NtlFinVol Ccy="BRL">701828427.58</NtlFinVol>
+              <IntlFinVol Ccy="USD">127609809</IntlFinVol>
+              <FinInstrmQty>4238074</FinInstrmQty>
+              <BestBidPric Ccy="BRL">165.91</BestBidPric>
+              <BestAskPric Ccy="BRL">165.95</BestAskPric>
+              <FrstPric Ccy="BRL">163.39</FrstPric>
+              <MinPric Ccy="BRL">163.33</MinPric>
+              <MaxPric Ccy="BRL">166.39</MaxPric>
+              <TradAvrgPric Ccy="BRL">165.6</TradAvrgPric>
+              <LastPric Ccy="BRL">165.93</LastPric>
+              <RglrTxsQty>91926</RglrTxsQty>
+              <RglrTraddCtrcts>4238074</RglrTraddCtrcts>
+              <NtlRglrVol Ccy="BRL">701828427.58</NtlRglrVol>
+              <IntlRglrVol Ccy="USD">127609809</IntlRglrVol>
+              <OscnPctg>1.77</OscnPctg>
+            </FinInstrmAttrbts>
+          </PricRpt>
+<!-- file: BVBG.086.01_BV000328202611060328000001839488043.xml -->
+<PricRpt>
+            <TradDt>
+              <Dt>2026-11-06</Dt>
+            </TradDt>
+            <SctyId>
+              <TckrSymb>PETR4</TckrSymb>
+            </SctyId>
+            <FinInstrmId>
+              <OthrId>
+                <Id>200003061028</Id>
+                <Tp>
+                  <Prtry>8</Prtry>
+                </Tp>
+              </OthrId>
+              <PlcOfListg>
+                <MktIdrCd>BVMF</MktIdrCd>
+              </PlcOfListg>
+            </FinInstrmId>
+            <TradDtls>
+              <TradQty>70037</TradQty>
+            </TradDtls>
+            <FinInstrmAttrbts>
+              <MktDataStrmId>E</MktDataStrmId>
+              <NtlFinVol Ccy="BRL">2182862133</NtlFinVol>
+              <IntlFinVol Ccy="USD">396898456.85</IntlFinVol>
+              <FinInstrmQty>48069700</FinInstrmQty>
+              <BestBidPric Ccy="BRL">45.35</BestBidPric>
+              <BestAskPric Ccy="BRL">45.37</BestAskPric>
+              <FrstPric Ccy="BRL">46</FrstPric>
+              <MinPric Ccy="BRL">44.96</MinPric>
+              <MaxPric Ccy="BRL">46.11</MaxPric>
+              <TradAvrgPric Ccy="BRL">45.41</TradAvrgPric>
+              <LastPric Ccy="BRL">45.36</LastPric>
+              <RglrTxsQty>70037</RglrTxsQty>
+              <RglrTraddCtrcts>48069700</RglrTraddCtrcts>
+              <NtlRglrVol Ccy="BRL">2182862133</NtlRglrVol>
+              <IntlRglrVol Ccy="USD">396898456.85</IntlRglrVol>
+              <OscnPctg>-1.28</OscnPctg>
+            </FinInstrmAttrbts>
+          </PricRpt>
+<!-- file: BVBG.086.01_BV000328202611060328000001839488043.xml -->
+<PricRpt>
+            <TradDt>
+              <Dt>2026-11-06</Dt>
+            </TradDt>
+            <SctyId>
+              <TckrSymb>WINZ26</TckrSymb>
+            </SctyId>
+            <FinInstrmId>
+              <OthrId>
+                <Id>200001771169</Id>
+                <Tp>
+                  <Prtry>8</Prtry>
+                </Tp>
+              </OthrId>
+              <PlcOfListg>
+                <MktIdrCd>BVMF</MktIdrCd>
+              </PlcOfListg>
+            </FinInstrmId>
+            <TradDtls>
+              <TradQty>6302406</TradQty>
+            </TradDtls>
+            <FinInstrmAttrbts>
+              <MktDataStrmId>E</MktDataStrmId>
+              <NtlFinVol Ccy="BRL">670096231333</NtlFinVol>
+              <IntlFinVol Ccy="USD">121806887705.26</IntlFinVol>
+              <OpnIntrst>1275337</OpnIntrst>
+              <FinInstrmQty>19763080</FinInstrmQty>
+              <BestBidPric Ccy="BRL">170720</BestBidPric>
+              <BestAskPric Ccy="BRL">170725</BestAskPric>
+              <FrstPric Ccy="BRL">167850</FrstPric>
+              <MinPric Ccy="BRL">167575</MinPric>
+              <MaxPric Ccy="BRL">170990</MaxPric>
+              <TradAvrgPric Ccy="BRL">169532</TradAvrgPric>
+              <LastPric Ccy="BRL">170720</LastPric>
+              <RglrTxsQty>6302406</RglrTxsQty>
+              <RglrTraddCtrcts>19763080</RglrTraddCtrcts>
+              <NtlRglrVol Ccy="BRL">670096231333</NtlRglrVol>
+              <IntlRglrVol Ccy="USD">121806887705.26</IntlRglrVol>
+              <AdjstdQt Ccy="BRL">170484</AdjstdQt>
+              <AdjstdQtStin>F</AdjstdQtStin>
+              <PrvsAdjstdQt Ccy="BRL">167848</PrvsAdjstdQt>
+              <PrvsAdjstdQtStin>F</PrvsAdjstdQtStin>
+              <OscnPctg>1.71</OscnPctg>
+              <VartnPts Ccy="BRL">2636</VartnPts>
+              <AdjstdValCtrct Ccy="BRL">527.2</AdjstdValCtrct>
+              <MaxTradLmt Ccy="BRL">184630</MaxTradLmt>
+              <MinTradLmt Ccy="BRL">151065</MinTradLmt>
+            </FinInstrmAttrbts>
+          </PricRpt>
+<!-- file: BVBG.086.01_BV000328202611060328000001839488043.xml -->
+<PricRpt>
+            <TradDt>
+              <Dt>2026-11-06</Dt>
+            </TradDt>
+            <SctyId>
+              <TckrSymb>DI1F35</TckrSymb>
+            </SctyId>
+            <FinInstrmId>
+              <OthrId>
+                <Id>200000363903</Id>
+                <Tp>
+                  <Prtry>8</Prtry>
+                </Tp>
+              </OthrId>
+              <PlcOfListg>
+                <MktIdrCd>BVMF</MktIdrCd>
+              </PlcOfListg>
+            </FinInstrmId>
+            <TradDtls>
+              <TradQty>10683</TradQty>
+            </TradDtls>
+            <FinInstrmAttrbts>
+              <MktDataStrmId>E</MktDataStrmId>
+              <NtlFinVol Ccy="BRL">1891624777.39</NtlFinVol>
+              <IntlFinVol Ccy="USD">343850503.95</IntlFinVol>
+              <OpnIntrst>795503</OpnIntrst>
+              <FinInstrmQty>58754</FinInstrmQty>
+              <BestBidPric Ccy="BRL">14.975</BestBidPric>
+              <BestAskPric Ccy="BRL">14.99</BestAskPric>
+              <FrstPric Ccy="BRL">15.02</FrstPric>
+              <MinPric Ccy="BRL">14.955</MinPric>
+              <MaxPric Ccy="BRL">15.105</MaxPric>
+              <TradAvrgPric Ccy="BRL">15.019</TradAvrgPric>
+              <LastPric Ccy="BRL">14.985</LastPric>
+              <RglrTxsQty>10683</RglrTxsQty>
+              <RglrTraddCtrcts>58754</RglrTraddCtrcts>
+              <NtlRglrVol Ccy="BRL">1891624777.39</NtlRglrVol>
+              <IntlRglrVol Ccy="USD">343850503.95</IntlRglrVol>
+              <AdjstdQt Ccy="BRL">32208.28</AdjstdQt>
+              <AdjstdQtTax Ccy="BRL">15.014</AdjstdQtTax>
+              <AdjstdQtStin>F</AdjstdQtStin>
+              <PrvsAdjstdQt Ccy="BRL">32068.67</PrvsAdjstdQt>
+              <PrvsAdjstdQtTax Ccy="BRL">15.076</PrvsAdjstdQtTax>
+              <PrvsAdjstdQtStin>U</PrvsAdjstdQtStin>
+              <OscnPctg>-0.6</OscnPctg>
+              <VartnPts Ccy="BRL">139.61</VartnPts>
+              <AdjstdValCtrct Ccy="BRL">139.61</AdjstdValCtrct>
+              <MaxTradLmt Ccy="BRL">16.385</MaxTradLmt>
+              <MinTradLmt Ccy="BRL">14.095</MinTradLmt>
+            </FinInstrmAttrbts>
+          </PricRpt>
+<!-- file: BVBG.086.01_BV000328202611060328000001839488043.xml -->
+<PricRpt>
+            <TradDt>
+              <Dt>2026-11-06</Dt>
+            </TradDt>
+            <SctyId>
+              <TckrSymb>DOLZ26</TckrSymb>
+            </SctyId>
+            <FinInstrmId>
+              <OthrId>
+                <Id>400000105485</Id>
+                <Tp>
+                  <Prtry>8</Prtry>
+                </Tp>
+              </OthrId>
+              <PlcOfListg>
+                <MktIdrCd>BVMF</MktIdrCd>
+              </PlcOfListg>
+            </FinInstrmId>
+            <TradDtls>
+              <TradQty>20487</TradQty>
+            </TradDtls>
+            <FinInstrmAttrbts>
+              <MktDataStrmId>E</MktDataStrmId>
+              <NtlFinVol Ccy="BRL">54579577875</NtlFinVol>
+              <IntlFinVol Ccy="USD">9921214599.27</IntlFinVol>
+              <OpnIntrst>833299</OpnIntrst>
+              <FinInstrmQty>197550</FinInstrmQty>
+              <BestBidPric Ccy="BRL">5526</BestBidPric>
+              <BestAskPric Ccy="BRL">5530</BestAskPric>
+              <FrstPric Ccy="BRL">5523</FrstPric>
+              <MinPric Ccy="BRL">5504</MinPric>
+              <MaxPric Ccy="BRL">5557</MaxPric>
+              <TradAvrgPric Ccy="BRL">5525.646</TradAvrgPric>
+              <LastPric Ccy="BRL">5530</LastPric>
+              <RglrTxsQty>20487</RglrTxsQty>
+              <RglrTraddCtrcts>197550</RglrTraddCtrcts>
+              <NtlRglrVol Ccy="BRL">54579577875</NtlRglrVol>
+              <IntlRglrVol Ccy="USD">9921214599.27</IntlRglrVol>
+              <AdjstdQt Ccy="BRL">5523.964</AdjstdQt>
+              <AdjstdQtStin>F</AdjstdQtStin>
+              <PrvsAdjstdQt Ccy="BRL">5519.234</PrvsAdjstdQt>
+              <PrvsAdjstdQtStin>F</PrvsAdjstdQtStin>
+              <OscnPctg>0.19</OscnPctg>
+              <VartnPts Ccy="BRL">4.73</VartnPts>
+              <AdjstdValCtrct Ccy="BRL">236.5</AdjstdValCtrct>
+              <MaxTradLmt Ccy="BRL">5850</MaxTradLmt>
+              <MinTradLmt Ccy="BRL">5188.5</MinTradLmt>
+            </FinInstrmAttrbts>
+          </PricRpt>
+<!-- file: BVBG.086.01_BV000328202611060328000001839488043.xml -->
+<PricRpt>
+            <TradDt>
+              <Dt>2026-11-06</Dt>
+            </TradDt>
+            <SctyId>
+              <TckrSymb>INDZ26</TckrSymb>
+            </SctyId>
+            <FinInstrmId>
+              <OthrId>
+                <Id>200001604742</Id>
+                <Tp>
+                  <Prtry>8</Prtry>
+                </Tp>
+              </OthrId>
+              <PlcOfListg>
+                <MktIdrCd>BVMF</MktIdrCd>
+              </PlcOfListg>
+            </FinInstrmId>
+            <TradDtls>
+              <TradQty>8190</TradQty>
+            </TradDtls>
+            <FinInstrmAttrbts>
+              <MktDataStrmId>E</MktDataStrmId>
+              <NtlFinVol Ccy="BRL">7945935425</NtlFinVol>
+              <IntlFinVol Ccy="USD">1444374134.29</IntlFinVol>
+              <OpnIntrst>184688</OpnIntrst>
+              <FinInstrmQty>46830</FinInstrmQty>
+              <BestBidPric Ccy="BRL">170680</BestBidPric>
+              <BestAskPric Ccy="BRL">170700</BestAskPric>
+              <FrstPric Ccy="BRL">167800</FrstPric>
+              <MinPric Ccy="BRL">167590</MinPric>
+              <MaxPric Ccy="BRL">170990</MaxPric>
+              <TradAvrgPric Ccy="BRL">169676</TradAvrgPric>
+              <LastPric Ccy="BRL">170700</LastPric>
+              <RglrTxsQty>8190</RglrTxsQty>
+              <RglrTraddCtrcts>46830</RglrTraddCtrcts>
+              <NtlRglrVol Ccy="BRL">7945935425</NtlRglrVol>
+              <IntlRglrVol Ccy="USD">1444374134.29</IntlRglrVol>
+              <AdjstdQt Ccy="BRL">170484</AdjstdQt>
+              <AdjstdQtStin>F</AdjstdQtStin>
+              <PrvsAdjstdQt Ccy="BRL">167848</PrvsAdjstdQt>
+              <PrvsAdjstdQtStin>F</PrvsAdjstdQtStin>
+              <OscnPctg>1.69</OscnPctg>
+              <VartnPts Ccy="BRL">2636</VartnPts>
+              <AdjstdValCtrct Ccy="BRL">2636</AdjstdValCtrct>
+              <MaxTradLmt Ccy="BRL">184630</MaxTradLmt>
+              <MinTradLmt Ccy="BRL">151065</MinTradLmt>
+            </FinInstrmAttrbts>
+          </PricRpt>
+<!-- file: BVBG.086.01_BV000328202611060328000001839488043.xml -->
+<PricRpt>
+            <TradDt>
+              <Dt>2026-11-06</Dt>
+            </TradDt>
+            <SctyId>
+              <TckrSymb>DI1F28</TckrSymb>
+            </SctyId>
+            <FinInstrmId>
+              <OthrId>
+                <Id>100000071818</Id>
+                <Tp>
+                  <Prtry>8</Prtry>
+                </Tp>
+              </OthrId>
+              <PlcOfListg>
+                <MktIdrCd>BVMF</MktIdrCd>
+              </PlcOfListg>
+            </FinInstrmId>
+            <TradDtls>
+              <TradQty>40056</TradQty>
+            </TradDtls>
+            <FinInstrmAttrbts>
+              <MktDataStrmId>E</MktDataStrmId>
+              <NtlFinVol Ccy="BRL">34050965875.93</NtlFinVol>
+              <IntlFinVol Ccy="USD">6189621703.22</IntlFinVol>
+              <OpnIntrst>5039478</OpnIntrst>
+              <FinInstrmQty>396945</FinInstrmQty>
+              <BestBidPric Ccy="BRL">14.295</BestBidPric>
+              <BestAskPric Ccy="BRL">14.32</BestAskPric>
+              <FrstPric Ccy="BRL">14.315</FrstPric>
+              <MinPric Ccy="BRL">14.275</MinPric>
+              <MaxPric Ccy="BRL">14.355</MaxPric>
+              <TradAvrgPric Ccy="BRL">14.307</TradAvrgPric>
+              <LastPric Ccy="BRL">14.295</LastPric>
+              <RglrTxsQty>40056</RglrTxsQty>
+              <RglrTraddCtrcts>396945</RglrTraddCtrcts>
+              <NtlRglrVol Ccy="BRL">34050965875.93</NtlRglrVol>
+              <IntlRglrVol Ccy="USD">6189621703.22</IntlRglrVol>
+              <AdjstdQt Ccy="BRL">85780.3</AdjstdQt>
+              <AdjstdQtTax Ccy="BRL">14.31</AdjstdQtTax>
+              <AdjstdQtStin>F</AdjstdQtStin>
+              <PrvsAdjstdQt Ccy="BRL">85765.37</PrvsAdjstdQt>
+              <PrvsAdjstdQtTax Ccy="BRL">14.327</PrvsAdjstdQtTax>
+              <PrvsAdjstdQtStin>U</PrvsAdjstdQtStin>
+              <OscnPctg>-0.22</OscnPctg>
+              <VartnPts Ccy="BRL">14.93</VartnPts>
+              <AdjstdValCtrct Ccy="BRL">14.93</AdjstdValCtrct>
+              <MaxTradLmt Ccy="BRL">15.365</MaxTradLmt>
+              <MinTradLmt Ccy="BRL">13.475</MinTradLmt>
+            </FinInstrmAttrbts>
+          </PricRpt>

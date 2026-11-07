@@ -1,0 +1,8 @@
+CNPJ_Companhia;Data_Referencia;Versao;ID_Documento;Nome_Empresarial;Valor_Mobiliario;Sigla_Classe_Acao_Preferencial;Classe_Acao_Preferencial;Codigo_Negociacao;Composicao_BDR_Unit;Mercado;Sigla_Entidade_Administradora;Entidade_Administradora;Data_Inicio_Negociacao;Data_Fim_Negociacao;Segmento;Data_Inicio_Listagem;Data_Fim_Listagem
+01.838.723/0001-27;2026-01-01;2;159005;BRF S.A.;Ações Ordinárias;;;BRFS3;;Bolsa;B3;B3 S.A. - Brasil, Bolsa, Balcão.;2006-02-17;2025-09-22;Novo Mercado;2006-02-17;
+33.000.167/0001-01;2026-01-01;1;156276;PETROLEO BRASILEIRO S.A. PETROBRAS;Ações Ordinárias;;;PETR3;;Bolsa;B3;B3 S.A. - Brasil, Bolsa, Balcão.;2018-05-14;;Nível 2 de Governança Corporativa;1977-07-20;
+33.000.167/0001-01;2026-01-01;1;156276;PETROLEO BRASILEIRO S.A. PETROBRAS;Debêntures;;;;;Balcão Não-Organizado;B3;B3 S.A. - Brasil, Bolsa, Balcão.;2019-02-12;;Básico;2019-02-12;
+33.000.167/0001-01;2026-01-01;1;156276;PETROLEO BRASILEIRO S.A. PETROBRAS;Nota Comercial;;;;;Balcão Organizado;B3;B3 S.A. - Brasil, Bolsa, Balcão.;2022-12-14;;Básico;2022-09-12;
+33.000.167/0001-01;2026-01-01;1;156276;PETROLEO BRASILEIRO S.A. PETROBRAS;Ações Preferenciais;;;PETR4;;Bolsa;B3;B3 S.A. - Brasil, Bolsa, Balcão.;2018-05-14;;Nível 2 de Governança Corporativa;1977-07-20;
+60.872.504/0001-23;2026-01-01;2;156921;ITAU UNIBANCO HOLDING S.A.;Ações Ordinárias;;;ITUB3;;Bolsa;B3;B3 S.A. - Brasil, Bolsa, Balcão.;2002-12-30;;Nível 1 de Governança Corporativa;2002-12-30;
+60.872.504/0001-23;2026-01-01;2;156921;ITAU UNIBANCO HOLDING S.A.;Ações Preferenciais;;;ITUB4;;Bolsa;B3;B3 S.A. - Brasil, Bolsa, Balcão.;2002-12-30;;Nível 1 de Governança Corporativa;2002-12-30;

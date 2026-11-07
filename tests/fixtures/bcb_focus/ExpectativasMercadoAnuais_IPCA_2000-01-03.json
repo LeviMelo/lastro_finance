@@ -1,0 +1,1 @@
+{"@odata.context":"https://was-p.bcnet.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata$metadata#ExpectativasMercadoAnuais","value":[{"Indicador":"IPCA","IndicadorDetalhe":null,"Data":"2000-01-03","DataReferencia":"2000","Media":7.0000,"Mediana":7.0000,"DesvioPadrao":0.8000,"Minimo":null,"Maximo":null,"numeroRespondentes":null,"baseCalculo":0}]}

@@ -1,0 +1,221 @@
+# The source registry (PLAN §4.3.1 `source_registry`). Reviewed like code.
+# tier: P primary/official, S secondary reputable, U unofficial (never feeds L3 alone, PLAN §4.4).
+# ephemeral: the source serves only today or a short window; it is archived daily (PLAN §4.1 invariant 13).
+# status: recon (note exists, no connector) | archiving (raw archived, not parsed yet) | parsed (L2 loaded)
+# Every recon path must exist (scripts/check_docs.py).
+
+[anbima_calendar]
+name = "Feriados nacionais"
+institution = "ANBIMA"
+access = "HTTP file (.xls)"
+tier = "P"
+ephemeral = false
+status = "parsed"
+recon = "docs/sources/anbima_calendar.md"
+
+[anbima_titulos_publicos]
+name = "Mercado secundário de títulos públicos (taxas indicativas)"
+institution = "ANBIMA"
+access = "HTTP files per day (.txt, .xls)"
+tier = "P"
+ephemeral = true
+status = "archiving"
+recon = "docs/sources/anbima_titulos_publicos.md"
+
+[b3_bdi]
+name = "Boletim Diário do Mercado (BDI) tables"
+institution = "B3"
+access = "JSON backend, POST per table/date/page"
+tier = "P"
+ephemeral = true
+status = "archiving"
+recon = "docs/sources/b3_settlement_prices.md"
+
+[b3_cotahist]
+name = "Séries históricas COTAHIST"
+institution = "B3"
+access = "HTTP zip files (yearly, monthly, daily), fixed-width"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/b3_cotahist.md"
+
+[b3_reference_rates]
+name = "Taxas referenciais (curvas)"
+institution = "B3"
+access = "unknown: old page gone"
+tier = "P"
+ephemeral = true
+status = "recon"
+recon = "docs/sources/b3_reference_rates.md"
+
+[bcb_sgs]
+name = "Sistema Gerenciador de Séries Temporais"
+institution = "Banco Central do Brasil"
+access = "REST JSON, ≤ 10-year windows for daily series"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/bcb_sgs.md"
+
+[cvm_cia_cadastro]
+name = "Cadastro de companhias abertas"
+institution = "CVM"
+access = "HTTP file (.csv, cp1252)"
+tier = "P"
+ephemeral = true
+status = "archiving"
+recon = "docs/sources/cvm_cia_cadastro.md"
+
+[cvm_fca]
+name = "Formulário Cadastral (FCA)"
+institution = "CVM"
+access = "HTTP yearly zips"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/cvm_fca.md"
+
+[cvm_fre]
+name = "Formulário de Referência (FRE)"
+institution = "CVM"
+access = "HTTP yearly zips"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/cvm_fre.md"
+
+[cvm_dfp_itr]
+name = "Demonstrações financeiras (DFP, ITR)"
+institution = "CVM"
+access = "HTTP yearly zips"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/cvm_dfp_itr.md"
+
+[cvm_ipe]
+name = "Documentos eventuais (IPE)"
+institution = "CVM"
+access = "HTTP yearly zips + document links"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/cvm_ipe.md"
+
+[cvm_vlmo]
+name = "Valores mobiliários negociados e detidos (VLMO)"
+institution = "CVM"
+access = "HTTP yearly zips"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/cvm_vlmo.md"
+
+[cvm_fi_cadastro]
+name = "Cadastro de fundos e registro fundo/classe/subclasse"
+institution = "CVM"
+access = "HTTP files (.csv, .zip)"
+tier = "P"
+ephemeral = true
+status = "archiving"
+recon = "docs/sources/cvm_fi_cadastro.md"
+
+[cvm_fi_inf_diario]
+name = "Informe diário de fundos"
+institution = "CVM"
+access = "HTTP monthly zips; yearly archives before 2021"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/cvm_fi_inf_diario.md"
+
+[cvm_fi_cda]
+name = "Composição e diversificação das aplicações (CDA)"
+institution = "CVM"
+access = "HTTP monthly zips"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/cvm_fi_cda.md"
+
+[cvm_fii]
+name = "Informes de FII (mensal, trimestral, anual)"
+institution = "CVM"
+access = "HTTP yearly zips"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/cvm_fii.md"
+
+[cvm_fie]
+name = "Fundos de investimento especialmente constituídos (FIE)"
+institution = "CVM"
+access = "HTTP monthly files"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/cvm_fie.md"
+
+[tesouro_transparente]
+name = "Preços e taxas do Tesouro Direto"
+institution = "Tesouro Nacional"
+access = "CKAN CSV"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/tesouro_transparente.md"
+
+[anbima_ettj]
+name = "Estrutura a termo das taxas de juros (ETTJ)"
+institution = "ANBIMA"
+access = "not verified"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/anbima_ettj.md"
+
+[anbima_vna]
+name = "Valor nominal atualizado (VNA)"
+institution = "ANBIMA"
+access = "not verified"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/anbima_vna.md"
+
+[anbima_projecoes]
+name = "Projeções de inflação (IPCA, IGP-M)"
+institution = "ANBIMA"
+access = "not verified"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/anbima_projecoes.md"
+
+[anbima_debentures]
+name = "Mercado secundário de debêntures"
+institution = "ANBIMA"
+access = "not verified"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/anbima_debentures.md"
+
+[nefin]
+name = "Fatores de risco brasileiros"
+institution = "NEFIN-FEA/USP"
+access = "not verified"
+tier = "S"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/nefin.md"
+
+[snd_debentures]
+name = "Sistema Nacional de Debêntures"
+institution = "ANBIMA/B3 (SND)"
+access = "not verified"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/snd_debentures.md"

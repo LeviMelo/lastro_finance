@@ -1,0 +1,23 @@
+# zones (PLAN §4.2): never in git
+/data/
+/inbox/
+/catalog.duckdb
+/catalog.duckdb.wal
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.hypothesis/
+dist/
+build/
+*.egg-info/
+
+# editors / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

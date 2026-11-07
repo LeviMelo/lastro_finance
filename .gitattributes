@@ -1,0 +1,8 @@
+# Text is LF in the repository (later lines override earlier ones, so this comes first).
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.xls binary
+*.zip binary
+*.parquet binary
+# Fixtures are byte-exact copies of real source payloads (CRLF, cp1252, latin-1…): never convert them.
+tests/fixtures/** binary
