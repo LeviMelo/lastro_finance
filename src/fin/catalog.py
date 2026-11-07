@@ -83,6 +83,7 @@ def views(z: Zones) -> dict[str, str]:
             GROUP BY p.instrument_id, p.trade_date, p.close
         """,
         "focus_expectation": _scan(s / "bcb_focus" / "expectation" / "**" / "*.parquet"),
+        "copom_decision": _scan(s / "bcb_copom" / "decision" / "**" / "*.parquet"),
         "fii_distribution": f"""
             SELECT d.*, l.delivered_at
             FROM {_rp(s / "b3_fundosnet" / "distribution" / "**" / "*.parquet")} d

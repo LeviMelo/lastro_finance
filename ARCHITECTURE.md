@@ -70,6 +70,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/alternates.py` | archive connectors for the routes that close data gaps: SND, Fundos.NET, BCB SGS, Ipeadata, Tesouro VNA, the `pyield_data` mirror, Yahoo (ADR-0010) |
 | `ingest/series.py` | series payloads (SGS JSON and SOAP metadata, Ipeadata OData, SIDRA, Tesouro VNA workbooks, Treasury/NY Fed/Cboe CSVs, SDMX-CSV with the sources' unit codelists) → staging `observation`/`definition` → core `series_observation`/`series_definition`, versioned (ADR-0013) |
 | `ingest/cvm_statements.py` | CVM DFP/ITR zips → staging `statement_line` (every account line, value as written with its scale), `document` (every version and its delivery date), `share_capital` |
+| `ingest/copom.py` | BCB Copom decision history → staging `decision` |
 | `ingest/focus.py` | BCB Focus expectations (8 tables) → staging `expectation` |
 | `ingest/fundosnet.py` | Fundos.NET notices → staging `distribution` (per Provento and kind, exact BRL per quota) and `listing` (delivery minute = knowledge time, version) |
 | `ingest/b3_events.py` | B3 listed-companies backend: issuers, cash history, stock events, subscriptions; Yahoo chart events (tier U) |

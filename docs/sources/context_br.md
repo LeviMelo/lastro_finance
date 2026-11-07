@@ -178,3 +178,9 @@ CEPEA/ESALQ (USP): data licence printed on every indicator page = CC BY-NC 4.0 (
 - The Top-5 tables use lower-case keys (`indicador`, `media`, `coeficienteVariacao`); the others capitalised ones.
 - 1,897 Top-5 rows carry no statistic at all (IGP-DI, IGP-M, IPCA, Selic, mostly 2010-2016): quarantined.
 - The survey of a Friday is served from the following Monday (2026-11-06 empty on 2026-11-07; 2026-10-30 served).
+
+## Copom parsed (2026-11-07, `ingest/copom.py`)
+- 290 decisions, meeting 1 (1996-06-26) to 282 (2026-11-04), one row per decision with its validity period. Meeting
+  33 (1999) has three rows: the later two are the president's use of the bias (`UsoMetaSelic` true).
+- `MetaSelic` is the Selic target in % a.a. from 1999-03-05. Before, the field holds the TBC (19-29 in 1998, 1.9 in
+  1996): its unit is not stated *(not verified)*; SGS 432 is the target series from 1999.
