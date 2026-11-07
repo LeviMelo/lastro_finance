@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from fin.ingest.alternates import (
     BcbSgs,
+    CvmDfpItr,
+    CvmFca,
+    CvmFre,
+    CvmIpe,
     FundosNetRendimentos,
     Ipeadata,
     PyieldData,
@@ -50,6 +54,10 @@ CONNECTORS: dict[str, type[Connector]] = {
         TesouroPrecoTaxa,
         NefinFactors,
         BcbSgs,
+        CvmDfpItr,
+        CvmFca,
+        CvmFre,
+        CvmIpe,
         FundosNetRendimentos,
         Ipeadata,
         PyieldData,
@@ -82,6 +90,11 @@ DAILY: tuple[str, ...] = (
     "bcb_sgs",
     "ipeadata",
     "tesouro_vna",
+    # CVM keeps only the latest version of each filing: weekly/monthly versions keep restatements (cadence inside)
+    "cvm_dfp_itr",
+    "cvm_fca",
+    "cvm_fre",
+    "cvm_ipe",
 )
 
 

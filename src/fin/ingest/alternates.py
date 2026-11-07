@@ -214,10 +214,21 @@ class SndDebentures(Connector):
         if mode is Mode.BACKFILL:
             rows = _held(zones, self.source_id, "precos")
             held = set(rows["notes"].to_list()) if rows.height else set()
+            # A month whose export failed is fetched day by day: one bad day makes SND answer 500 for any range
+            # containing it (2020-12-16 and 2021-04-09, measured 2026-11-07), and only that day stays missing.
+            first_pass = not held
             for a, b in month_windows(self.FIRST_PRICES, d - timedelta(days=1)):
                 spec = self._precos(a, b)
-                if spec.locator not in held or b >= d - timedelta(days=40):
+                if spec.locator in held and b < d - timedelta(days=40):
+                    continue
+                if first_pass or b >= d - timedelta(days=40):
                     yield spec
+                    continue
+                for k in range((b - a).days + 1):
+                    day = a + timedelta(days=k)
+                    one = self._precos(day, day)
+                    if one.locator not in held:
+                        yield one
         else:
             yield self._precos(d - timedelta(days=10), d - timedelta(days=1))
 
@@ -330,3 +341,68 @@ class YahooChart(Connector):
                 absent_status=frozenset({404}),
                 locator=t,
             )
+
+
+class _CvmCompanyDocs(Connector):
+    """CVM's yearly company-document zips (dados.cvm.gov.br/dados/CIA_ABERTA/DOC/<KIND>/DADOS/). The last ~5 years
+    are rewritten weekly and keep **only the latest version** of each filing (docs/sources/cvm_dfp_itr.md), so a
+    restated number is lost unless the file is archived before the restatement. Backfill takes every year once;
+    the daily job re-requests (conditionally: an unchanged file is a 304) the current and previous year weekly and
+    the three years before monthly."""
+
+    version: ClassVar[str] = "0-archive"
+    KINDS: ClassVar[dict[str, int]] = {}  # kind -> first year served
+    WEEKLY_YEARS = 2
+    MONTHLY_YEARS = 5
+    BASE = "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC"
+
+    def _spec(self, kind: str, year: int) -> FetchSpec:
+        k = kind.lower()
+        return FetchSpec(
+            self.source_id,
+            f"{k}_cia_aberta",
+            f"{self.BASE}/{kind}/DADOS/{k}_cia_aberta_{year}.zip",
+            "zip",
+            reference_date=date(year, 12, 31),
+            absent_status=frozenset({404}),
+            locator=str(year),
+        )
+
+    def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
+        today = today_brt()
+        for kind, first in self.KINDS.items():
+            years = options.get("years") or list(range(first, today.year + 1))
+            held = _held(zones, self.source_id, f"{kind.lower()}_cia_aberta")
+            last: dict[str, date] = {}
+            if held.height:
+                for note, at in zip(held["notes"].to_list(), held["fetched_at"].to_list(), strict=True):
+                    last[note] = max(last.get(note, at.date()), at.date())
+            for year in years:
+                seen = last.get(str(year))
+                age = today.year - year
+                if mode is Mode.BACKFILL and seen is None:
+                    yield self._spec(kind, year)
+                elif mode is not Mode.BACKFILL and age < self.MONTHLY_YEARS:
+                    every = 7 if age < self.WEEKLY_YEARS else 30
+                    if seen is None or (today - seen).days >= every:
+                        yield self._spec(kind, year)
+
+
+class CvmDfpItr(_CvmCompanyDocs):
+    source_id: ClassVar[str] = "cvm_dfp_itr"
+    KINDS: ClassVar[dict[str, int]] = {"DFP": 2010, "ITR": 2011}
+
+
+class CvmFca(_CvmCompanyDocs):
+    source_id: ClassVar[str] = "cvm_fca"
+    KINDS: ClassVar[dict[str, int]] = {"FCA": 2010}
+
+
+class CvmFre(_CvmCompanyDocs):
+    source_id: ClassVar[str] = "cvm_fre"
+    KINDS: ClassVar[dict[str, int]] = {"FRE": 2010}
+
+
+class CvmIpe(_CvmCompanyDocs):
+    source_id: ClassVar[str] = "cvm_ipe"
+    KINDS: ClassVar[dict[str, int]] = {"IPE": 2003}

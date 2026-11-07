@@ -5,8 +5,9 @@ from __future__ import annotations
 
 import itertools
 import json
-from datetime import date, timedelta
+from datetime import UTC, date, datetime, timedelta
 
+import polars as pl
 import pytest
 
 from fin.config import Zones
@@ -43,7 +44,7 @@ def test_sgs_backfill_windows_are_contiguous_and_capped(zones: Zones) -> None:
     assert len(daily) == 1 and daily[0].params and daily[0].params["dataFinal"] == "07/11/2026"
 
 
-def test_snd_backfill_months_and_snapshots(zones: Zones) -> None:
+def test_snd_backfill_months_and_snapshots(zones: Zones, monkeypatch: pytest.MonkeyPatch) -> None:
     specs = list(SndDebentures().discover(Mode.BACKFILL, zones))
     kinds = [s.dataset_id for s in specs]
     assert kinds.count("caracteristicas") == 1 and kinds.count("agenda") == 1
@@ -51,6 +52,17 @@ def test_snd_backfill_months_and_snapshots(zones: Zones) -> None:
     assert precos[0].locator == "1993-11-01..1993-11-30"
     assert precos[-1].locator == "2026-11-01..2026-11-06"
     assert len(precos) == (2026 - 1993) * 12 + 1
+    held = {s.locator for s in precos if s.locator != "2020-12-01..2020-12-31"} | {"2020-12-01..2020-12-01"}
+    monkeypatch.setattr(
+        alternates,
+        "_held",
+        lambda *_: pl.DataFrame({"notes": sorted(held), "fetched_at": [datetime(2026, 11, 7, tzinfo=UTC)] * len(held)}),
+    )
+    retry = [s.locator for s in SndDebentures().discover(Mode.BACKFILL, zones) if s.dataset_id == "precos"]
+    assert retry[:2] == ["2020-12-02..2020-12-02", "2020-12-03..2020-12-03"]  # a failed month, day by day
+    assert len([r for r in retry if r and r.startswith("2020-12")]) == 30
+    monkeypatch.undo()
+    monkeypatch.setattr(alternates, "today_brt", lambda: TODAY)
     daily = [s for s in SndDebentures().discover(Mode.INCREMENTAL, zones) if s.dataset_id == "precos"]
     assert [s.locator for s in daily] == ["2026-10-28..2026-11-06"]
     assert daily[0].params and daily[0].params["dt_ini"] == "10/28/2026"  # SND reads month/day/year
@@ -87,3 +99,29 @@ def test_yahoo_uses_given_tickers(zones: Zones) -> None:
     specs = list(YahooChart().discover(Mode.SNAPSHOT, zones, tickers=["ITUB4", "SLCE3"]))
     assert [s.url.rsplit("/", 1)[1] for s in specs] == ["ITUB4.SA", "SLCE3.SA"]
     assert specs[0].params == {"range": "max", "interval": "1d", "events": "div|split"}
+
+
+def test_cvm_docs_backfill_then_weekly_and_monthly(zones: Zones, monkeypatch: pytest.MonkeyPatch) -> None:
+    from fin.ingest.alternates import CvmDfpItr
+
+    specs = list(CvmDfpItr().discover(Mode.BACKFILL, zones))
+    assert [s.url.rsplit("/", 1)[1] for s in specs][:2] == ["dfp_cia_aberta_2010.zip", "dfp_cia_aberta_2011.zip"]
+    assert sum(s.dataset_id == "itr_cia_aberta" for s in specs) == 2026 - 2011 + 1
+
+    fetched = {
+        "2026": date(2026, 11, 2),
+        "2025": date(2026, 10, 30),
+        "2024": date(2026, 10, 20),
+        "2023": date(2026, 10, 1),
+    }
+    frame = pl.DataFrame(
+        {
+            "notes": list(fetched),
+            "fetched_at": [datetime(d.year, d.month, d.day, tzinfo=UTC) for d in fetched.values()],
+        }
+    )
+    monkeypatch.setattr(alternates, "_held", lambda *_: frame)
+    due = [s.locator for s in CvmDfpItr().discover(Mode.INCREMENTAL, zones) if s.dataset_id == "dfp_cia_aberta"]
+    # 2026: 5 days ago, not due; 2025: 8 days, weekly, due; 2024: 18 days, monthly, not due; 2023: 37 days, due;
+    # 2022: never seen, due; 2021 and older: frozen, not re-requested by the daily job.
+    assert due == ["2022", "2023", "2025"]

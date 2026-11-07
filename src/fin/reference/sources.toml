@@ -73,7 +73,7 @@ institution = "CVM"
 access = "HTTP yearly zips"
 tier = "P"
 ephemeral = false
-status = "recon"
+status = "archiving"
 recon = "docs/sources/cvm_fca.md"
 
 [cvm_fre]
@@ -82,7 +82,7 @@ institution = "CVM"
 access = "HTTP yearly zips"
 tier = "P"
 ephemeral = false
-status = "recon"
+status = "archiving"
 recon = "docs/sources/cvm_fre.md"
 
 [cvm_dfp_itr]
@@ -91,7 +91,7 @@ institution = "CVM"
 access = "HTTP yearly zips"
 tier = "P"
 ephemeral = false
-status = "recon"
+status = "archiving"
 recon = "docs/sources/cvm_dfp_itr.md"
 
 [cvm_ipe]
@@ -100,7 +100,7 @@ institution = "CVM"
 access = "HTTP yearly zips + document links"
 tier = "P"
 ephemeral = false
-status = "recon"
+status = "archiving"
 recon = "docs/sources/cvm_ipe.md"
 
 [cvm_vlmo]
