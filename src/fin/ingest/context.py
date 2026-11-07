@@ -117,7 +117,7 @@ class ContextConnector(Connector):
         url = _fill(p.entry.url, p.key, p.year, since)
         if any(" " in v for v in query.values()):
             # OData (BCB Olinda) rejects '+' for a space with HTTP 400 and accepts %20 (measured 2026-11-07)
-            url, query = f"{url}?{urlencode(query, quote_via=quote, safe="$'")}", {}
+            url, query = url + "?" + urlencode(query, quote_via=quote, safe="$'"), {}
         return FetchSpec(
             self.source_id,
             p.dataset_id,

@@ -3,7 +3,7 @@ name = "lastro-fin"
 version = "0.1.0"
 description = "LASTRO: local, owner-controlled Brazilian personal-investment data and analysis system"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
     "duckdb>=1.1",
     "polars>=1.10",
@@ -36,7 +36,7 @@ packages = ["src/fin"]
 
 [tool.ruff]
 line-length = 120
-target-version = "py312"
+target-version = "py311"
 src = ["src", "tests", "scripts"]
 
 [tool.ruff.lint]
@@ -49,7 +49,9 @@ ignore = ["RUF001", "RUF002", "RUF003", "B027"]
 [tool.pyright]
 include = ["src"]
 typeCheckingMode = "strict"
-pythonVersion = "3.12"
+pythonVersion = "3.11"
+venvPath = "C:/Users/Galaxy/miniconda3/envs"  # the shared `pegasus` conda env (ADR-0013)
+venv = "pegasus"
 reportMissingTypeStubs = false
 reportUnknownMemberType = false
 reportUnknownVariableType = false

@@ -6,9 +6,10 @@
 # Remove:               Unregister-ScheduledTask -TaskName "LASTRO fin ingest daily" -Confirm:$false
 
 $repo = Split-Path -Parent $PSScriptRoot
-$uv = (Get-Command uv -ErrorAction Stop).Source
+$fin = "C:\Users\Galaxy\miniconda3\envs\pegasus\Scripts\fin.exe"   # shared `pegasus` env (ADR-0013)
+if (-not (Test-Path $fin)) { throw "fin is not installed in the pegasus env: pip install -e . --no-deps" }
 $log = Join-Path $repo "data\logs\scheduler.log"
-$cmd = "/c cd /d `"$repo`" && set PYTHONUTF8=1 && `"$uv`" run fin ingest daily >> `"$log`" 2>&1"
+$cmd = "/c cd /d `"$repo`" && set PYTHONUTF8=1 && `"$fin`" ingest daily >> `"$log`" 2>&1"
 
 $action = New-ScheduledTaskAction -Execute "cmd.exe" -Argument $cmd -WorkingDirectory $repo
 $triggers = @(

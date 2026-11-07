@@ -6,9 +6,9 @@ time, values and analyses them, and exports dossiers for an external LLM. Intent
 [`STATUS.md`](STATUS.md).
 
 ```bash
-uv sync
-uv run fin status            # o que existe, frescor por fonte, bloqueios
-uv run fin ingest daily      # arquiva as fontes efêmeras do dia
+C:/Users/Galaxy/miniconda3/envs/pegasus/python.exe -m pip install -e . --no-deps   # ambiente conda `pegasus`
+fin status            # o que existe, frescor por fonte, bloqueios
+fin ingest daily      # arquiva as fontes efêmeras do dia
 ```
 
 Everything fetched is kept byte for byte under `data/raw/` (git-ignored), and every derived table can be rebuilt
