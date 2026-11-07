@@ -18,6 +18,11 @@
 - IGP-M index Oct-2026 = 1243.905 (Ipeadata).
 - Unemployment (rolling quarter Jul–Sep 2026) = 5.2.
 
+**Added the same day: Tesouro VNA** (`fin reparse tesouro_vna`):
+- 3 series: NTN-B 316 months, two NTN-C groups; 239 zero cells kept as missing ("matured").
+- NTN-B against IBGE's IPCA index: trunc(1000 × IPCA(m−1)/IPCA(Jun-2000), 6 dp) is exact on 315 of 316 months.
+  The exception is 2014-02 (source note `tesouro_vna`).
+
 **Found.**
 - SGS 226 (TR) has several periods per start date: `data` 01/05/1991 ends on both 30/05 and 31/05. A period is
   therefore its start and its stated end.

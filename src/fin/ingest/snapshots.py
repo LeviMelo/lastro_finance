@@ -24,10 +24,12 @@ from zoneinfo import ZoneInfo
 import polars as pl
 
 from fin.config import Zones
-from fin.ingest.base import Connector, Mode
+from fin.ingest import tesouro
+from fin.ingest.base import Connector, Mode, Parsed
 from fin.ingest.fetch import FetchSpec
 from fin.ingest.http import BROWSER_UA
 from fin.reference.calendar import Calendar
+from fin.schema import Contract
 from fin.store.manifest import Manifest
 
 BRT = ZoneInfo("America/Sao_Paulo")
@@ -229,7 +231,12 @@ class TesouroPrecoTaxa(Connector):
     past would otherwise be invisible); conditional GET makes an unchanged day a 304."""
 
     source_id: ClassVar[str] = "tesouro_transparente"
-    version: ClassVar[str] = "0-archive"
+    version: ClassVar[str] = "1"
+    contracts: ClassVar[dict[str, Contract]] = {"price_rate": tesouro.PRICE_RATE}
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return tesouro.parse_payload(blob, row)
+
     URL = (
         "https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/"
         "796d2059-14e9-44e3-80c9-2d9e30b405c1/download/precotaxatesourodireto.csv"

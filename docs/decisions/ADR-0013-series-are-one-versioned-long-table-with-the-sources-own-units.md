@@ -8,8 +8,9 @@ or for a rolling quarter's last month. Units sit in separate metadata (SGS, Ipea
 Sources revise without keeping vintages.
 
 **Decision.**
-- **Staging is source-shaped.** A row keeps the date and the value as written (`period_text`, `value_text`). The
-  source's missing markers (`...`, `..`, `X`, JSON null) are kept with a null value. Any other text quarantines.
+- **Staging is source-shaped.** A row keeps the date and the value as written (`period_text`, `value_text`). A
+  missing value keeps its marker and its meaning in `missing_reason`: `...`, `..`, `X`, JSON null, or a reason the
+  parser states (a VNA of 0 after a group matured). Any other text quarantines.
 - **Definitions are archived raw, like data:**
   - SGS from its SOAP `getUltimoValorXML`, because CKAN lacks 11 of our codes;
   - Ipeadata from `Metadados('<code>')`;

@@ -163,7 +163,7 @@ institution = "Tesouro Nacional"
 access = "CKAN CSV"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/tesouro_transparente.md"
 
 [anbima_ettj]
@@ -289,7 +289,7 @@ institution = "Tesouro Nacional"
 access = "HTTP xlsx at permanent links, overwritten at each update"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/tesouro_vna.md"
 
 [ipeadata]

@@ -35,6 +35,12 @@ Tesouro Prefixado;01/01/2027;05/11/2026;13,58;13,70;980,98;980,32;980,32
 - Rows exist for all maturities listed that day (incl. ones closed to purchase) *(not verified)*; dataset is the *offered* bonds' morning prices, not closing secondary-market (ANBIMA is that).
 - Whole history re-uploaded each time; past values could be revised silently → keep sha256 per download.
 
+- **Zero PUs, read (2026-11-07):** the `0,00` buy/sell PUs fall on a title's last days before maturity (e.g. NTN-F
+  2023-01-01 on 2022-12-29: buy 0,00, sell and base 1047,70): that side was not offered. Parsed as null; a zero base
+  PU (29 rows) is quarantined. Two consecutive daily files agree on all 178,197 shared rows and add 58 rows (one day).
+- 8 titles: Prefixado, Prefixado com Juros Semestrais, IPCA+, IPCA+ com Juros Semestrais, Selic, IGPM+ com Juros
+  Semestrais (2004–), Renda+ Aposentadoria Extra (2023-01-30–), Educa+ (2023-08-01–).
+
 ## 5. Identity fields
 `Tipo Titulo` + `Data Vencimento` → Tesouro instrument (no SELIC code, no ISIN). Join to ANBIMA by type + maturity.
 

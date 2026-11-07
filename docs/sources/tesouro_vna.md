@@ -18,5 +18,11 @@
   4771.575463 (ANBIMA 2026-10-30: 4771.575461).
 - NTN-C: 1000 × IGP-M / 183.745 (IGP-M of Jun-2000) reproduces 2026-11-01 exactly. The intra-month day count is not
   pinned (two data points).
+- **Rule measured on the whole file (2026-11-07):** NTN-B VNA = trunc(1000 × IPCA index(m−1) / 1614.62, 6 dp) with
+  IBGE's index (SIDRA 1737 v2266): exact on 315 of 316 months. 2014-02-15 (2376.026557) needs a Jan-2014 index of
+  3836.38 where IBGE serves 3836.37 (a revision or a different print; not resolved).
+- Workbook quirks: numbers are floats written with 17 digits (1051.9850879999999 for 1051.985088); NTN-C 2018-01-01
+  is a pt-BR text cell ` 3.580,282456`; the 2002/2006 group reads 0 after 2006-12 (no VNA). Parsed into
+  `series_observation` as `tesouro_vna:NTN-B`, `tesouro_vna:NTN-C/<maturities>` (ADR-0013).
 - The monthly VNA is therefore closed from 2000. ANBIMA's projected daily VNA before 2026-10-29 is recomputable only
   where a projection is known (ANBIMA's own projections are served latest-only).

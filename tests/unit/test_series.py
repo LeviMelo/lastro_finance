@@ -183,3 +183,27 @@ def test_period_labels_per_frequency() -> None:
         date(2024, 3, 31),
     ]
     assert out["_aligned"].to_list() == [True, True, True, True, True, False]
+
+
+def test_vna_reads_text_cells_and_zero_means_matured() -> None:
+    obs, defs = series.parse_tesouro_vna((FIX / "tesouro_vna/vna_ntnc.xlsx").read_bytes(), _row("vna_ntnc"))
+    obs = _ok(series.OBSERVATION, obs)
+    assert set(defs["series_id"]) == {"tesouro_vna:NTN-C/2005+2008+2011+2017+2021+2031", "tesouro_vna:NTN-C/2002+2006"}
+    text = obs.filter(pl.col("vt_date") == date(2018, 1, 1), pl.col("series_id").str.ends_with("2031")).row(
+        0, named=True
+    )
+    assert text["value"] == Decimal("3580.282456") and text["value_text"] == "\xa03.580,282456"
+    old = obs.filter(pl.col("series_id") == "tesouro_vna:NTN-C/2002+2006", pl.col("vt_date") > date(2006, 12, 1))
+    assert old["value"].null_count() == old.height and set(old["missing_reason"]) == {
+        "VNA 0: the group's bonds have matured"
+    }
+
+
+def test_vna_ntnb_is_ipca_ratio_truncated() -> None:
+    """VNA NTN-B = trunc(1000 × IPCA(m−1) / IPCA(Jun-2000), 6 dp), measured exact on 315 of 316 months."""
+    obs, _ = series.parse_tesouro_vna((FIX / "tesouro_vna/vna_ntnb.xlsx").read_bytes(), _row("vna_ntnb"))
+    ipca = json.loads((FIX / "ibge_sidra/t1737_v2266_all.json").read_bytes())[1:]
+    index = {it["D3C"]: Decimal(it["V"]) for it in ipca}
+    oct26 = obs.filter(pl.col("vt_date") == date(2026, 10, 15))["value"][0]
+    expected = (Decimal(1000) * index["202609"] / index["200006"]).quantize(Decimal("0.000001"), rounding="ROUND_DOWN")
+    assert oct26 == expected == Decimal("4766.335112")

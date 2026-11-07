@@ -138,10 +138,19 @@ class IbgeSidra(SeriesConnector):
 
 class TesouroVna(Connector):
     """Tesouro Nacional's monthly VNA tables, NTN-B from 2000-07-15 and NTN-C from 2000-07-01, overwritten at each
-    update (docs/sources/tesouro_vna.md). Reproduced exactly from IPCA/IGP-M index numbers in recon."""
+    update (docs/sources/tesouro_vna.md). Reproduced exactly from IPCA/IGP-M index numbers in recon. Parsed into
+    `series_observation` (`tesouro_vna:NTN-B`, `tesouro_vna:NTN-C/<maturities>`)."""
 
     source_id: ClassVar[str] = "tesouro_vna"
-    version: ClassVar[str] = "0-archive"
+    version: ClassVar[str] = "1"
+    contracts: ClassVar[dict[str, Any]] = series.CONTRACTS
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return series.parse_tesouro_vna_payload(blob, row)
+
+    def derive(self, zones: Zones, run: Any) -> None:
+        series.build_core(zones, self.source_id, run)
+
     FILES: ClassVar[dict[str, str]] = {
         "vna_ntnb": "https://thot-arquivos.tesouro.gov.br/publicacao/53360",
         "vna_ntnc": "https://thot-arquivos.tesouro.gov.br/publicacao/45833",

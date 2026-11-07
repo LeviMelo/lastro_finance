@@ -21,7 +21,7 @@ import html
 import json
 import re
 from collections.abc import Iterable
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 import polars as pl
@@ -36,9 +36,14 @@ VALUE = pl.Decimal(38, 18)
 KT = pl.Datetime("us", "UTC")
 # Frequencies: D daily (a date), M month, Q quarter, A year, M3 rolling three months labelled by its last month.
 FREQUENCIES = ("D", "M", "Q", "A", "M3")
-# Written by the source where a value is not available (IBGE: "..." not available, ".." not applicable, "X"
-# suppressed; Ipeadata: JSON null). Any other text that is not a number breaks a rule and is quarantined.
-MISSING = ("...", "..", "X", "")
+# What the source writes where a value is not available, and its meaning (IBGE's conventions; '' is a JSON null).
+# A parser may state another reason itself (`missing_reason`); any other text that is not a number is quarantined.
+MISSING: dict[str, str] = {
+    "...": "IBGE '...': not available",
+    "..": "IBGE '..': not applicable",
+    "X": "IBGE 'X': suppressed",
+    "": "null in the source",
+}
 
 
 class LayoutError(ValueError):
@@ -47,7 +52,7 @@ class LayoutError(ValueError):
 
 OBSERVATION = Contract(
     table="staging.series.observation",
-    version=1,
+    version=2,
     description="One value of one series as one payload served it: date and value as written, and parsed.",
     columns=(
         Column("series_id", pl.String, "<source_id>:<source code>", "série", nullable=False),
@@ -80,6 +85,12 @@ OBSERVATION = Contract(
             "value_text", pl.String, "the value as written; '' for a JSON null", "valor como publicado", nullable=False
         ),
         Column(
+            "missing_reason",
+            pl.String,
+            "why there is no value (the source's marker and its meaning); null when there is one",
+            "motivo da ausência",
+        ),
+        Column(
             "kt_first_seen_at",
             KT,
             "when this payload was first fetched (UTC)",
@@ -89,7 +100,7 @@ OBSERVATION = Contract(
         ),
     ),
     rules=(
-        Rule("value_parsed_or_marked_missing", pl.col("value").is_not_null() | pl.col("value_text").is_in(MISSING)),
+        Rule("value_or_missing_reason", pl.col("value").is_not_null() ^ pl.col("missing_reason").is_not_null()),
         Rule("until_after_date", pl.col("vt_until").is_null() | (pl.col("vt_until") > pl.col("vt_date"))),
     ),
     key=("series_id", "vt_date", "raw_sha256"),
@@ -196,6 +207,8 @@ _OBS_IN = {
     "vt_until": pl.Date,
     "period_text": pl.String,
     "value_text": pl.String,
+    "value_norm": pl.String,  # the number to read when value_text is formatted (pt-BR text in a spreadsheet)
+    "missing_reason": pl.String,
     "raw_locator": pl.String,
 }
 _DEF_IN = {
@@ -210,8 +223,14 @@ _DEF_IN = {
 
 
 def _observations(rows: list[dict[str, Any]], row: dict[str, Any]) -> pl.DataFrame:
-    df = _frame(rows, row, _OBS_IN)
-    return df.with_columns(_decimal(pl.col("value_text")).alias("value"))
+    df = _frame([{k: r.get(k) for k in _OBS_IN} for r in rows], row, _OBS_IN)
+    reason = pl.coalesce(
+        pl.col("missing_reason"), pl.col("value_text").replace_strict(MISSING, default=None, return_dtype=pl.String)
+    )
+    number = _decimal(pl.coalesce(pl.col("value_norm"), pl.col("value_text")))
+    return df.with_columns(reason.alias("missing_reason"), pl.when(reason.is_null()).then(number).alias("value")).drop(
+        "value_norm"
+    )
 
 
 def _dmy(text: str) -> date:
@@ -423,6 +442,89 @@ def parse_sidra(blob: bytes, row: dict[str, Any]) -> tuple[pl.DataFrame, pl.Data
 
 def parse_sidra_payload(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
     obs, defs = parse_sidra(blob, row)
+    yield Parsed("observation", str(row["dataset_id"]), obs)
+    yield Parsed("definition", str(row["dataset_id"]), defs)
+
+
+# ------------------------------------------------------------------------------------------------ Tesouro VNA
+
+VNA_UNIT = "BRL per bond (VNA, valor nominal atualizado)"  # docs/sources/tesouro_vna.md
+
+
+def _xlsx_number(v: object) -> tuple[str, str | None]:
+    """(value as written, number to read). openpyxl returns the cell's float; its shortest repr is the published
+    decimal (the XML holds e.g. 1051.9850879999999 for 1051.985088). A text cell is pt-BR (' 3.580,282456')."""
+    if isinstance(v, bool) or v is None:
+        return ("" if v is None else str(v)), None
+    if isinstance(v, int | float):
+        return repr(v), None
+    text = str(v)
+    return text, text.replace("\xa0", "").strip().replace(".", "").replace(",", ".")
+
+
+def parse_tesouro_vna(blob: bytes, row: dict[str, Any]) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """Tesouro's VNA workbooks (publicacao/53360 NTN-B, 45833 NTN-C): a header row starting `DATA`, then one row
+    per month: date, then one VNA per column (NTN-C: one column per group of maturities). A zero VNA after a
+    group's last maturity means no VNA, not a value of zero."""
+    import io
+
+    import openpyxl
+
+    ws = openpyxl.load_workbook(io.BytesIO(blob), data_only=True, read_only=True).worksheets[0]
+    rows = list(ws.iter_rows(values_only=True))
+    hdr = next((i for i, r in enumerate(rows) if r and r[0] == "DATA"), None)
+    if hdr is None:
+        raise LayoutError("VNA workbook: no header row starting with DATA")
+    head = [c for c in rows[hdr][1:] if c is not None]
+    if len(head) == 1:  # NTN-B: the title sits in the header row itself
+        names = {1: ("NTN-B", str(head[0]))}
+    else:
+        names = {}
+        for j, c in enumerate(rows[hdr][1:], start=1):
+            if c is None:
+                continue
+            years = re.findall(r"(?:19|20)\d\d", str(c))
+            if not years:
+                raise LayoutError(f"VNA workbook: column header without maturities: {c!r}")
+            names[j] = ("NTN-C/" + "+".join(years), f"VALORES NOMINAIS DE NTN-C — {c}")
+    obs: list[dict[str, Any]] = []
+    for i, r in enumerate(rows[hdr + 1 :], start=hdr + 2):
+        if not r or r[0] is None:
+            continue
+        if not isinstance(r[0], datetime):
+            raise LayoutError(f"VNA workbook row {i}: date cell {r[0]!r}")
+        for j, (code, _) in names.items():
+            text, norm = _xlsx_number(r[j] if j < len(r) else None)
+            zero = text in ("0", "0.0")
+            obs.append(
+                {
+                    "series_id": f"tesouro_vna:{code}",
+                    "vt_date": r[0].date(),
+                    "vt_until": None,
+                    "period_text": r[0].date().isoformat(),
+                    "value_text": text,
+                    "value_norm": norm,
+                    "missing_reason": "VNA 0: the group's bonds have matured" if zero else None,
+                    "raw_locator": f"{ws.title}!R{i}C{j + 1}",
+                }
+            )
+    defs = [
+        {
+            "series_id": f"tesouro_vna:{code}",
+            "source_code": code,
+            "name": name,
+            "frequency": "D",
+            "frequency_text": "monthly, dated on the VNA's reference day",
+            "unit": VNA_UNIT,
+            "raw_locator": f"{ws.title}!R{hdr + 1}",
+        }
+        for code, name in names.values()
+    ]
+    return _observations(obs, row), _frame(defs, row, _DEF_IN)
+
+
+def parse_tesouro_vna_payload(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+    obs, defs = parse_tesouro_vna(blob, row)
     yield Parsed("observation", str(row["dataset_id"]), obs)
     yield Parsed("definition", str(row["dataset_id"]), defs)
 
