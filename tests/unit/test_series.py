@@ -310,3 +310,32 @@ def test_imf_series_and_indicator_units() -> None:
     out = series.label_units(defs.select("series_id", "unit"), labels)
     unit = dict(out.iter_rows())["imf:PCPS.G001.PBEEF.USD.M"]
     assert unit == "Beef, US cents per pound, Unit prices (PBEEF)"
+
+
+def test_cepea_units_from_the_indicator_page() -> None:
+    obs, defs = series.parse_cepea((FIX / "cepea/boi_gordo_id_2.xls").read_bytes(), _row("cepea_boi_gordo_aspx_id_2"))
+    assert (
+        dict(defs.select("series_id", "unit").iter_rows())["cepea:boi_gordo_aspx_id_2/brl"] == "BRL per arroba (15 kg)"
+    )
+    good = _ok(series.OBSERVATION, obs)
+    last = good.filter(pl.col("series_id") == "cepea:boi_gordo_aspx_id_2/brl").sort("vt_date").row(-1, named=True)
+    assert last["vt_date"] == date(2026, 11, 6) and last["value"] == Decimal("392.7")
+
+
+def test_anp_units_per_row_and_monthly_periods() -> None:
+    obs, defs = series.parse_anp((FIX / "anp/precos_mensal_brasil.xlsx").read_bytes(), _row("precos_mensal_brasil"))
+    units = dict(defs.select("series_id", "unit").iter_rows())
+    assert units["anp:gasolina_comum/retail_mean"] == "R$/l" and units["anp:glp/retail_mean"] == "R$/13kg"
+    good = _ok(series.OBSERVATION, obs)
+    jan13 = good.filter(pl.col("series_id") == "anp:gasolina_comum/retail_mean", pl.col("vt_date") == date(2013, 1, 1))
+    assert jan13["value"][0] == Decimal("2.763")
+
+
+def test_ima_totals_and_portfolio() -> None:
+    obs, _defs, comp = series.parse_ima((FIX / "anbima_ima/ima_completo.xml").read_bytes(), _row("ima_completo"))
+    good = _ok(series.OBSERVATION, obs)
+    irfm1 = good.filter(pl.col("series_id") == "anbima_ima:irf_m_1/index").row(0, named=True)
+    assert irfm1["vt_date"] == date(2026, 11, 6) and irfm1["value"] == Decimal("21300.072318")
+    comp = _ok(series.IMA_COMPONENT, comp)
+    w = comp.group_by("index_family").agg(pl.col("weight").sum())
+    assert w.filter((pl.col("weight").cast(pl.Float64) - 100).abs() > 0.05).is_empty()

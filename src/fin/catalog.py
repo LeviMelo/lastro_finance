@@ -84,6 +84,7 @@ def views(z: Zones) -> dict[str, str]:
         """,
         "focus_expectation": _scan(s / "bcb_focus" / "expectation" / "**" / "*.parquet"),
         "copom_decision": _scan(s / "bcb_copom" / "decision" / "**" / "*.parquet"),
+        "ima_component": _scan(s / "anbima_ima" / "ima_component" / "**" / "*.parquet"),
         "fii_distribution": f"""
             SELECT d.*, l.delivered_at
             FROM {_rp(s / "b3_fundosnet" / "distribution" / "**" / "*.parquet")} d

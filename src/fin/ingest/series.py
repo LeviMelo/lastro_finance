@@ -1055,6 +1055,265 @@ def _imf(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
     yield Parsed("definition", ds, defs)
 
 
+# ------------------------------------------------------------------------------------------------ CEPEA
+# `indicador/series/<x>.aspx?id=N` (xls; xlrd needs ignore_workbook_corruption): title row, `Fonte: Cepea`, a header
+# `Data | À vista R$ | À vista US$`, then one row per date (dd/mm/yyyy). The unit is on CEPEA's indicator page, not in
+# the file (read 2026-11-07, docs/sources/context_br.md); a 0,00 price is no price.
+
+CEPEA_UNIT = {  # dataset id -> per-what, from CEPEA's indicator pages
+    "cepea_acucar_aspx_id_53": "50 kg sack",
+    "cepea_boi_gordo_aspx_id_2": "arroba (15 kg)",
+    "cepea_cafe_aspx_id_23": "60 kg sack",
+    "cepea_cafe_aspx_id_24": "60 kg sack",
+    "cepea_etanol_aspx_id_103": "litre",
+    "cepea_etanol_aspx_id_104": "litre",
+    "cepea_milho_aspx_id_77": "60 kg sack",
+    "cepea_soja_aspx_id_12": "60 kg sack",
+}
+
+
+def parse_cepea(blob: bytes, row: dict[str, Any]) -> tuple[pl.DataFrame, pl.DataFrame]:
+    import xlrd  # pyright: ignore[reportMissingTypeStubs]
+
+    ds = str(row["dataset_id"])
+    per = CEPEA_UNIT.get(ds)
+    if per is None:
+        raise LayoutError(f"CEPEA {ds}: no unit recorded for this indicator")
+    sh = xlrd.open_workbook(file_contents=blob, ignore_workbook_corruption=True).sheet_by_index(0)
+    rows = [sh.row_values(i) for i in range(sh.nrows)]
+    hdr = next((i for i, r in enumerate(rows) if r and r[0] == "Data"), None)
+    if hdr is None:
+        raise LayoutError(f"CEPEA {ds}: no header row 'Data'")
+    title = str(rows[0][0]).strip()
+    weekly = "SEMANAL" in title.upper()
+    cols = {j: str(c).strip() for j, c in enumerate(rows[hdr]) if j and str(c).strip()}
+    for c in cols.values():
+        if c not in ("À vista R$", "À vista US$"):
+            raise LayoutError(f"CEPEA {ds}: unexpected column {c!r}")
+    obs: list[dict[str, Any]] = []
+    for i, r in enumerate(rows[hdr + 1 :], start=hdr + 2):
+        if not r or not str(r[0]).strip():
+            continue
+        d, mo, y = str(r[0]).strip().split("/")
+        day = date(int(y), int(mo), int(d))
+        for j, c in cols.items():
+            text, norm = _xlsx_number(r[j] if j < len(r) else None)
+            obs.append(
+                {
+                    "series_id": f"cepea:{ds.removeprefix('cepea_')}/{'brl' if 'R$' in c else 'usd'}",
+                    "vt_date": day,
+                    "vt_until": None,
+                    "period_text": str(r[0]),
+                    "value_text": text,
+                    "value_norm": norm,
+                    "missing_reason": "CEPEA 0,00: no price" if text in ("0.0", "0") else None,
+                    "raw_locator": f"R{i}C{j + 1}",
+                }
+            )
+    defs = [
+        {
+            "series_id": f"cepea:{ds.removeprefix('cepea_')}/{'brl' if 'R$' in c else 'usd'}",
+            "source_code": ds,
+            "name": f"{title} ({c})",
+            "frequency": "D",
+            "frequency_text": "weekly" if weekly else "daily",
+            "unit": f"{'BRL' if 'R$' in c else 'USD'} per {per}",
+            "raw_locator": f"R{hdr + 1}C{j + 1}",
+        }
+        for j, c in cols.items()
+    ]
+    return _observations(obs, row), _frame(defs, row, _DEF_IN)
+
+
+# ------------------------------------------------------------------------------------------------ ANP
+# `precos_mensal_brasil` (xlsx): notes, then a header row starting `MÊS`, then one row per (month, product) with the
+# unit on the row (`R$/l`, `R$/13kg`, `R$/m3`) and revenda/distribuição statistics; `-` marks no figure.
+
+ANP_FIELDS = {
+    "PREÇO MÉDIO REVENDA": ("retail_mean", None),
+    "DESVIO PADRÃO REVENDA": ("retail_std", None),
+    "PREÇO MÍNIMO REVENDA": ("retail_min", None),
+    "PREÇO MÁXIMO REVENDA": ("retail_max", None),
+    "MARGEM MÉDIA REVENDA": ("retail_margin", None),
+    "COEF DE VARIAÇÃO REVENDA": ("retail_cv", "ratio"),
+    "PREÇO MÉDIO DISTRIBUIÇÃO": ("distribution_mean", None),
+    "DESVIO PADRÃO DISTRIBUIÇÃO": ("distribution_std", None),
+    "PREÇO MÍNIMO DISTRIBUIÇÃO": ("distribution_min", None),
+    "PREÇO MÁXIMO DISTRIBUIÇÃO": ("distribution_max", None),
+    "COEF DE VARIAÇÃO DISTRIBUIÇÃO": ("distribution_cv", "ratio"),
+    "NÚMERO DE POSTOS PESQUISADOS": ("stations", "count"),
+}
+
+
+def parse_anp(blob: bytes, row: dict[str, Any]) -> tuple[pl.DataFrame, pl.DataFrame]:
+    import io
+
+    import openpyxl
+
+    ws = openpyxl.load_workbook(io.BytesIO(blob), data_only=True, read_only=True).worksheets[0]
+    rows = list(ws.iter_rows(values_only=True))
+    hdr = next((i for i, r in enumerate(rows) if r and r[0] == "MÊS"), None)
+    if hdr is None:
+        raise LayoutError("ANP: no header row starting with MÊS")
+    head = [str(c).strip() if c is not None else "" for c in rows[hdr]]
+    if head[1:4] != ["PRODUTO", "NÚMERO DE POSTOS PESQUISADOS", "UNIDADE DE MEDIDA"]:
+        raise LayoutError(f"ANP: header changed: {head[:4]}")
+    cols = {j: ANP_FIELDS[h] for j, h in enumerate(head) if h in ANP_FIELDS}
+    unknown = [h for h in head[4:] if h and h not in ANP_FIELDS]
+    if unknown:
+        raise LayoutError(f"ANP: unknown columns {unknown}")
+    obs: list[dict[str, Any]] = []
+    defs: dict[str, dict[str, Any]] = {}
+    for i, r in enumerate(rows[hdr + 1 :], start=hdr + 2):
+        if not r or not isinstance(r[0], datetime):
+            continue
+        product, unit = str(r[1]).strip(), str(r[3]).strip()
+        for j, (field, fixed_unit) in cols.items():
+            sid = f"anp:{_slug_code(product)}/{field}"
+            text, norm = _xlsx_number(r[j] if j < len(r) else None)
+            obs.append(
+                {
+                    "series_id": sid,
+                    "vt_date": r[0].date().replace(day=1),
+                    "vt_until": None,
+                    "period_text": r[0].date().isoformat(),
+                    "value_text": text,
+                    "value_norm": norm,
+                    "missing_reason": "ANP '-': no figure" if text == "-" else None,
+                    "raw_locator": f"R{i}C{j + 1}",
+                }
+            )
+            defs.setdefault(
+                sid,
+                {
+                    "series_id": sid,
+                    "source_code": f"{product}|{head[j]}",
+                    "name": f"ANP {product}: {head[j].lower()}",
+                    "frequency": "M",
+                    "frequency_text": "mensal",
+                    "unit": fixed_unit or unit,
+                    "raw_locator": f"R{i}C{j + 1}",
+                },
+            )
+    return _observations(obs, row), _frame(list(defs.values()), row, _DEF_IN)
+
+
+# ------------------------------------------------------------------------------------------------ ANBIMA IMA
+# `ima_completo` (XML, today only): per family (IRF-M 1, IMA-B, IMA-S…) a <TOTAL> of the index's figures and the
+# <CARTEIRA> of bonds in it. Index figures go to series (they exist only from the day archiving began); the portfolio
+# goes to its own staging table. Units of duration and PMR are ANBIMA's (business days) *(not verified)*.
+
+IMA_TOTALS = {
+    "T_Num_Indice": ("index", "index points"),
+    "T_Var_Diaria": ("change_day", "% over the day"),
+    "T_Var_Mensal": ("change_month", "% month to date"),
+    "T_Var_Anual": ("change_year", "% year to date"),
+    "T_Var_Ult12M": ("change_12m", "% over 12 months"),
+    "T_Var_Ult24M": ("change_24m", "% over 24 months"),
+    "T_Duration": ("duration", "business days (ANBIMA; not verified)"),
+    "T_PMR": ("pmr", "business days (ANBIMA; not verified)"),
+    "T_Yield": ("yield", "% a.a."),
+    "T_Peso_Geral": ("weight_general", "% of IMA-Geral"),
+    "T_Pi_Qi": ("market_value", "BRL"),
+}
+
+IMA_COMPONENT = Contract(
+    table="staging.anbima_ima.component",
+    version=1,
+    description="A bond in an ANBIMA index portfolio on one date (CARTEIRA).",
+    columns=(
+        Column("index_family", pl.String, "FAMILIA INDICE (IRF-M 1, IMA-B…)", "índice", nullable=False),
+        Column("ref_date", pl.Date, "DT_REF", "data de referência", "date", nullable=False),
+        Column("title", pl.String, "C_Titulo (NTN-B, LTN…)", "título", nullable=False),
+        Column("maturity", pl.Date, "C_Data_Vencimento", "vencimento", "date", nullable=False),
+        Column("selic_code", pl.String, "C_Cod_550", "código SELIC"),
+        Column("isin", pl.String, "C_Cod_ISIN", "ISIN"),
+        Column("rate", VALUE, "C_Taxa: indicative rate", "taxa", "% a.a."),
+        Column("pu", VALUE, "C_PU", "PU", "BRL per bond"),
+        Column("quantity", VALUE, "C_Quantidade (in the market)", "quantidade", "bonds"),
+        Column("weight", VALUE, "C_Peso: weight in the index", "peso", "%"),
+    ),
+)
+
+
+def _br(v: str | None) -> str | None:
+    if v is None or v.strip() in ("", "--"):
+        return None
+    return v.strip().replace(".", "").replace(",", ".")
+
+
+def parse_ima(blob: bytes, row: dict[str, Any]) -> tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame]:
+    import xml.etree.ElementTree as ET
+
+    root = ET.fromstring(blob)
+    obs: list[dict[str, Any]] = []
+    defs: dict[str, dict[str, Any]] = {}
+    comps: list[dict[str, Any]] = []
+    for f, fam in enumerate(root.findall("FAMILIA"), start=1):
+        name = fam.get("INDICE") or ""
+        tot = fam.find("TOTAIS")
+        if tot is None:
+            raise LayoutError(f"IMA {name}: no TOTAIS")
+        d0, m0, y0 = (tot.get("DT_REF") or "").split("/")
+        ref = date(int(y0), int(m0), int(d0))
+        total = tot.find("TOTAL")
+        for k, (field, unit) in IMA_TOTALS.items():
+            v = None if total is None else total.get(k)
+            sid = f"anbima_ima:{_slug_code(name)}/{field}"
+            text = "" if v is None else v
+            obs.append(
+                {
+                    "series_id": sid,
+                    "vt_date": ref,
+                    "vt_until": None,
+                    "period_text": tot.get("DT_REF"),
+                    "value_text": text,
+                    "value_norm": _br(v),
+                    "missing_reason": "ANBIMA '--': not computed" if text.strip() in ("--", "") else None,
+                    "raw_locator": f"FAMILIA[{f}]/TOTAIS/TOTAL/@{k}",
+                }
+            )
+            defs.setdefault(
+                sid,
+                {"series_id": sid, "source_code": f"{name}|{k}", "name": f"ANBIMA {name}: {k}", "frequency": "D",
+                 "frequency_text": "daily", "unit": unit, "raw_locator": f"FAMILIA[{f}]/TOTAIS/TOTAL/@{k}"},
+            )  # fmt: skip
+        car = fam.find("CARTEIRAS")
+        for c, el in enumerate([] if car is None else car.findall("CARTEIRA"), start=1):
+            dv, mv, yv = (el.get("C_Data_Vencimento") or "").split("/")
+            comps.append(
+                {
+                    "index_family": name,
+                    "ref_date": ref,
+                    "title": el.get("C_Titulo"),
+                    "maturity": date(int(yv), int(mv), int(dv)),
+                    "selic_code": el.get("C_Cod_550"),
+                    "isin": el.get("C_Cod_ISIN"),
+                    "rate": _br(el.get("C_Taxa")),
+                    "pu": _br(el.get("C_PU")),
+                    "quantity": _br(el.get("C_Quantidade")),
+                    "weight": _br(el.get("C_Peso")),
+                    "raw_locator": f"FAMILIA[{f}]/CARTEIRAS/CARTEIRA[{c}]",
+                }
+            )
+    schema = {c.name: (pl.String if c.dtype == VALUE else c.dtype) for c in IMA_COMPONENT.columns} | {
+        "raw_locator": pl.String
+    }
+    comp = pl.DataFrame(comps, schema=schema, orient="row").with_columns(
+        *[pl.col(c).cast(VALUE) for c in ("rate", "pu", "quantity", "weight")],
+        pl.lit(row["raw_sha256"]).alias("raw_sha256"),
+        pl.lit(row["ingest_run_id"]).alias("ingest_run_id"),
+    )
+    return _observations(obs, row), _frame(list(defs.values()), row, _DEF_IN), comp
+
+
+def _ima(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+    obs, defs, comp = parse_ima(blob, row)
+    yield Parsed("observation", "ima_completo", obs)
+    yield Parsed("definition", "ima_completo", defs)
+    yield Parsed("ima_component", "ima_completo", comp)
+
+
 def _pair(parse: Any) -> Any:
     def payload(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
         obs, defs = parse(blob, row)
@@ -1072,6 +1331,9 @@ CATALOGUE_PARSERS: dict[str, Any] = {
     "worldbank_cmo": _worldbank,
     "eia": _pair(parse_eia),
     "imf": _imf,
+    "cepea": _pair(parse_cepea),
+    "anp": _pair(parse_anp),
+    "anbima_ima": _ima,
     "ecb": _sdmx("ecb"),
     "bis": _sdmx("bis"),
     "oecd": _sdmx("oecd"),
@@ -1187,4 +1449,9 @@ def build_core(zones: Zones, source_id: str, run: IngestRun | None = None) -> tu
     return good.height, bad.height
 
 
-CONTRACTS: dict[str, Contract] = {"observation": OBSERVATION, "definition": DEFINITION, "unit_label": UNIT_LABEL}
+CONTRACTS: dict[str, Contract] = {
+    "observation": OBSERVATION,
+    "definition": DEFINITION,
+    "unit_label": UNIT_LABEL,
+    "ima_component": IMA_COMPONENT,
+}

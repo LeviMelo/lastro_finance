@@ -352,7 +352,7 @@ institution = "ANBIMA"
 access = "XML file, latest day only"
 tier = "P"
 ephemeral = true
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/context_br.md"
 
 [cepea]
@@ -361,7 +361,7 @@ institution = "CEPEA/ESALQ-USP"
 access = "XLS per indicator, full history"
 tier = "S"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/context_br.md"
 
 [anp]
@@ -370,7 +370,7 @@ institution = "ANP"
 access = "XLSX"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/context_br.md"
 
 [us_treasury]

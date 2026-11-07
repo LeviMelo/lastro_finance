@@ -184,3 +184,14 @@ CEPEA/ESALQ (USP): data licence printed on every indicator page = CC BY-NC 4.0 (
   33 (1999) has three rows: the later two are the president's use of the bias (`UsoMetaSelic` true).
 - `MetaSelic` is the Selic target in % a.a. from 1999-03-05. Before, the field holds the TBC (19-29 in 1998, 1.9 in
   1996): its unit is not stated *(not verified)*; SGS 432 is the target series from 1999.
+
+## CEPEA, ANP and ANBIMA IMA parsed (2026-11-07, `ingest/series.py`)
+- **CEPEA** (8 indicators, R$ and US$): the xls files fail xlrd's corruption check; `ignore_workbook_corruption`
+  reads them. Units are not in the files; from CEPEA's indicator pages (2026-11-07): sugar per 50 kg sack, cattle per
+  arroba (15 kg), coffee (arabica, robusta), corn and soy per 60 kg sack, ethanol per litre. Ethanol is weekly. A
+  0,00 price (robusta 2001) is no price. History: cattle 1997-07, soy 1997-07, arabica 1996-09, sugar 2003-05.
+- **ANP** monthly Brazil fuel prices 2013-01→: 7 products × 12 statistics, the unit on each row (`R$/l`, `R$/13kg`,
+  `R$/m³`); `-` = no figure.
+- **ANBIMA IMA** (today only): 9 families × 11 index figures into `series_observation`, and each family's portfolio
+  into `ima_component` (weights sum to 100 ± 0.02). Duration and PMR units are ANBIMA's (business days)
+  *(not verified)*. IMA history before 2026-10-29 is still a gap (gap matrix #7).
