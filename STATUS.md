@@ -63,7 +63,8 @@ Day one (2026-11-07).
 ## Next
 
 1. **Prove events against CVM IPE** documents; ISIN changes and mergers as event legs (PLAN's event graph).
-2. **Issuer links before 2009 and across mergers** (events as legs), and FII issuers from Fundos.NET.
+2. **Mergers without a B3 event** (ITAU4 → ITUB4, 2009) from CVM IPE; FII issuers from Fundos.NET. Links from ticker
+   continuity and B3 cross-asset events exist (`instrument_link`, 170; ADR-0019).
 3. **Fundamentals mapping** on `fundamental_fact`: accounts mapped per sector (banks differ), per-share figures once
    the unit of the CVM share counts is verified.
 4. **Context:** every archived context source is parsed (Focus, Copom, CEPEA, ANP, ANBIMA IMA, CFTC included).

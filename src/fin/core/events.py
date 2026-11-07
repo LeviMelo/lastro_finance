@@ -180,7 +180,14 @@ def stock_events(zones: Zones, dates: pl.Series) -> pl.DataFrame:
     b3 = _staging(zones, "b3_company_events", "stock_event")
     if b3 is not None:
         b3 = b3.unique(["isin", "label", "factor", "last_date_prior"]).join(isin, on="isin", how="inner")
-        b3 = b3.filter(pl.col("label").is_in(list(B3_STOCK)) & pl.col("last_date_prior").is_not_null())
+        # only events paid in the same class adjust its price; a bonus in another class (CYRE 2025-12: PN to ON
+        # holders), a spin-off or an incorporation is a link between instruments (core/links.py)
+        same = (
+            pl.col("asset_issued").is_null()
+            | (pl.col("asset_issued") == "")
+            | (pl.col("asset_issued") == pl.col("isin"))
+        )
+        b3 = b3.filter(pl.col("label").is_in(list(B3_STOCK)) & pl.col("last_date_prior").is_not_null() & same)
         b3 = b3.with_columns(next_session(dates, b3["last_date_prior"]).alias("ex_date"))
         for r in b3.iter_rows(named=True):
             ratio = b3_ratio(r["label"], Fraction(r["factor"]))
@@ -540,7 +547,9 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
     write_parquet(
         fac.sort("instrument_id", "ex_date"), zones.derived / "adjustment_factor" / "adjustment_factor.parquet"
     )
-    out = {"events": good.height, "events:quarantined": bad.height, "factors": fac.height}
+    from fin.core import links
+
+    out = {"events": good.height, "events:quarantined": bad.height, "factors": fac.height, **links.build(zones, run)}
     if run is not None:
         run.count("core.corporate_event", in_=allev.height, out=good.height, quarantined=bad.height)
     return out
