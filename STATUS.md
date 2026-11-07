@@ -10,10 +10,10 @@ Day one (2026-11-07).
 - **Collection terms** (ADR-0012): automating what the owner could fetch by hand for the owner's own portfolio is the personal
   use the sources' general terms allow. Collection stays polite and is never redistributed.
 - **Stage A passes its exit criteria.** **Stage B** has a note for every registered source (51). **Stage C** has
-  started: COTAHIST 1986–2026, Tesouro Direto prices/rates 2004– and FII distributions (Fundos.NET) are parsed
-  to staging; SGS, Ipeadata,
-  SIDRA, Tesouro VNA, US Treasury, NY Fed and Cboe are parsed into core `series_observation` (1,068 series,
-  468,490 values, every row with its unit; ADR-0013). VNA NTN-B reproduces from IBGE's IPCA on 315 of 316 months.
+  started: COTAHIST 1986–2026, Tesouro Direto prices/rates 2004–, FII distributions (Fundos.NET) and company
+  statements (CVM DFP 2010–, ITR 2011–: 66.8 million account lines, 1,224 companies) are parsed to staging; SGS, Ipeadata,
+  SIDRA, Tesouro VNA, US Treasury, NY Fed, Cboe, ECB, BIS and OECD are parsed into core `series_observation`
+  (1,091 series, 511,948 values, every row with its unit; ADR-0013). VNA NTN-B reproduces from IBGE's IPCA on 315 of 316 months.
 - **Data gaps are mapped and ranked** ([gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md)). Everything
   priority 1 needs has a free route.
 
@@ -44,8 +44,9 @@ Day one (2026-11-07).
   - free FRED and Tiingo tokens (OQ-23);
   - paid sources (OQ-10); PLAN §12 OQ-11 and OQ-14 to OQ-16.
 - **Engineering:**
-  - parsers for the other archived payloads (ADR-0007): ECB, BIS, OECD (SDMX: archive their structure metadata
-    for unit codes), World Bank, IMF, EIA, CFTC, Focus, Copom, CEPEA, ANP into `series_observation`;
+  - parsers for the other archived payloads (ADR-0007): World Bank, IMF, EIA, CFTC, Focus, Copom, CEPEA, ANP;
+    then the B3 snapshots, CVM FCA/FRE/IPE and the ANBIMA files;
+  - fundamentals: `fundamental_fact` from `statement_line` (scale applied, accounts mapped per sector);
   - the mirror-vs-ANBIMA overlap check; calendar 1986–2000 (OQ-22);
   - `price_daily`, identity resolution, universes.
 

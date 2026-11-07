@@ -43,3 +43,12 @@ Persistent yearly files, regenerated weekly for the last years (Last-Modified of
 - ITR (`itr_cia_aberta_YYYY.zip`): members, quarterly DT_INI/DT_FIM, the index `CATEG_DOC` = ITR and whether Q4 is derived, all *(not verified)*.
 - Whether LINK_DOC (ENETCONSULTA host) still resolves and what it returns (not fetched).
 - Whether the 2024 file's prior-period (PENÚLTIMO) rows equal the restated 2023 numbers; and how much the PENÚLTIMO values differ from the 2023 DFP.
+
+## 8. Parsed (2026-11-07, `ingest/cvm_statements.py`)
+- Every member header is identical across DFP 2010–2026 and ITR 2011–2026 (33 zips); all decode as cp1252. ITR has
+  the same members as DFP (its auditor member's 5th column is `TP_RELAT_ESP`, DFP's `TP_RELAT_AUD`).
+- 66,783,329 statement lines, 0 quarantined; 49,787 delivered document versions of 1,224 companies; 18,495
+  share-capital rows. Staging 231 MB; about 2 s per DFP zip.
+- `composicao_capital`: 6 rows with a negative treasury count (Bradesco DFP 2022 and ITR 2024-Q1, Azzas 2020,
+  Ourofino 2023) are quarantined. **The unit of the counts is not stated**: Bradesco's 5,338,394 common shares paid
+  in looks like thousands (it has ~5.3 billion) *(not verified)*. Check against FRE or FCA before any per-share figure.

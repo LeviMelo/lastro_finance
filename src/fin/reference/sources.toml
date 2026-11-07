@@ -91,7 +91,7 @@ institution = "CVM"
 access = "HTTP yearly zips"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/cvm_dfp_itr.md"
 
 [cvm_ipe]
@@ -388,7 +388,7 @@ institution = "European Central Bank"
 access = "SDMX REST CSV, keyless"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/context_global.md"
 
 [bis]
@@ -397,7 +397,7 @@ institution = "Bank for International Settlements"
 access = "SDMX v2 CSV, keyless"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/context_global.md"
 
 [cboe]
@@ -442,7 +442,7 @@ institution = "OECD"
 access = "SDMX REST CSV, keyless"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/context_global.md"
 
 [cftc_cot]

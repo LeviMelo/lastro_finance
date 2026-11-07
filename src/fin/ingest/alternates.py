@@ -15,7 +15,7 @@ from typing import Any, ClassVar
 import polars as pl
 
 from fin.config import Zones
-from fin.ingest import fundosnet, series
+from fin.ingest import cvm_statements, fundosnet, series
 from fin.ingest.base import Connector, Mode, Parsed
 from fin.ingest.context import ContextConnector, catalogue
 from fin.ingest.fetch import FetchSpec
@@ -477,8 +477,15 @@ class _CvmCompanyDocs(Connector):
 
 
 class CvmDfpItr(_CvmCompanyDocs):
+    """Parsed to staging `statement_line`, `document`, `share_capital` (`ingest/cvm_statements.py`)."""
+
     source_id: ClassVar[str] = "cvm_dfp_itr"
+    version: ClassVar[str] = "1"
     KINDS: ClassVar[dict[str, int]] = {"DFP": 2010, "ITR": 2011}
+    contracts: ClassVar[dict[str, Any]] = cvm_statements.CONTRACTS
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return cvm_statements.parse_zip(blob, row)
 
 
 class CvmFca(_CvmCompanyDocs):

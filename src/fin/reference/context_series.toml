@@ -164,6 +164,14 @@ keys = [
 ]
 
 [[file]]
+source = "ecb"
+dataset = "codelist_cl_unit"
+url = "https://data-api.ecb.europa.eu/service/codelist/ECB/CL_UNIT"
+ext = "xml"
+every_days = 30
+about = "ECB unit codelist (SDMX 2.1 structure): labels of the UNIT codes in the data files (PCPA, PC, BRL...)"
+
+[[file]]
 source = "bis"
 dataset = "{key}"
 url = "https://stats.bis.org/api/v2/data/dataflow/BIS/{key}"
@@ -172,6 +180,14 @@ ext = "csv"
 every_days = 7
 about = "BIS: monthly policy rates of 10 central banks (1954-), Brazil broad effective exchange rates"
 keys = ["WS_CBPOL/1.0/M.BR+US+XM+GB+JP+CN+MX+CL+ZA+IN", "WS_EER/1.0/M.N+R.B.BR"]
+
+[[file]]
+source = "bis"
+dataset = "codelist_cl_bis_unit"
+url = "https://stats.bis.org/api/v2/structure/codelist/BIS/CL_BIS_UNIT/1.0"
+ext = "json"
+every_days = 30
+about = "BIS unit codelist (SDMX-JSON): labels of UNIT_MEASURE codes (368 per cent per year, 882 index 2020=100)"
 
 # ---------------------------------------------------------------- Global: risk, commodities, positioning
 [[file]]
@@ -216,6 +232,15 @@ params = { format = "csv" }
 ext = "csv"
 every_days = 7
 about = "OECD composite leading indicators (amplitude adjusted), Brazil, US, China, G20, 1990s-"
+
+[[file]]
+source = "oecd"
+dataset = "dsd_stes_codelists"
+url = "https://sdmx.oecd.org/public/rest/datastructure/OECD.SDD.STES/DSD_STES/4.1"
+params = { references = "codelist" }
+ext = "xml"
+every_days = 30
+about = "OECD DSD_STES with its codelists (SDMX 2.1 structure, 1.6 MB): labels of UNIT_MEASURE codes (IX...)"
 
 [[file]]
 source = "cftc_cot"

@@ -118,3 +118,11 @@ Recommendation: `httpx` + `polars` for the CSV/SDMX-CSV routes (all verified abo
   standard deviation run 2000-07-03 → 2016-02-29; percentiles and volume from 2016-03-01. SOFR percentiles read `NA`
   on 2019-05-31 and 2021-08-05 (kept as missing). `Revision Indicator` ('r') and `Footnote ID` stay in raw.
 - **cboe:** `cboe:<INDEX>/{OPEN,HIGH,LOW,CLOSE}`; VVIX and SKEW files carry only the close. VIX 1990-01-02 → 2026-11-06.
+- **ecb, bis, oecd (SDMX-CSV):** ids `<source>:<series key>` (ECB's `KEY` column; BIS and OECD from the flow's
+  dimensions). Units are codes: ECB `UNIT` (PCPA, PC, BRL…), BIS/OECD `UNIT_MEASURE` (368, 882, IX). They are labelled
+  from the sources' codelists, archived monthly:
+  - ECB `service/codelist/ECB/CL_UNIT` (XML);
+  - BIS `api/v2/structure/codelist/BIS/CL_BIS_UNIT/1.0` (JSON; the `latest` alias also works);
+  - OECD `rest/datastructure/OECD.SDD.STES/DSD_STES/4.1?references=codelist` (1.6 MB;
+    `rest/codelist/OECD.SDD.STES/CL_UNIT_MEASURE` answers 404).
+  ECB frequency `B` (business days) is read as daily.

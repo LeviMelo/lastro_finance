@@ -18,6 +18,8 @@ Sources revise without keeping vintages.
   - Each is re-requested monthly.
   - Where a payload carries no unit (Treasury, Cboe, NY Fed, the VNA workbooks), the parser declares it and cites
     the source note that verified it.
+  - Where a payload carries a unit code (SDMX: ECB, BIS, OECD), the source's codelist is archived monthly and the
+    core step writes `label (code)`.
 - **Core rows join the latest definition.**
   - `vt_reference` follows the frequency: `2024-03-15`, `2024-03-15..2024-04-14` (a stated end, as for TR),
     `2024-03`, `2024Q1`, `2024`, `2024-01..2024-03` (rolling quarter).

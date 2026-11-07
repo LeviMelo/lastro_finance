@@ -675,6 +675,178 @@ def parse_cboe(blob: bytes, row: dict[str, Any]) -> tuple[pl.DataFrame, pl.DataF
     return _wide(blob, row, "DATE", cols)
 
 
+# ------------------------------------------------------------------------------------------------ SDMX
+# ECB, BIS and OECD serve SDMX-CSV: one row per observation, dimensions and attributes as columns. The unit is a code
+# (ECB UNIT, BIS/OECD UNIT_MEASURE); its label comes from the source's own codelist, archived monthly and joined in
+# core (`unit_label`), so no label is typed by hand.
+
+SDMX_FREQ = {"D": "D", "B": "D", "M": "M", "Q": "Q", "A": "A"}
+SDMX_KEYS: dict[str, tuple[str, ...]] = {  # flow -> its dimensions, in key order (measured on the payload headers)
+    "BIS:WS_CBPOL": ("FREQ", "REF_AREA"),
+    "BIS:WS_EER": ("FREQ", "EER_TYPE", "EER_BASKET", "REF_AREA"),
+    "OECD:DF_CLI": (
+        "REF_AREA", "FREQ", "MEASURE", "UNIT_MEASURE", "ACTIVITY", "ADJUSTMENT", "TRANSFORMATION", "TIME_HORIZ",
+        "METHODOLOGY",
+    ),
+}  # fmt: skip
+
+UNIT_LABEL = Contract(
+    table="staging.series.unit_label",
+    version=1,
+    description="A unit code and its label, from a source's own SDMX codelist.",
+    columns=(
+        Column(
+            "codelist",
+            pl.String,
+            "codelist id (CL_UNIT, CL_BIS_UNIT, CL_UNIT_MEASURE)",
+            "lista de códigos",
+            nullable=False,
+        ),
+        Column("code", pl.String, "unit code as the data files write it", "código", nullable=False),
+        Column("label", pl.String, "English label", "rótulo", nullable=False),
+        Column(
+            "kt_first_seen_at",
+            KT,
+            "when this payload was first fetched (UTC)",
+            "visto pela primeira vez",
+            "timestamp",
+            nullable=False,
+        ),
+    ),
+    key=("codelist", "code", "raw_sha256"),
+)
+
+
+def _sdmx_date(period: str, freq: str) -> date:
+    if freq == "D":
+        return date.fromisoformat(period)
+    if freq == "M":
+        return date.fromisoformat(period + "-01")
+    if freq == "Q":
+        y, q = period.split("-Q")
+        return date(int(y), 3 * int(q) - 2, 1)
+    if freq == "A":
+        return date(int(period), 1, 1)
+    raise LayoutError(f"SDMX period {period!r} of frequency {freq}")
+
+
+def parse_sdmx_csv(blob: bytes, row: dict[str, Any], source: str) -> tuple[pl.DataFrame, pl.DataFrame]:
+    import io
+
+    df = pl.read_csv(io.BytesIO(blob), infer_schema=False)
+    for need in ("FREQ", "TIME_PERIOD", "OBS_VALUE"):
+        if need not in df.columns:
+            raise LayoutError(f"SDMX-CSV ({source}): no {need} column")
+    if "KEY" in df.columns:  # ECB writes the series key itself
+        key = pl.col("KEY")
+    else:
+        flow = re.search(r"(DF_[A-Z_]+|WS_[A-Z_]+)", _url(row))
+        dims = SDMX_KEYS.get(f"{source.upper()}:{flow.group(1)}" if flow else "")
+        if dims is None or any(d not in df.columns for d in dims):
+            raise LayoutError(f"SDMX-CSV ({source}): no known dimensions for {_url(row)}")
+        key = pl.lit(f"{flow.group(1)}.") + pl.concat_str([pl.col(d) for d in dims], separator=".")  # type: ignore[union-attr]
+    unit_col = "UNIT" if "UNIT" in df.columns else "UNIT_MEASURE"
+    if unit_col not in df.columns:
+        raise LayoutError(f"SDMX-CSV ({source}): no unit column")
+    title = next((c for c in ("TITLE", "TITLE_TS") if c in df.columns), None)
+    mult = pl.col("UNIT_MULT") if "UNIT_MULT" in df.columns else pl.lit("0")
+    frame = df.with_row_index("i", offset=2).select(
+        (pl.lit(f"{source}:") + key).alias("series_id"),
+        key.alias("source_code"),
+        pl.col("FREQ").alias("freq"),
+        pl.col("TIME_PERIOD").alias("period"),
+        pl.col("OBS_VALUE").fill_null("").alias("value_text"),
+        pl.when(mult.fill_null("0") == "0")
+        .then(pl.col(unit_col))
+        .otherwise(pl.col(unit_col) + " x10^" + mult)
+        .alias("unit"),
+        (pl.col(title).str.strip_chars() if title else key).alias("name"),
+        pl.col("i"),
+    )
+    bad_freq = set(frame["freq"].unique().to_list()) - set(SDMX_FREQ)
+    if bad_freq:
+        raise LayoutError(f"SDMX-CSV ({source}): frequencies {sorted(bad_freq)}")
+    obs = [
+        {
+            "series_id": r["series_id"],
+            "vt_date": _sdmx_date(r["period"], SDMX_FREQ[r["freq"]]),
+            "vt_until": None,
+            "period_text": r["period"],
+            "value_text": r["value_text"],
+            "raw_locator": f"line={r['i']}",
+        }
+        for r in frame.iter_rows(named=True)
+    ]
+    first = frame.unique("series_id", keep="first", maintain_order=True)
+    defs = [
+        {
+            "series_id": r["series_id"],
+            "source_code": r["source_code"],
+            "name": r["name"],
+            "frequency": SDMX_FREQ[r["freq"]],
+            "frequency_text": r["freq"],
+            "unit": r["unit"],
+            "raw_locator": f"line={r['i']}",
+        }
+        for r in first.iter_rows(named=True)
+    ]
+    return _observations(obs, row), _frame(defs, row, _DEF_IN)
+
+
+def parse_sdmx_codelist(blob: bytes, row: dict[str, Any], want: str) -> pl.DataFrame:
+    """Codes and English labels of the codelists whose id contains `want`: an SDMX 2.1 structure message (XML) or
+    SDMX-JSON (BIS)."""
+    out: list[dict[str, Any]] = []
+    if blob.lstrip()[:1] == b"{":
+        doc = json.loads(blob)
+        for cl in doc["data"]["codelists"]:
+            if want in cl["id"]:
+                out += [
+                    {"codelist": cl["id"], "code": c["id"], "label": c.get("name") or c["names"]["en"]}
+                    for c in cl["codes"]
+                ]
+    else:
+        import xml.etree.ElementTree as ET
+
+        root = ET.fromstring(blob)
+        for cl in root.iter():
+            if not cl.tag.endswith("}Codelist") or want not in cl.get("id", ""):
+                continue
+            for c in cl:
+                if not c.tag.endswith("}Code"):
+                    continue
+                names = [n for n in c if n.tag.endswith("}Name")]
+                en = next((n.text for n in names if n.get("{http://www.w3.org/XML/1998/namespace}lang") == "en"), None)
+                out.append(
+                    {"codelist": cl.get("id"), "code": c.get("id"), "label": en or (names[0].text if names else "")}
+                )
+    if not out:
+        raise LayoutError(f"no codelist matching {want!r} in the structure payload")
+    df = pl.DataFrame(out, schema={"codelist": pl.String, "code": pl.String, "label": pl.String}, orient="row")
+    return df.with_columns(
+        pl.lit(row["fetched_at"], dtype=KT).alias("kt_first_seen_at"),
+        pl.lit(row["raw_sha256"]).alias("raw_sha256"),
+        (pl.lit("codelist=") + pl.col("codelist") + ";code=" + pl.col("code")).alias("raw_locator"),
+        pl.lit(row["ingest_run_id"]).alias("ingest_run_id"),
+    )
+
+
+SDMX_CODELISTS = {"ecb": "CL_UNIT", "bis": "CL_BIS_UNIT", "oecd": "CL_UNIT_MEASURE"}
+
+
+def _sdmx(source: str) -> Any:
+    def payload(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        ds = str(row["dataset_id"])
+        if ds.startswith(("codelist_", "dsd_")):
+            yield Parsed("unit_label", ds, parse_sdmx_codelist(blob, row, SDMX_CODELISTS[source]))
+            return
+        obs, defs = parse_sdmx_csv(blob, row, source)
+        yield Parsed("observation", ds, obs)
+        yield Parsed("definition", ds, defs)
+
+    return payload
+
+
 def _pair(parse: Any) -> Any:
     def payload(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
         obs, defs = parse(blob, row)
@@ -689,6 +861,9 @@ CATALOGUE_PARSERS: dict[str, Any] = {
     "us_treasury": _pair(parse_us_treasury),
     "nyfed": _pair(parse_nyfed),
     "cboe": _pair(parse_cboe),
+    "ecb": _sdmx("ecb"),
+    "bis": _sdmx("bis"),
+    "oecd": _sdmx("oecd"),
 }
 
 
@@ -738,6 +913,22 @@ def latest_definitions(defs: pl.DataFrame) -> pl.DataFrame:
     return defs.sort("kt_first_seen_at").unique("series_id", keep="last", maintain_order=True).sort("series_id")
 
 
+def label_units(defs: pl.DataFrame, labels: pl.DataFrame) -> pl.DataFrame:
+    """`PCPA` -> `Percent per annum (PCPA)`, `PC x10^3` -> `Percent (PC) x10^3`, from the latest codelist payload."""
+    lab = labels.sort("kt_first_seen_at").unique("code", keep="last").select("code", "label")
+    code = pl.col("unit").str.split(" x10^").list.first()
+    rest = pl.col("unit").str.strip_prefix(code)
+    out = defs.with_columns(code.alias("_code"), rest.alias("_rest")).join(
+        lab, left_on="_code", right_on="code", how="left"
+    )
+    return out.with_columns(
+        pl.when(pl.col("label").is_not_null())
+        .then(pl.col("label") + " (" + pl.col("_code") + ")" + pl.col("_rest"))
+        .otherwise(pl.col("unit"))
+        .alias("unit")
+    ).select(defs.columns)
+
+
 def versions(obs: pl.DataFrame) -> pl.DataFrame:
     """Keep the first row of each (series, period) and each later row whose value differs from the one before it.
     A period is its date and, where the source states one, its end (SGS TR: one start date, several periods)."""
@@ -760,6 +951,9 @@ def build_core(zones: Zones, source_id: str, run: IngestRun | None = None) -> tu
     if obs is None:
         return 0, 0
     latest = latest_definitions(defs) if defs is not None else pl.DataFrame(schema=DEFINITION.schema())
+    labels = read_parquet_dir(zones.staging / source_id / "unit_label")
+    if labels is not None and latest.height:
+        latest = label_units(latest, labels)
     write_parquet(SERIES_DEFINITION.conform(latest), out_def)
     v = versions(obs).join(latest.select("series_id", "frequency", "unit"), on="series_id", how="left")
     v = v.with_columns(*_period(pl.col("frequency"), pl.col("vt_date"), pl.col("vt_until")))
@@ -782,4 +976,4 @@ def build_core(zones: Zones, source_id: str, run: IngestRun | None = None) -> tu
     return good.height, bad.height
 
 
-CONTRACTS: dict[str, Contract] = {"observation": OBSERVATION, "definition": DEFINITION}
+CONTRACTS: dict[str, Contract] = {"observation": OBSERVATION, "definition": DEFINITION, "unit_label": UNIT_LABEL}

@@ -247,3 +247,31 @@ def test_cboe_single_column_is_the_close() -> None:
     obs, defs = series.parse_cboe((FIX / "cboe/VVIX_History.csv").read_bytes(), _row("vvix"))
     assert set(defs["series_id"]) == {"cboe:VVIX/CLOSE"}
     assert obs.row(0, named=True)["value"] == Decimal("71.73")
+
+
+def test_sdmx_keys_frequency_and_unit_codes() -> None:
+    url = "https://stats.bis.org/api/v2/data/dataflow/BIS/WS_EER/1.0/M.N+R.B.BR"
+    obs, defs = series.parse_sdmx_csv((FIX / "bis/WS_EER_M.N+R.B.BR.csv").read_bytes(), _row("x", url), "bis")
+    obs = _ok(series.OBSERVATION, obs)
+    assert set(defs["series_id"]) == {"bis:WS_EER.M.N.B.BR", "bis:WS_EER.M.R.B.BR"}
+    assert set(defs["unit"]) == {"882"} and set(defs["frequency"]) == {"M"}
+    assert obs.filter(pl.col("series_id") == "bis:WS_EER.M.R.B.BR")["vt_date"].min() == date(1994, 1, 1)
+    _, ecb_defs = series.parse_sdmx_csv(
+        (FIX / "ecb/FM_B.U2.EUR.4F.KR.MRR_FR.LEV.csv").read_bytes(),
+        _row("x", "https://data-api.ecb.europa.eu/x"),
+        "ecb",
+    )
+    assert ecb_defs["series_id"][0] == "ecb:FM.B.U2.EUR.4F.KR.MRR_FR.LEV" and ecb_defs["frequency"][0] == "D"
+    oecd_url = "https://sdmx.oecd.org/public/rest/data/OECD.SDD.STES,DSD_STES@DF_CLI,4.1/BRA+USA+CHN+G20.M.LI"
+    _, oecd = series.parse_sdmx_csv((FIX / "oecd/DF_CLI_BRA+USA+CHN+G20.csv").read_bytes(), _row("x", oecd_url), "oecd")
+    assert "oecd:DF_CLI.BRA.M.LI.IX._Z.AA.IX._Z.H" in set(oecd["series_id"])
+
+
+def test_unit_codes_get_the_sources_labels() -> None:
+    bis = series.parse_sdmx_codelist((FIX / "bis/codelist_CL_BIS_UNIT.json").read_bytes(), _row("c"), "CL_BIS_UNIT")
+    ecb = series.parse_sdmx_codelist((FIX / "ecb/codelist_CL_UNIT.xml").read_bytes(), _row("c"), "CL_UNIT")
+    assert dict(bis.select("code", "label").iter_rows())["368"] == "Per cent per year"
+    assert dict(ecb.select("code", "label").iter_rows())["PCPA"] == "Percent per annum"
+    defs = pl.DataFrame({"series_id": ["a", "b", "c"], "unit": ["368", "882 x10^3", "ZZZ"]})
+    out = series.label_units(defs, bis)
+    assert out["unit"].to_list() == ["Per cent per year (368)", "Index, 2020 = 100 (882) x10^3", "ZZZ"]
