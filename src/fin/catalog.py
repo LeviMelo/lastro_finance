@@ -69,6 +69,53 @@ def views(z: Zones) -> dict[str, str]:
                 l.raw_sha256, l.raw_locator
             FROM lines l LEFT JOIN docs d USING (form, cnpj, reference_date, version)
         """,
+        "fundamental_metric": """
+            -- standard metrics by account name among CVM's fixed accounts: names are stable across the industrial
+            -- and the bank templates where codes are not (equity is 2.03 for industrials, 2.07 or 2.08 for banks);
+            -- the shallowest matching code wins (docs/evaluation/2026-11-07-fundamentals-mapping.md)
+            WITH f AS (
+                SELECT *,
+                    CASE
+                        WHEN statement = 'BPA' AND account_code = '1' THEN 'total_assets'
+                        WHEN statement = 'BPA' AND account_name = 'Ativo Circulante' THEN 'current_assets'
+                        WHEN statement = 'BPA' AND account_name = 'Caixa e Equivalentes de Caixa' THEN 'cash'
+                        WHEN statement = 'BPP' AND account_name = 'Passivo Circulante' THEN 'current_liabilities'
+                        WHEN statement = 'BPP' AND account_name = 'Passivo Não Circulante' THEN 'noncurrent_liabilities'
+                        WHEN statement = 'BPP'
+                            AND account_name IN ('Patrimônio Líquido Consolidado', 'Patrimônio Líquido')
+                            THEN 'equity'
+                        WHEN statement = 'BPP' AND account_name = 'Patrimônio Líquido Atribuído ao Controlador'
+                            THEN 'equity_controlling'
+                        WHEN statement = 'DRE' AND account_code = '3.01' THEN 'revenue'
+                        WHEN statement = 'DRE' AND account_name ILIKE 'Resultado Bruto%' THEN 'gross_profit'
+                        WHEN statement = 'DRE'
+                            AND account_name = 'Resultado Antes do Resultado Financeiro e dos Tributos'
+                            THEN 'ebit'
+                        WHEN statement = 'DRE' AND account_name ILIKE 'Resultado Antes dos Tributos sobre o Lucro'
+                            THEN 'pretax_income'
+                        WHEN statement = 'DRE' AND account_name IN ('Lucro/Prejuízo Consolidado do Período',
+                            'Lucro ou Prejuízo Líquido Consolidado do Período', 'Lucro/Prejuízo do Período',
+                            'Lucro ou Prejuízo Líquido do Período') THEN 'net_income'
+                        WHEN statement = 'DRE' AND account_name ILIKE 'Atribuído a%Controladora'
+                            THEN 'net_income_controlling'
+                        WHEN statement LIKE 'DFC%' AND account_name IN ('Caixa Líquido Atividades Operacionais',
+                            'Caixa Líquido das Atividades Operacionais') THEN 'cash_from_operations'
+                        WHEN statement LIKE 'DFC%' AND account_name IN ('Caixa Líquido Atividades de Investimento',
+                            'Caixa Líquido das Atividades de Investimento') THEN 'cash_from_investing'
+                        WHEN statement LIKE 'DFC%' AND account_name IN ('Caixa Líquido Atividades de Financiamento',
+                            'Caixa Líquido das Atividades de Financiamento') THEN 'cash_from_financing'
+                    END AS metric
+                FROM fundamental_fact
+                WHERE fixed_account AND period_order = 'ÚLTIMO'
+            )
+            SELECT issuer_cnpj, cd_cvm, company_name, form, reference_date, version, received_on, consolidation,
+                   metric, period_start, period_end, account_code, account_name, value_brl, raw_sha256, raw_locator
+            FROM f WHERE metric IS NOT NULL
+            QUALIFY row_number() OVER (
+                PARTITION BY issuer_cnpj, form, reference_date, version, consolidation, metric, period_start, period_end
+                ORDER BY length(account_code), account_code
+            ) = 1
+        """,
         "price_adjusted": """
             WITH p AS (
                 SELECT instrument_id, trade_date, CAST(close AS DOUBLE) AS close
