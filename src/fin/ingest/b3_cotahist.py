@@ -305,6 +305,12 @@ class B3Cotahist(Connector):
     contracts: ClassVar[dict[str, Contract]] = {"quote": QUOTE, "unparsed_line": UNPARSED}
     user_agent: ClassVar[str | None] = BROWSER_UA
 
+    def derive(self, zones: Zones, run: Any) -> None:
+        """Core `instrument`, `instrument_identifier` and `price_daily` (ingest/../core/equities.py, ADR-0015)."""
+        from fin.core.equities import build
+
+        build(zones, run)
+
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
         """backfill: yearly files `years` (default all, 1986 to last year); incremental/snapshot: the daily files of
         the last `days` business days (default 10). The current year's yearly file is rewritten daily, so it is

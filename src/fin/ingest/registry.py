@@ -20,6 +20,7 @@ from fin.ingest.anbima_calendar import AnbimaCalendar
 from fin.ingest.b3_cotahist import B3Cotahist
 from fin.ingest.base import Connector
 from fin.ingest.context import context_connectors
+from fin.ingest.intraday import YahooIntraday
 from fin.ingest.snapshots import (
     AnbimaDebentures,
     AnbimaEttj,
@@ -69,6 +70,7 @@ CONNECTORS: dict[str, type[Connector]] = {
         SndDebentures,
         TesouroVna,
         YahooChart,
+        YahooIntraday,
         *context_connectors(),
     )
 }
@@ -103,6 +105,7 @@ DAILY: tuple[str, ...] = (
     "cvm_fca",
     "cvm_fre",
     "cvm_ipe",
+    "yahoo_intraday",  # tier U: 5-minute bars exist only ~60 days back, so they are archived as they pass
     # the context catalogue (reference/context_series.toml): each entry carries its own cadence
     *(c.source_id for c in context_connectors()),
 )

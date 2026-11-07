@@ -7,6 +7,7 @@ import io
 import json
 import os
 import stat
+from pathlib import Path
 
 import httpx
 import polars as pl
@@ -158,3 +159,90 @@ def test_crashed_run_journal_is_recovered(zones: Zones) -> None:
     assert recover(zones) == ["20260101T000000Z-dead00"]
     assert Manifest(zones.manifest).read().height == 1
     assert (zones.manifest / "part-20260101T000000Z-dead00.parquet").exists()
+
+
+def _history(n: int) -> list[bytes]:
+    """A file re-sent with one more line each time, as Tesouro's full-history CSV is."""
+    lines = [f"Tesouro Selic;{d:05d};{hashlib.sha256(str(d).encode()).hexdigest()[:24]}\n" for d in range(4000)]
+    return ["".join(lines[: 3000 + 10 * i]).encode() for i in range(n)]
+
+
+def test_delta_round_trips_and_is_small(tmp_path: Path) -> None:
+    store = RawStore(tmp_path / "raw")
+    v = _history(3)
+    a = store.put_bytes(v[0], "csv")
+    b = store.put_bytes(v[1], "csv", base=a.sha256)
+    assert b.path.suffix == ".zsd" and store.base_of(b.sha256) == a.sha256
+    assert b.path.stat().st_size * 20 < a.path.stat().st_size
+    fresh = RawStore(tmp_path / "raw")  # no cache: rebuilt from the file
+    assert fresh.read(b.sha256) == v[1]
+    fresh.verify(b.sha256)
+    assert store.put_bytes(v[1], "csv", base=a.sha256).created is False  # already held
+
+
+def test_delta_chain_is_cut_by_a_keyframe(tmp_path: Path) -> None:
+    from fin.store.raw import KEYFRAME
+
+    store = RawStore(tmp_path / "raw")
+    prev = None
+    depths = []
+    for data in _history(KEYFRAME + 3):
+        ref = store.put_bytes(data, "csv", base=prev)
+        depths.append(store.depth(ref.sha256))
+        prev = ref.sha256
+    assert max(depths) == KEYFRAME and depths[KEYFRAME + 1] == 0
+
+
+def test_unrelated_bytes_are_not_stored_as_delta(tmp_path: Path) -> None:
+    store = RawStore(tmp_path / "raw")
+    a = store.put_bytes(os.urandom(100_000), "bin")
+    b = store.put_bytes(os.urandom(100_000), "bin", base=a.sha256)
+    assert b.path.suffix != ".zsd"
+
+
+def test_rewrite_as_delta_keeps_the_bytes(tmp_path: Path) -> None:
+    store = RawStore(tmp_path / "raw")
+    v = _history(2)
+    a = store.put_bytes(v[0], "csv")
+    b = store.put_bytes(v[1], "csv")
+    saved = store.rewrite_as_delta(b.sha256, a.sha256)
+    assert saved > 0 and store.find(b.sha256).suffix == ".zsd" and not b.path.exists()
+    assert RawStore(tmp_path / "raw").read(b.sha256) == v[1]
+    assert store.rewrite_as_delta(a.sha256, b.sha256) == 0  # never a cycle
+
+
+def test_unpacked_zip_stores_members_as_deltas(zones: Zones) -> None:
+    import zipfile
+
+    def make_zip(rows: int) -> bytes:
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+            z.writestr("itr_2026.csv", b"".join(_history(1)[0].splitlines(keepends=True)[:rows]))
+            z.writestr("itr_idx_2026.csv", b"a;b\r\n1;2\r\n")
+        return buf.getvalue()
+
+    versions = [make_zip(2900), make_zip(3000)]
+    served = iter(versions)
+    transport = httpx.MockTransport(lambda req: httpx.Response(200, content=next(served)))
+    spec = FetchSpec(
+        "cvm_dfp_itr",
+        "itr_cia_aberta",
+        "https://example.test/itr.zip",
+        "zip",
+        locator="2026",
+        unpack_members=True,
+        conditional=False,
+    )
+    raw = RawStore(zones.raw)
+    with IngestRun(zones, "test") as run:
+        f = Fetcher(run, raw, _client(transport), "1")
+        first, second = f.fetch(spec), f.fetch(spec)
+    assert first is not None and second is not None
+    record = json.loads(raw.read(second.row.raw_sha256))
+    assert [m["name"] for m in record["members"]] == ["itr_2026.csv", "itr_idx_2026.csv"]
+    assert record["zip_sha256"] == hashlib.sha256(versions[1]).hexdigest()
+    big = second.members[0][0]
+    assert big.notes == "2026|itr_2026.csv" and raw.find(big.raw_sha256).suffix == ".zsd"
+    assert second.members[1][1] is False  # the unchanged member is the same object
+    with zipfile.ZipFile(io.BytesIO(versions[1])) as z:
+        assert RawStore(zones.raw).read(big.raw_sha256) == z.read("itr_2026.csv")

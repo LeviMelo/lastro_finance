@@ -51,6 +51,7 @@ class SeriesConnector(ContextConnector):
     (`ingest/series.py`)."""
 
     contracts: ClassVar[dict[str, Any]] = series.CONTRACTS
+    dedup_staging: ClassVar[bool] = True
 
     def derive(self, zones: Zones, run: Any) -> None:
         series.build_core(zones, self.source_id, run)
@@ -144,6 +145,7 @@ class TesouroVna(Connector):
     source_id: ClassVar[str] = "tesouro_vna"
     version: ClassVar[str] = "1"
     contracts: ClassVar[dict[str, Any]] = series.CONTRACTS
+    dedup_staging: ClassVar[bool] = True
 
     def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
         return series.parse_tesouro_vna_payload(blob, row)
@@ -327,6 +329,7 @@ class FundosNetRendimentos(Connector):
     version: ClassVar[str] = "1"
     user_agent: ClassVar[str | None] = BROWSER_UA
     contracts: ClassVar[dict[str, Any]] = fundosnet.CONTRACTS
+    dedup_staging: ClassVar[bool] = True  # listing pages overlap
     BASE = "https://fnet.bmfbovespa.com.br/fnet/publico"
     PAGE = 200  # 500 is refused with a 302 (measured 2026-11-07)
 
@@ -454,6 +457,7 @@ class _CvmCompanyDocs(Connector):
             reference_date=date(year, 12, 31),
             absent_status=frozenset({404}),
             locator=str(year),
+            unpack_members=True,  # re-shipped weekly: stored as member deltas (ADR-0014)
         )
 
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
@@ -483,9 +487,10 @@ class CvmDfpItr(_CvmCompanyDocs):
     version: ClassVar[str] = "1"
     KINDS: ClassVar[dict[str, int]] = {"DFP": 2010, "ITR": 2011}
     contracts: ClassVar[dict[str, Any]] = cvm_statements.CONTRACTS
+    dedup_staging: ClassVar[bool] = True
 
     def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
-        return cvm_statements.parse_zip(blob, row)
+        return cvm_statements.parse_payload(blob, row)
 
 
 class CvmFca(_CvmCompanyDocs):

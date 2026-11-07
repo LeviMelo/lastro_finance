@@ -3,6 +3,11 @@
 A request is identified by its canonical JSON (method, URL, params, body; credentials redacted). When the previous
 fetch of the same request left an ETag or Last-Modified, the request is made conditional; a 304 records a manifest
 row pointing at the object already held. Any other non-2xx is an error of the run, never an empty object.
+
+**Unpacked zips (ADR-0014).** With `unpack_members`, a zip that a source re-ships whole (CVM's weekly yearly files) is
+stored as its members, each a raw object of its own and a delta of the same member's previous version, plus a small
+JSON record of the zip (its sha256, size and each member's name, CRC-32, size and sha256). The member bytes are the
+source's data exactly (CRC-checked); the zip's compressed bytes are transport and are not kept.
 """
 
 from __future__ import annotations
@@ -37,6 +42,7 @@ class FetchSpec:
     min_bytes: int = 0  # a 200 shorter than this is the source's "no data for that date" stub: absent, not stored
     # a 200 whose Content-Type starts with none of these is an error page served as success: an error, not stored
     content_types: tuple[str, ...] = ()
+    unpack_members: bool = False  # a zip stored as its members (ADR-0014)
     locator: str | None = None  # e.g. "page=3"; the part of a multi-request payload this object is
     notes: str | None = None
 
@@ -58,6 +64,7 @@ class FetchOutcome:
     spec: FetchSpec
     row: ManifestRow
     new_object: bool  # the bytes were not in the archive before this fetch
+    members: tuple[tuple[ManifestRow, bool], ...] = ()  # unpacked zip members: (row, new object)
 
 
 class Fetcher:
@@ -128,7 +135,10 @@ class Fetcher:
         if spec.content_types and not ctype.startswith(spec.content_types):
             raise FetchError(spec.url, f"HTTP {resp.status_code} with Content-Type {ctype!r}", status=resp.status_code)
 
-        ref = self.raw.put_bytes(resp.content, spec.ext)
+        if spec.unpack_members:
+            return self._unpack(spec, resp, request, key, fetched_at)
+        base = self.run.manifest.previous_version(spec.source_id, spec.dataset_id, spec.notes or spec.locator)
+        ref = self.raw.put_bytes(resp.content, spec.ext, base=base)
         row = ManifestRow(
             raw_sha256=ref.sha256,
             raw_ext=ref.ext,
@@ -150,3 +160,71 @@ class Fetcher:
         self.run.manifest.append(row)
         self.run.log("fetch.stored", url=spec.url, sha256=ref.sha256, bytes=ref.size, new=ref.created)
         return FetchOutcome(spec, row, new_object=ref.created)
+
+    def _unpack(self, spec: FetchSpec, resp: Any, request: str, key: str, fetched_at: Any) -> FetchOutcome:
+        import io
+        import json
+        import zipfile
+
+        blob: bytes = resp.content
+        locator = spec.notes or spec.locator or ""
+        listing: list[dict[str, Any]] = []
+        members: list[tuple[ManifestRow, bool]] = []
+        with zipfile.ZipFile(io.BytesIO(blob)) as z:
+            for info in z.infolist():
+                if info.is_dir():
+                    continue
+                data = z.read(info)  # raises on a CRC mismatch
+                ext = info.filename.rsplit(".", 1)[-1].lower() if "." in info.filename else "bin"
+                note = f"{locator}|{info.filename}"
+                base = self.run.manifest.previous_version(spec.source_id, spec.dataset_id, note)
+                ref = self.raw.put_bytes(data, ext, base=base)
+                listing.append({"name": info.filename, "crc32": info.CRC, "size": info.file_size, "sha256": ref.sha256})
+                mreq = json.dumps({"container": json.loads(request), "member": info.filename}, sort_keys=True)
+                mrow = ManifestRow(
+                    raw_sha256=ref.sha256,
+                    raw_ext=ref.ext,
+                    source_id=spec.source_id,
+                    dataset_id=spec.dataset_id,
+                    request=mreq,
+                    request_key=hashlib.sha256(mreq.encode("utf-8")).hexdigest(),
+                    fetched_at=fetched_at,
+                    http_status=resp.status_code,
+                    content_type="application/octet-stream; zip-member",
+                    bytes=ref.size,
+                    etag=None,
+                    last_modified=None,
+                    source_reference_date=spec.reference_date,
+                    ingest_run_id=self.run.run_id,
+                    connector_version=self.connector_version,
+                    notes=note,
+                )
+                self.run.manifest.append(mrow)
+                members.append((mrow, ref.created))
+        record = json.dumps(
+            {"zip_sha256": hashlib.sha256(blob).hexdigest(), "zip_size": len(blob), "members": listing},
+            sort_keys=True,
+            indent=1,
+        ).encode("utf-8")
+        ref = self.raw.put_bytes(record, "json")
+        row = ManifestRow(
+            raw_sha256=ref.sha256,
+            raw_ext=ref.ext,
+            source_id=spec.source_id,
+            dataset_id=spec.dataset_id,
+            request=request,
+            request_key=key,
+            fetched_at=fetched_at,
+            http_status=resp.status_code,
+            content_type="application/json; unpacked-zip",
+            bytes=ref.size,
+            etag=resp.headers.get("ETag"),
+            last_modified=resp.headers.get("Last-Modified"),
+            source_reference_date=spec.reference_date,
+            ingest_run_id=self.run.run_id,
+            connector_version=self.connector_version,
+            notes=locator or None,
+        )
+        self.run.manifest.append(row)
+        self.run.log("fetch.unpacked", url=spec.url, members=len(listing), zip_bytes=len(blob))
+        return FetchOutcome(spec, row, new_object=ref.created, members=tuple(members))

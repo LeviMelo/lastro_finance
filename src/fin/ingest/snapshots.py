@@ -233,6 +233,7 @@ class TesouroPrecoTaxa(Connector):
     source_id: ClassVar[str] = "tesouro_transparente"
     version: ClassVar[str] = "1"
     contracts: ClassVar[dict[str, Contract]] = {"price_rate": tesouro.PRICE_RATE}
+    dedup_staging: ClassVar[bool] = True  # the whole history, re-sent every morning
 
     def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
         return tesouro.parse_payload(blob, row)

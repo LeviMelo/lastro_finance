@@ -18,3 +18,4 @@ matters, and the result against the independent figure.
 | 2026-11-07 | [Data gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md) | 19 gaps against PLAN's scope: free, mirror, unofficial, scraping and paid routes, verified; what each closes |
 | 2026-11-07 | [Context catalogue backfill](docs/evaluation/2026-11-07-context-catalogue-backfill.md) | 21 context sources archived from their first date; Focus %20 and SGS window fixes |
 | 2026-11-07 | [Series core, first build](docs/evaluation/2026-11-07-series-core-first-build.md) | SGS, Ipeadata, SIDRA → `series_observation`: 1,017 series, 0 quarantined, IPCA SGS = SIDRA, reparse byte-identical |
+| 2026-11-07 | [Storage and price_daily](docs/evaluation/2026-11-07-storage-and-price-daily.md) | raw deltas, changed-row staging, compaction measured; price_daily 7.34 M sessions, identity, 172/173 closes equal Yahoo |

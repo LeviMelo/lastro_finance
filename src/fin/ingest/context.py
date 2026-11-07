@@ -196,6 +196,12 @@ def context_connectors() -> list[type[Connector]]:
         attrs: dict[str, Any] = {"source_id": sid, "user_agent": BROWSER_UA if browser else None}
         parser = series.CATALOGUE_PARSERS.get(sid)
         if parser is not None:  # parsed into series_observation (ADR-0013)
-            attrs |= {"version": "1", "contracts": series.CONTRACTS, "parse": _parse_with(parser), "derive": _derive}
+            attrs |= {
+                "version": "1",
+                "contracts": series.CONTRACTS,
+                "parse": _parse_with(parser),
+                "derive": _derive,
+                "dedup_staging": True,
+            }
         out.append(type(f"Context_{sid}", (ContextConnector,), attrs))
     return out

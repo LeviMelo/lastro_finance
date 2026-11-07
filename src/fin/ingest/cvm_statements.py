@@ -182,8 +182,8 @@ SHARE_CAPITAL = Contract(
 CONTRACTS = {"statement_line": STATEMENT_LINE, "document": DOCUMENT, "share_capital": SHARE_CAPITAL}
 
 
-def _read(z: zipfile.ZipFile, name: str, header: list[str] | None) -> pl.DataFrame:
-    text = z.read(name).decode("cp1252")
+def _read(data: bytes, name: str, header: list[str] | None) -> pl.DataFrame:
+    text = data.decode("cp1252")
     first = text.split("\n", 1)[0].rstrip("\r").split(";")
     if header is not None and any(c not in header for c in first):
         raise LayoutError(f"{name}: unknown columns {[c for c in first if c not in header]}")
@@ -239,40 +239,54 @@ def parse_lines(df: pl.DataFrame, form: str, statement: str, consolidation: str)
     ]
 
 
+def parse_payload(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+    """A zip as archived before 2026-11-08, one unpacked member (notes `<year>|<member>`), or the JSON record of an
+    unpacked zip (nothing to parse)."""
+    notes = row.get("notes") or ""
+    if "|" in notes:
+        yield from parse_member(notes.split("|", 1)[1], blob, row)
+    elif blob[:2] == b"PK":
+        yield from parse_zip(blob, row)
+
+
 def parse_zip(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
     z = zipfile.ZipFile(io.BytesIO(blob))
     for name in z.namelist():
-        m = _MEMBER.match(name)
-        if m is None:
-            raise LayoutError(f"unexpected member {name}")
-        form, kind, year = m.group(1), m.group("kind"), m.group("year")
-        part = f"form={form}/year={year}"
-        if kind is None:
-            df = _read(z, name, INDEX_HEADER)
-            out = df.select(
-                *_company(form),
-                pl.col("CD_CVM").alias("cd_cvm"),
-                pl.col("CATEG_DOC").alias("category"),
-                pl.col("ID_DOC").cast(pl.Int64).alias("doc_id"),
-                _day("DT_RECEB").alias("received_on"),
-                pl.col("LINK_DOC").alias("link"),
-                *_provenance(df, name, row),
-            )
-            yield Parsed("document", part, out)
-        elif kind == "composicao_capital":
-            df = _read(z, name, CAPITAL_HEADER)
-            counts = [
-                pl.col(f"QT_ACAO_{s}_{t}").cast(pl.Int64).alias(f"{a}_{b}")
-                for a, s in (("common", "ORDIN"), ("preferred", "PREF"), ("total", "TOTAL"))
-                for b, t in (("paid_in", "CAP_INTEGR"), ("treasury", "TESOURO"))
-            ]
-            yield Parsed("share_capital", part, df.select(*_company(form), *counts, *_provenance(df, name, row)))
-        elif kind == "parecer":
-            continue  # the auditor's report: free text, kept in raw
-        else:
-            statement, _, consolidation = kind.rpartition("_")
-            if statement not in STATEMENTS or consolidation not in ("con", "ind"):
-                raise LayoutError(f"unexpected statement member {name}")
-            df = _read(z, name, LINE_HEADER)
-            out = df.select(*parse_lines(df, form, statement, consolidation), *_provenance(df, name, row))
-            yield Parsed("statement_line", f"{part}/statement={statement}_{consolidation}", out)
+        yield from parse_member(name, z.read(name), row)
+
+
+def parse_member(name: str, data: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+    m = _MEMBER.match(name)
+    if m is None:
+        raise LayoutError(f"unexpected member {name}")
+    form, kind, year = m.group(1), m.group("kind"), m.group("year")
+    part = f"form={form}/year={year}"
+    if kind is None:
+        df = _read(data, name, INDEX_HEADER)
+        out = df.select(
+            *_company(form),
+            pl.col("CD_CVM").alias("cd_cvm"),
+            pl.col("CATEG_DOC").alias("category"),
+            pl.col("ID_DOC").cast(pl.Int64).alias("doc_id"),
+            _day("DT_RECEB").alias("received_on"),
+            pl.col("LINK_DOC").alias("link"),
+            *_provenance(df, name, row),
+        )
+        yield Parsed("document", part, out)
+    elif kind == "composicao_capital":
+        df = _read(data, name, CAPITAL_HEADER)
+        counts = [
+            pl.col(f"QT_ACAO_{s}_{t}").cast(pl.Int64).alias(f"{a}_{b}")
+            for a, s in (("common", "ORDIN"), ("preferred", "PREF"), ("total", "TOTAL"))
+            for b, t in (("paid_in", "CAP_INTEGR"), ("treasury", "TESOURO"))
+        ]
+        yield Parsed("share_capital", part, df.select(*_company(form), *counts, *_provenance(df, name, row)))
+    elif kind == "parecer":
+        return  # the auditor's report: free text, kept in raw
+    else:
+        statement, _, consolidation = kind.rpartition("_")
+        if statement not in STATEMENTS or consolidation not in ("con", "ind"):
+            raise LayoutError(f"unexpected statement member {name}")
+        df = _read(data, name, LINE_HEADER)
+        out = df.select(*parse_lines(df, form, statement, consolidation), *_provenance(df, name, row))
+        yield Parsed("statement_line", f"{part}/statement={statement}_{consolidation}", out)

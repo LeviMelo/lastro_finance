@@ -6,15 +6,21 @@
     derive(zones) -> core/derived tables built from staging (optional)
 
 Staging holds one file per (dataset, partition, raw object), so parsing the same object again replaces the same file:
-idempotent by construction. `reparse` runs the same parse/validate/load from the manifest alone, which is what
-`fin rebuild --from-raw` does.
+idempotent by construction.
+
+**Re-sent files keep only what changed (ADR-0014).** A connector with `dedup_staging` gets, for each new version of a
+file, only the rows that are not identical (all data columns) to a row of the previous version of the same file.
+A full history re-uploaded daily thus adds the rows of the new day and any restated ones, not a second copy of the
+past; A→B→A still records the return to A.
+
+`reparse` runs the same parse/validate/load from the manifest alone, which is what `fin rebuild --from-raw` does.
 """
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from enum import StrEnum
 from typing import Any, ClassVar
 
@@ -54,6 +60,7 @@ class Connector(ABC):
     contracts: ClassVar[dict[str, Contract]] = {}
     user_agent: ClassVar[str | None] = None  # None: the default generic UA
     min_interval: ClassVar[float] = 1.0
+    dedup_staging: ClassVar[bool] = False  # its files are re-sent whole: keep only rows that changed (ADR-0014)
 
     @abstractmethod
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
@@ -71,10 +78,39 @@ class Connector(ABC):
         """Build this source's core/derived tables from its staging tables."""
 
 
-def load(connector: Connector, zones: Zones, run: IngestRun, blob: bytes, row: dict[str, Any]) -> None:
+_NOT_DATA_COLUMNS = ("raw_sha256", "raw_locator", "ingest_run_id", "kt_first_seen_at")
+
+
+def _data_columns(frame: pl.DataFrame) -> list[str]:
+    return [c for c in frame.columns if c not in _NOT_DATA_COLUMNS]
+
+
+def load(
+    connector: Connector,
+    zones: Zones,
+    run: IngestRun,
+    blob: bytes,
+    row: dict[str, Any],
+    previous: tuple[bytes, dict[str, Any]] | None = None,
+) -> None:
+    before: dict[tuple[str, str], pl.DataFrame] = {}
+    if previous is not None and connector.dedup_staging:
+        try:
+            for p in connector.parse(*previous):
+                key = (p.dataset_id, p.partition)
+                before[key] = pl.concat([before[key], p.frame]) if key in before else p.frame
+        except Exception:  # an unparseable previous version (error page): nothing to compare with
+            before = {}
     for parsed in connector.parse(blob, row):
         contract = connector.contracts[parsed.dataset_id]
-        valid, rejected = contract.split(parsed.frame)
+        frame = parsed.frame
+        old = before.get((parsed.dataset_id, parsed.partition))
+        if old is not None and frame.height:
+            cols = _data_columns(frame)
+            kept = frame.join(old.select(cols).unique(), on=cols, how="anti", nulls_equal=True, maintain_order="left")
+            run.count(f"{parsed.dataset_id}:unchanged", in_=frame.height - kept.height)
+            frame = kept
+        valid, rejected = contract.split(frame)
         sha = row["raw_sha256"]
         base = f"{connector.source_id}/{parsed.dataset_id}/{parsed.partition}/{sha}.parquet"
         write_parquet(valid, zones.staging / base)
@@ -83,7 +119,7 @@ def load(connector: Connector, zones: Zones, run: IngestRun, blob: bytes, row: d
             write_parquet(rejected, q)
         else:
             q.unlink(missing_ok=True)
-        run.count(parsed.dataset_id, in_=parsed.frame.height, out=valid.height, quarantined=rejected.height)
+        run.count(parsed.dataset_id, in_=frame.height, out=valid.height, quarantined=rejected.height)
 
 
 def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode, **options: Any) -> int:
@@ -107,6 +143,11 @@ def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode
             blob = raw.read(out.row.raw_sha256)
             queue[:0] = list(connector.follow(spec, blob))
             run.count(f"fetch:{spec.dataset_id}", in_=1, out=int(out.new_object))
+            for mrow, new in out.members:
+                if new:
+                    member = asdict(mrow)
+                    prev = _previous(connector, raw, run.manifest.read(), member) if connector.dedup_staging else None
+                    _load_isolated(connector, zones, run, raw.read(mrow.raw_sha256), member, prev)
             if not out.new_object:
                 continue  # already archived and parsed when first seen; a rebuild re-parses it from raw
             row = {
@@ -116,8 +157,10 @@ def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode
                 "dataset_id": out.row.dataset_id,
                 "fetched_at": out.row.fetched_at,
                 "request": out.row.request,
+                "notes": out.row.notes,
             }
-            _load_isolated(connector, zones, run, blob, row)
+            prev = _previous(connector, raw, run.manifest.read(), row) if connector.dedup_staging else None
+            _load_isolated(connector, zones, run, blob, row, prev)
         connector.derive(zones, run)
     finally:
         client.close()
@@ -125,23 +168,58 @@ def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode
 
 
 def reparse(connector: Connector, zones: Zones, run: IngestRun, manifest: pl.DataFrame) -> None:
-    """Re-derive this connector's staging from the manifest and raw alone (one parse per distinct object)."""
+    """Re-derive this connector's staging from the manifest and raw alone (one parse per distinct object). Its
+    staging and quarantine are cleared first, so nothing of an earlier parser survives."""
+    import shutil
+
+    for zone in (zones.staging, zones.quarantine):
+        shutil.rmtree(zone / connector.source_id, ignore_errors=True)
     raw = RawStore(zones.raw)
     rows = (
         manifest.filter((pl.col("source_id") == connector.source_id) & (pl.col("http_status") == 200))
         .sort("fetched_at")
         .unique(subset=["dataset_id", "raw_sha256"], keep="first", maintain_order=True)
     )
+    last: dict[tuple[str, str | None], dict[str, Any]] = {}
     for row in rows.iter_rows(named=True):
-        _load_isolated(connector, zones, run, raw.read(row["raw_sha256"]), row)
+        group = (row["dataset_id"], row["notes"])
+        prev_row = last.get(group) if connector.dedup_staging else None
+        prev = (raw.read(prev_row["raw_sha256"]), prev_row) if prev_row is not None else None
+        _load_isolated(connector, zones, run, raw.read(row["raw_sha256"]), row, prev)
+        last[group] = row
     connector.derive(zones, run)
 
 
-def _load_isolated(connector: Connector, zones: Zones, run: IngestRun, blob: bytes, row: dict[str, Any]) -> None:
+def _previous(
+    connector: Connector, raw: RawStore, manifest: pl.DataFrame, row: dict[str, Any]
+) -> tuple[bytes, dict[str, Any]] | None:
+    """The version stored just before `row` for the same source, dataset and locator."""
+    m = manifest.filter(
+        (pl.col("source_id") == connector.source_id)
+        & (pl.col("dataset_id") == row["dataset_id"])
+        & (pl.col("http_status") == 200)
+        & (pl.col("raw_sha256") != row["raw_sha256"])
+        & (pl.col("fetched_at") < row["fetched_at"])
+        & (pl.col("notes").is_null() if row.get("notes") is None else pl.col("notes") == row["notes"])
+    )
+    if m.is_empty():
+        return None
+    prev = m.sort("fetched_at").row(-1, named=True)
+    return raw.read(prev["raw_sha256"]), prev
+
+
+def _load_isolated(
+    connector: Connector,
+    zones: Zones,
+    run: IngestRun,
+    blob: bytes,
+    row: dict[str, Any],
+    previous: tuple[bytes, dict[str, Any]] | None = None,
+) -> None:
     """An object that cannot be parsed is an error of the run, never the end of it: raw is immutable, so one bad
     object would otherwise block every later run and rebuild."""
     try:
-        load(connector, zones, run, blob, row)
+        load(connector, zones, run, blob, row, previous)
     except NotData as e:
         run.count(f"{connector.source_id}/not_data", in_=1, quarantined=1)
         run.log("parse.not_data", raw_sha256=row["raw_sha256"], message=str(e))

@@ -328,6 +328,15 @@ ephemeral = false
 status = "archiving"
 recon = "docs/sources/yahoo_chart.md"
 
+[yahoo_intraday]
+name = "Yahoo Finance barras de 5 minutos"
+institution = "Yahoo (unofficial)"
+access = "undocumented JSON endpoint, no key"
+tier = "U"
+ephemeral = true
+status = "parsed"
+recon = "docs/sources/yahoo_intraday.md"
+
 [bcb_copom]
 name = "Histórico das taxas de juros (reuniões do Copom)"
 institution = "Banco Central do Brasil"

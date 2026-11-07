@@ -63,6 +63,7 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `imf` | IMF | P | commodity prices monthly 1992– | archiving | [note](docs/sources/context_global.md) |
 | `oecd` | OECD | P | leading indicators 1990s– | archiving | [note](docs/sources/context_global.md) |
 | `cftc_cot` | CFTC | P | positioning weekly, files 2010– | archiving | [note](docs/sources/context_global.md) |
+| `yahoo_intraday` | Yahoo | **U** | 5-minute bars, last ~60 trading days only; archived daily from 2026-11-07 | parsed (daily) | [note](docs/sources/yahoo_intraday.md) |
 | `yahoo_chart` | Yahoo | **U** | splits ~2005–, dividends ~2007– | archiving (on demand) | [note](docs/sources/yahoo_chart.md) |
 
 ## Cross-source facts (2026-11-07)

@@ -94,6 +94,18 @@ class Manifest:
     def read(self) -> pl.DataFrame:
         return self.journal.read()
 
+    def previous_version(self, source_id: str, dataset_id: str, notes: str | None) -> str | None:
+        """The newest object stored for the same source, dataset and locator: the base of a delta (ADR-0014)."""
+        df = self.read().filter(
+            (pl.col("source_id") == source_id)
+            & (pl.col("dataset_id") == dataset_id)
+            & (pl.col("http_status") == 200)
+            & (pl.col("notes").is_null() if notes is None else pl.col("notes") == notes)
+        )
+        if df.is_empty():
+            return None
+        return str(df.sort("fetched_at")["raw_sha256"][-1])
+
     def latest_for_request(self, request_key: str) -> dict[str, Any] | None:
         """The newest row of a request that stored or confirmed an object; used for conditional requests."""
         df = self.read().filter((pl.col("request_key") == request_key) & pl.col("http_status").is_in([200, 304]))

@@ -31,6 +31,8 @@ uv run fin ingest <context sources> --mode backfill  # the catalogue in src/fin/
 uv run fin status                          # freshness per source, raw size, orphan objects, blockers, last runs
 uv run fin verify-raw                      # re-hash every raw object
 uv run fin reparse bcb_sgs ipeadata ibge_sidra  # re-parse archived raw of some sources (after a parser change)
+uv run fin compact-raw [sources]          # store repeated versions as deltas (verified; read bytes unchanged)
+uv run fin compact-staging [sources]      # merge small staging files (the daily job does this itself)
 uv run fin rebuild --from-raw              # rebuild staging/core/derived/quarantine from raw + manifest
 ```
 

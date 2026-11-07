@@ -51,6 +51,12 @@ def ingest(
                 errors += 1
                 run.error(sid, f"{type(e).__name__}: {e}")
                 typer.echo(f"  ERRO em {sid}: {e}", err=True)
+        if sources == ["daily"]:  # keep staging to one file per partition once small files pile up (ADR-0014)
+            from fin.store.compact import compact_staging
+
+            for sid in ids:
+                if (z.staging / sid).exists():
+                    compact_staging(z.staging / sid)
         for ds, c in sorted(run.counts.items()):
             typer.echo(f"  {ds}: entrada {c['in']}, saída {c['out']}, quarentena {c['quarantined']}")
         typer.echo(f"execução {run.run_id}: {errors} erro(s)")
@@ -120,6 +126,38 @@ def verify_raw() -> None:
     typer.echo(f"{n} objetos verificados, {bad} corrompido(s)")
     if bad:
         raise typer.Exit(1)
+
+
+@app.command("compact-raw")
+def compact_raw(
+    sources: Annotated[list[str] | None, typer.Argument(help="fontes (padrão: todas)")] = None,
+) -> None:
+    """Regrava versões repetidas do bruto como deltas da versão anterior (ADR-0014); os bytes lidos não mudam."""
+    from fin.store.compact import compact
+
+    z = zones()
+    raw = RawStore(z.raw)
+    before = sum(p.stat().st_size for _, p in raw.iter_objects())
+    saved = compact(raw, Manifest(z.manifest).read(), sources)
+    for sid, n in sorted(saved.items(), key=lambda kv: -kv[1]):
+        if n:
+            typer.echo(f"  {sid}: {n / 2**20:,.1f} MiB economizados")
+    after = sum(p.stat().st_size for _, p in raw.iter_objects())
+    typer.echo(f"bruto: {before / 2**30:.2f} GiB -> {after / 2**30:.2f} GiB")
+
+
+@app.command("compact-staging")
+def compact_staging_cmd(
+    sources: Annotated[list[str] | None, typer.Argument(help="fontes (padrão: todas)")] = None,
+) -> None:
+    """Junta os arquivos pequenos de staging (um por objeto bruto) em um arquivo por partição."""
+    from fin.store.compact import compact_staging
+
+    z = zones()
+    for sid in sources or sorted(p.name for p in z.staging.iterdir() if p.is_dir()):
+        fb, fa, bb, ba = compact_staging(z.staging / sid)
+        if fb != fa:
+            typer.echo(f"  {sid}: {fb} -> {fa} arquivos, {bb / 2**20:,.1f} -> {ba / 2**20:,.1f} MiB")
 
 
 @app.command("reparse")

@@ -25,6 +25,10 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `staging/<source>/<dataset>/<partition>/<sha>.parquet` | L2, source-shaped, with provenance | rebuildable |
 | `quarantine/…` (same layout) | rows that broke a contract rule, with `reject_rules` | rebuildable |
 | `core/reference/calendar_day/calendar_day.parquet` | the business-day calendar | rebuildable |
+| `raw/<sha[0:2]>/<sha>.<ext>.zsd` | a re-sent file stored as a delta of its previous version | write-once (ADR-0014) |
+| `core/instrument/instrument.parquet`, `core/instrument_identifier/instrument_identifier.parquet` | exchange-traded instruments and their time-ranged ISIN, B3 code and tickers | rebuildable (ADR-0015) |
+| `core/price_daily/year=YYYY.parquet` | spot and odd-lot sessions per unit, 1986– | rebuildable (ADR-0015) |
+| `staging/yahoo_intraday/bar/symbol=<s>/` | 5-minute bars (tier U), archived daily from 2026-11-07 | rebuildable |
 | `staging/b3_cotahist/quote/year=YYYY/<sha>.parquet` | COTAHIST records, 1986–, one file per raw zip and year | rebuildable |
 | `staging/<source>/{observation,definition}/…` | series values and metadata as each payload served them (SGS, Ipeadata, SIDRA, Tesouro VNA) | rebuildable |
 | `staging/cvm_dfp_itr/<dataset>/form=<f>/year=<y>[/statement=<st>_<con>]/<sha>.parquet` | company statements DFP 2010–, ITR 2011– | rebuildable |
@@ -39,10 +43,11 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 |---|---|
 | `__init__.py` | version |
 | `config.py` | the data home and its zones |
-| `cli.py` | `fin`: `ingest`, `status`, `verify-raw`, `reparse <sources>`, `rebuild --from-raw` |
+| `cli.py` | `fin`: `ingest`, `status`, `verify-raw`, `reparse <sources>`, `compact-raw`, `compact-staging`, `rebuild --from-raw` |
 | `schema.py` | `Contract`, `Column`, `Rule`: typed columns with unit and pt/en meaning; conform and quarantine split (ADR-0005) |
 | `store/` | L1 and the operational tables |
-| `store/raw.py` | content-addressed raw store |
+| `store/raw.py` | content-addressed raw store; zstd at rest; deltas of previous versions (ADR-0014) |
+| `store/compact.py` | re-encode stored versions as deltas; merge small staging files (ADR-0014) |
 | `store/journal.py` | append-only tables: fsynced JSON-lines journal per run, sealed to Parquet |
 | `store/manifest.py` | the manifest schema, canonical request identity, redaction |
 | `store/runs.py` | `IngestRun`, crash recovery |
@@ -60,12 +65,15 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/series.py` | series payloads (SGS JSON and SOAP metadata, Ipeadata OData, SIDRA, Tesouro VNA workbooks, Treasury/NY Fed/Cboe CSVs, SDMX-CSV with the sources' unit codelists) → staging `observation`/`definition` → core `series_observation`/`series_definition`, versioned (ADR-0013) |
 | `ingest/cvm_statements.py` | CVM DFP/ITR zips → staging `statement_line` (every account line, value as written with its scale), `document` (every version and its delivery date), `share_capital` |
 | `ingest/fundosnet.py` | Fundos.NET notices → staging `distribution` (per Provento and kind, exact BRL per quota) and `listing` (delivery minute = knowledge time, version) |
+| `ingest/intraday.py` | Yahoo 5-minute bars for the most traded shares and FIIs, Ibovespa and USD/BRL (tier U) |
 | `ingest/tesouro.py` | Tesouro Direto `PrecoTaxaTesouroDireto.csv` → staging `price_rate` (exact decimals; 0,00 PU = not offered) |
 | `ingest/b3_cotahist.py` | COTAHIST fixed-width → staging `quote` (exact decimals as quoted), line repair and quarantine (ADR-0008) |
 | `reference/` | L0 reference data |
 | `reference/calendar.py` | `calendar_day` build and the `Calendar` API (`du`, shifts) (ADR-0006) |
 | `reference/sources.py` | loads and validates `reference/sources.toml`, the source registry |
-| `core/`, `quality/` | empty packages, Stage C/D |
+| `core/` | core tables built from staging |
+| `core/equities.py` | COTAHIST → core `instrument`, `instrument_identifier`, `price_daily` (ADR-0015) |
+| `quality/` | empty package, Stage D |
 
 ## 4. Invariants as implemented
 
