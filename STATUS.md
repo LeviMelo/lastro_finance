@@ -12,8 +12,8 @@ Day one (2026-11-07).
 - **Stage A passes its exit criteria.** **Stage B** has a note for every registered source (51). **Stage C** has
   started: COTAHIST 1986–2026, Tesouro Direto prices/rates 2004– and FII distributions (Fundos.NET) are parsed
   to staging; SGS, Ipeadata,
-  SIDRA and Tesouro VNA are parsed into core `series_observation` (1,020 series, ~205,000 values, every row with its
-  unit; ADR-0013). VNA NTN-B reproduces from IBGE's IPCA on 315 of 316 months.
+  SIDRA, Tesouro VNA, US Treasury, NY Fed and Cboe are parsed into core `series_observation` (1,068 series,
+  468,490 values, every row with its unit; ADR-0013). VNA NTN-B reproduces from IBGE's IPCA on 315 of 316 months.
 - **Data gaps are mapped and ranked** ([gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md)). Everything
   priority 1 needs has a free route.
 
@@ -44,8 +44,8 @@ Day one (2026-11-07).
   - free FRED and Tiingo tokens (OQ-23);
   - paid sources (OQ-10); PLAN §12 OQ-11 and OQ-14 to OQ-16.
 - **Engineering:**
-  - parsers for the other archived payloads (ADR-0007): the global context sources, Focus, Copom, CEPEA, ANP into
-    `series_observation`; units and scales checked per entry;
+  - parsers for the other archived payloads (ADR-0007): ECB, BIS, OECD (SDMX: archive their structure metadata
+    for unit codes), World Bank, IMF, EIA, CFTC, Focus, Copom, CEPEA, ANP into `series_observation`;
   - the mirror-vs-ANBIMA overlap check; calendar 1986–2000 (OQ-22);
   - `price_daily`, identity resolution, universes.
 

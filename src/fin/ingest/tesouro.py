@@ -99,6 +99,10 @@ def parse_price_rate(blob: bytes, row: dict[str, Any]) -> pl.DataFrame:
     df = pl.read_csv(io.StringIO(text), separator=";", infer_schema=False, has_header=True)
     if df.width != len(HEADER):
         raise LayoutError(f"Tesouro preço/taxa: {df.width} columns")
+    for col, dtype in zip(HEADER[3:], (RATE, RATE, PU, PU, PU), strict=True):
+        finest = df[col].str.split(",").list.get(1, null_on_oob=True).str.len_chars().max()
+        if finest is not None and int(finest) > dtype.scale:  # type: ignore[arg-type]
+            raise LayoutError(f"Tesouro preço/taxa: {col} has {finest} decimals; a cast would round")
 
     def dec(col: str, dtype: pl.DataType) -> pl.Expr:
         return pl.col(col).str.replace(",", ".", literal=True).cast(dtype)

@@ -43,3 +43,10 @@ def test_zero_pu_is_not_offered_and_zero_base_quarantines() -> None:
 def test_changed_header_is_refused() -> None:
     with pytest.raises(tesouro.LayoutError):
         tesouro.parse_price_rate(b"Tipo;Data\nx;y\n", ROW)
+
+
+def test_a_value_finer_than_the_column_is_refused() -> None:
+    head = ";".join(tesouro.HEADER)
+    line = "Tesouro Selic;01/03/2027;05/11/2026;0,02;0,03;20240,1234567;20229,76;20229,76"
+    with pytest.raises(tesouro.LayoutError):
+        tesouro.parse_price_rate(f"{head}\n{line}\n".encode(), ROW)

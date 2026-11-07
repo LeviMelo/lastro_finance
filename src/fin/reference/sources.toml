@@ -370,7 +370,7 @@ institution = "US Treasury"
 access = "CSV per year"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/context_global.md"
 
 [nyfed]
@@ -379,7 +379,7 @@ institution = "Federal Reserve Bank of New York"
 access = "CSV API, keyless"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/context_global.md"
 
 [ecb]
@@ -406,7 +406,7 @@ institution = "Cboe"
 access = "CSV files"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/context_global.md"
 
 [eia]

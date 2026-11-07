@@ -16,6 +16,8 @@ Sources revise without keeping vintages.
   - Ipeadata from `Metadados('<code>')`;
   - SIDRA from the payload itself.
   - Each is re-requested monthly.
+  - Where a payload carries no unit (Treasury, Cboe, NY Fed, the VNA workbooks), the parser declares it and cites
+    the source note that verified it.
 - **Core rows join the latest definition.**
   - `vt_reference` follows the frequency: `2024-03-15`, `2024-03-15..2024-04-14` (a stated end, as for TR),
     `2024-03`, `2024Q1`, `2024`, `2024-01..2024-03` (rolling quarter).

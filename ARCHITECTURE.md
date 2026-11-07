@@ -56,7 +56,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/snapshots.py` | archive-only connectors for the ephemeral sources (ADR-0007) and for files replaced in place (Tesouro, NEFIN) |
 | `ingest/context.py` | the context catalogue (`reference/context_series.toml`) → one generated archive connector per source, cadence per entry (ADR-0011) |
 | `ingest/alternates.py` | archive connectors for the routes that close data gaps: SND, Fundos.NET, BCB SGS, Ipeadata, Tesouro VNA, the `pyield_data` mirror, Yahoo (ADR-0010) |
-| `ingest/series.py` | series payloads (SGS JSON and SOAP metadata, Ipeadata OData, SIDRA, Tesouro VNA workbooks) → staging `observation`/`definition` → core `series_observation`/`series_definition`, versioned (ADR-0013) |
+| `ingest/series.py` | series payloads (SGS JSON and SOAP metadata, Ipeadata OData, SIDRA, Tesouro VNA workbooks, Treasury/NY Fed/Cboe CSVs) → staging `observation`/`definition` → core `series_observation`/`series_definition`, versioned (ADR-0013) |
 | `ingest/fundosnet.py` | Fundos.NET notices → staging `distribution` (per Provento and kind, exact BRL per quota) and `listing` (delivery minute = knowledge time, version) |
 | `ingest/tesouro.py` | Tesouro Direto `PrecoTaxaTesouroDireto.csv` → staging `price_rate` (exact decimals; 0,00 PU = not offered) |
 | `ingest/b3_cotahist.py` | COTAHIST fixed-width → staging `quote` (exact decimals as quoted), line repair and quarantine (ADR-0008) |

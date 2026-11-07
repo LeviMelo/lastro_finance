@@ -215,3 +215,35 @@ def test_exponent_notation_is_written_out_exactly() -> None:
     assert row["value"] == Decimal("0.0000308619")
     with pytest.raises(series.LayoutError):
         series._plain("0." + "1" * 25)  # pyright: ignore[reportPrivateUsage]
+
+
+def test_treasury_tenors_and_late_columns() -> None:
+    url = "https://home.treasury.gov/x"
+    obs, defs = series.parse_us_treasury(
+        (FIX / "us_treasury/par_2025.csv").read_bytes(), _row("daily_treasury_yield_curve", url)
+    )
+    obs = _ok(series.OBSERVATION, obs)
+    assert "us_treasury:par/1.5M" in set(defs["series_id"]) and set(defs["unit"]) == {"% p.a. (bond-equivalent)"}
+    first_15 = obs.filter(pl.col("series_id") == "us_treasury:par/1.5M")["vt_date"].min()
+    assert first_15 == date(2025, 2, 18)  # an empty cell before the tenor existed yields no row
+    real = series.parse_us_treasury(
+        (FIX / "us_treasury/real_2026.csv").read_bytes(), _row("daily_treasury_real_yield_curve", url)
+    )[0]
+    r = real.filter(pl.col("series_id") == "us_treasury:real/10Y", pl.col("vt_date") == date(2026, 11, 6))
+    assert r["value"][0] == Decimal("2.63")
+
+
+def test_nyfed_na_is_missing_and_flags_are_not_series() -> None:
+    obs, defs = series.parse_nyfed((FIX / "nyfed/sofr_search.csv").read_bytes(), _row("secured_sofr"))
+    obs = _ok(series.OBSERVATION, obs)
+    na = obs.filter(pl.col("value_text") == "NA")
+    assert na.height == 8 and na["value"].null_count() == 8
+    assert not any("Footnote" in s or "Revision" in s for s in defs["source_code"])
+    last = obs.filter(pl.col("series_id") == "nyfed:SOFR/rate").sort("vt_date")["value"][-1]
+    assert last == Decimal("3.92")
+
+
+def test_cboe_single_column_is_the_close() -> None:
+    obs, defs = series.parse_cboe((FIX / "cboe/VVIX_History.csv").read_bytes(), _row("vvix"))
+    assert set(defs["series_id"]) == {"cboe:VVIX/CLOSE"}
+    assert obs.row(0, named=True)["value"] == Decimal("71.73")

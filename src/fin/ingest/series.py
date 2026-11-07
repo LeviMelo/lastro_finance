@@ -44,6 +44,7 @@ MISSING: dict[str, str] = {
     "..": "IBGE '..': not applicable",
     "X": "IBGE 'X': suppressed",
     "": "null in the source",
+    "NA": "'NA': not available (NY Fed percentiles 2019-05-31, 2021-08-05)",
 }
 
 
@@ -548,6 +549,147 @@ def parse_tesouro_vna_payload(blob: bytes, row: dict[str, Any]) -> Iterable[Pars
     obs, defs = parse_tesouro_vna(blob, row)
     yield Parsed("observation", str(row["dataset_id"]), obs)
     yield Parsed("definition", str(row["dataset_id"]), defs)
+
+
+# ------------------------------------------------------------------------------------------------ wide CSVs
+# Treasury, NY Fed and Cboe publish one row per date and one column per series. An empty cell is a series not
+# published that day (a tenor added later, a field before it existed): it is absent, not a missing value, so it
+# yields no row. Units are not in these payloads; each is declared here from the source note it cites.
+
+
+def _wide(
+    blob: bytes,
+    row: dict[str, Any],
+    date_col: str,
+    columns: dict[str, tuple[str, str, str]],
+    *,
+    fixed: dict[str, str] | None = None,
+    flags: tuple[str, ...] = (),
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """`columns`: header -> (series_id, name, unit). A header of the payload in neither `columns` nor `fixed` is a
+    layout change and raises. `fixed`: header -> the only value it may hold (e.g. NY Fed `Rate Type`)."""
+    import io
+
+    df = pl.read_csv(io.BytesIO(blob), infer_schema=False)
+    known = {date_col, *columns, *(fixed or {}), *flags}
+    extra = [c for c in df.columns if c not in known]
+    if extra or date_col not in df.columns:
+        raise LayoutError(f"wide CSV: unknown columns {extra} (date column {date_col!r})")
+    for col, want in (fixed or {}).items():
+        got = set(df[col].drop_nulls().unique().to_list()) if col in df.columns else set()
+        if got - {want}:
+            raise LayoutError(f"wide CSV: {col} holds {sorted(got)}, expected {want!r}")
+    obs: list[dict[str, Any]] = []
+    for i, r in enumerate(df.iter_rows(named=True), start=2):
+        if all(v is None for v in r.values()):
+            continue  # a blank line (NY Fed ends its CSV with one)
+        m, d, y = r[date_col].split("/")
+        day = date(int(y), int(m), int(d))
+        for col, (sid, _, _) in columns.items():
+            v = r.get(col)
+            if v is None or not v.strip():
+                continue
+            obs.append(
+                {
+                    "series_id": sid,
+                    "vt_date": day,
+                    "vt_until": None,
+                    "period_text": r[date_col],
+                    "value_text": v,
+                    "raw_locator": f"line={i};column={col}",
+                }
+            )
+    defs = [
+        {
+            "series_id": columns[c][0],
+            "source_code": c,
+            "name": columns[c][1],
+            "frequency": "D",
+            "frequency_text": "daily (one row per published date)",
+            "unit": columns[c][2],
+            "raw_locator": f"header:{c}",
+        }
+        for c in columns
+        if c in df.columns
+    ]
+    return _observations(obs, row), _frame(defs, row, _DEF_IN)
+
+
+def _tenor(header: str) -> str:
+    """'1 Mo' -> 1M, '1.5 Month' -> 1.5M, '10 Yr' / '10 YR' -> 10Y."""
+    n, unit = header.split(" ", 1)
+    return n + ("M" if unit.lower().startswith("mo") else "Y")
+
+
+TREASURY_CURVES = {  # docs/sources/context_global.md section 1
+    "daily_treasury_yield_curve": ("par", "US Treasury par yield curve rate", "% p.a. (bond-equivalent)"),
+    "daily_treasury_real_yield_curve": ("real", "US Treasury real (TIPS) par yield curve rate", "% p.a. real"),
+}
+TREASURY_TENORS = (
+    "1 Mo", "1.5 Month", "2 Mo", "3 Mo", "4 Mo", "6 Mo", "1 Yr", "2 Yr", "3 Yr", "5 Yr", "7 Yr", "10 Yr", "20 Yr",
+    "30 Yr", "5 YR", "7 YR", "10 YR", "20 YR", "30 YR",
+)  # fmt: skip
+
+
+def parse_us_treasury(blob: bytes, row: dict[str, Any]) -> tuple[pl.DataFrame, pl.DataFrame]:
+    key, name, unit = TREASURY_CURVES[str(row["dataset_id"])]
+    cols = {h: (f"us_treasury:{key}/{_tenor(h)}", f"{name}, {h}", unit) for h in TREASURY_TENORS}
+    return _wide(blob, row, "Date", cols)
+
+
+NYFED_FIELDS = {  # header -> (field, unit); units as the headers state them (docs/sources/context_global.md)
+    "Rate (%)": ("rate", "% p.a."),
+    "1st Percentile (%)": ("p01", "% p.a."),
+    "25th Percentile (%)": ("p25", "% p.a."),
+    "75th Percentile (%)": ("p75", "% p.a."),
+    "99th Percentile (%)": ("p99", "% p.a."),
+    "Volume ($Billions)": ("volume", "USD billions"),
+    "Target Rate From (%)": ("target_from", "% p.a."),
+    "Target Rate To (%)": ("target_to", "% p.a."),
+    "Intra Day - Low (%)": ("intraday_low", "% p.a."),
+    "Intra Day - High (%)": ("intraday_high", "% p.a."),
+    "Standard Deviation (%)": ("std", "% p.a."),
+    "30-Day Average SOFR": ("avg30", "% p.a."),
+    "90-Day Average SOFR": ("avg90", "% p.a."),
+    "180-Day Average SOFR": ("avg180", "% p.a."),
+    "SOFR Index": ("index", "index"),
+}
+NYFED_RATES = {"unsecured_effr": "EFFR", "secured_sofr": "SOFR"}
+
+
+def parse_nyfed(blob: bytes, row: dict[str, Any]) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """NY Fed `search.csv`: one row per date. `Revision Indicator (Y/N)` ('r') and `Footnote ID` are flags, not
+    series: they stay in raw."""
+    rate = NYFED_RATES[str(row["dataset_id"])]
+    cols = {h: (f"nyfed:{rate}/{f}", f"{rate} {h}", u) for h, (f, u) in NYFED_FIELDS.items()}
+    flags = ("Revision Indicator (Y/N)", "Footnote ID")
+    return _wide(blob, row, "Effective Date", cols, fixed={"Rate Type": rate}, flags=flags)
+
+
+def parse_cboe(blob: bytes, row: dict[str, Any]) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """Cboe `<INDEX>_History.csv`: DATE + OPEN/HIGH/LOW/CLOSE, or DATE + one column named after the index."""
+    idx = str(row["dataset_id"]).upper()
+    unit = "index points"  # docs/sources/context_global.md section 3
+    cols = {f: (f"cboe:{idx}/{f}", f"Cboe {idx} {f.lower()}", unit) for f in ("OPEN", "HIGH", "LOW", "CLOSE")}
+    cols[idx] = (f"cboe:{idx}/CLOSE", f"Cboe {idx} close", unit)
+    return _wide(blob, row, "DATE", cols)
+
+
+def _pair(parse: Any) -> Any:
+    def payload(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        obs, defs = parse(blob, row)
+        yield Parsed("observation", str(row["dataset_id"]), obs)
+        yield Parsed("definition", str(row["dataset_id"]), defs)
+
+    return payload
+
+
+# source_id -> payload parser, for the connectors generated from the context catalogue (ingest/context.py)
+CATALOGUE_PARSERS: dict[str, Any] = {
+    "us_treasury": _pair(parse_us_treasury),
+    "nyfed": _pair(parse_nyfed),
+    "cboe": _pair(parse_cboe),
+}
 
 
 # ------------------------------------------------------------------------------------------------ core

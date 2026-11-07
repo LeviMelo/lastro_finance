@@ -21,6 +21,7 @@ from typing import Any, ClassVar
 from urllib.parse import quote, urlencode
 
 from fin.config import Zones
+from fin.ingest import series
 from fin.ingest.base import Connector, Mode
 from fin.ingest.fetch import FetchSpec
 from fin.ingest.http import BROWSER_UA
@@ -174,6 +175,17 @@ class ContextConnector(Connector):
         ]
 
 
+def _parse_with(parser: Any) -> Any:
+    def parse(self: Connector, blob: bytes, row: dict[str, Any]) -> Iterable[Any]:
+        return parser(blob, row)
+
+    return parse
+
+
+def _derive(self: Connector, zones: Zones, run: Any) -> None:
+    series.build_core(zones, self.source_id, run)
+
+
 def context_connectors() -> list[type[Connector]]:
     """One generated class per source in the catalogue (registry: `ingest/registry.py`)."""
     out: list[type[Connector]] = []
@@ -182,5 +194,8 @@ def context_connectors() -> list[type[Connector]]:
             continue  # these sources already have a connector; their catalogue entries are merged in there
         browser = any(e.browser for e in catalogue() if e.source == sid)
         attrs: dict[str, Any] = {"source_id": sid, "user_agent": BROWSER_UA if browser else None}
+        parser = series.CATALOGUE_PARSERS.get(sid)
+        if parser is not None:  # parsed into series_observation (ADR-0013)
+            attrs |= {"version": "1", "contracts": series.CONTRACTS, "parse": _parse_with(parser), "derive": _derive}
         out.append(type(f"Context_{sid}", (ContextConnector,), attrs))
     return out

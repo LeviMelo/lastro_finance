@@ -109,3 +109,12 @@ Recommendation: `httpx` + `polars` for the CSV/SDMX-CSV routes (all verified abo
 - <=1 request/s per host held (1.2-1.5 s sleeps). No logins, no keys, no CAPTCHA/JS challenge met. HTTP 403 Akamai on: Treasury `/all/all` bulk, IMF www.imf.org (datamapper, commodity-prices), BLS download.bls.gov, NBS data.stats.gov.cn. Connection reset (not 403) on fred.stlouisfed.org robots.txt and once on browser UA: not diagnosed with curl -v.
 - Yahoo requests used a plain browser UA; BLS/SEC contact-info expectation not met (no email added).
 - Not requested at all: Fed H.10 feed, Eurostat, BoE beyond Bank Rate, ICE/MSCI/LBMA/DCE official pages, terms of use for any source (licences above are labels read from payloads or "not verified").
+
+## Parsed into `series_observation` (2026-11-07, ADR-0013)
+- **us_treasury:** `us_treasury:{par,real}/<tenor>` (1M…30Y; headers `1 Mo`, `1.5 Month`, `10 Yr`, real `10 YR`). Tenors
+  appear as columns are added (1M 2001-07-31, 2M 2018-10-16, 4M 2022-10-19, 1.5M 2025-02-18); an empty cell yields no
+  row. 2026-11-06: par 10Y 4.86, real 10Y 2.63.
+- **nyfed:** `nyfed:{EFFR,SOFR}/<field>` from the headers' units (`(%)`, `($Billions)`). EFFR intraday low/high and
+  standard deviation run 2000-07-03 → 2016-02-29; percentiles and volume from 2016-03-01. SOFR percentiles read `NA`
+  on 2019-05-31 and 2021-08-05 (kept as missing). `Revision Indicator` ('r') and `Footnote ID` stay in raw.
+- **cboe:** `cboe:<INDEX>/{OPEN,HIGH,LOW,CLOSE}`; VVIX and SKEW files carry only the close. VIX 1990-01-02 → 2026-11-06.
