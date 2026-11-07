@@ -46,6 +46,8 @@ def views(z: Zones) -> dict[str, str]:
         "series_observation": _scan(c / "series_observation" / "*.parquet"),
         "series_definition": _scan(c / "series_definition" / "*.parquet"),
         "corporate_event": _scan(c / "corporate_event" / "*.parquet"),
+        "issuer": _scan(c / "issuer" / "*.parquet"),
+        "issuer_instrument": _scan(c / "issuer_instrument" / "*.parquet"),
         "tesouro_bond": _scan(c / "tesouro_bond" / "*.parquet"),
         "tesouro_price_daily": _scan(c / "tesouro_price_daily" / "*.parquet"),
         "adjustment_factor": _scan(d / "adjustment_factor" / "*.parquet"),

@@ -30,6 +30,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `core/corporate_event/corporate_event.parquet` | dividends, JCP, FII income, bonuses, splits, rights, with sources and grade | rebuildable (ADR-0016) |
 | `derived/adjustment_factor/adjustment_factor.parquet` | split and cash factors per instrument and ex-date | rebuildable |
 | `catalog.duckdb` | views only | rebuilt by `fin catalog` (ADR-0017) |
+| `core/issuer/issuer.parquet`, `core/issuer_instrument/issuer_instrument.parquet` | companies by CNPJ and their instruments | rebuildable (ADR-0018) |
 | `core/tesouro_bond/tesouro_bond.parquet`, `core/tesouro_price_daily/tesouro_price_daily.parquet` | Tesouro Direto bonds 2004– and daily rates/PUs | rebuildable |
 | `core/price_daily/year=YYYY.parquet` | spot and odd-lot sessions per unit, 1986– | rebuildable (ADR-0015) |
 | `staging/yahoo_intraday/bar/symbol=<s>/` | 5-minute bars (tier U), archived daily from 2026-11-07 | rebuildable |
@@ -80,6 +81,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `reference/sources.py` | loads and validates `reference/sources.toml`, the source registry |
 | `core/` | core tables built from staging |
 | `core/events.py` | corporate events (B3, Yahoo, Fundos.NET) merged and graded by the price move; derived adjustment factors; `adjusted_close` (ADR-0016) |
+| `core/issuers.py` | CVM register → staging `company` (no contact data) → core `issuer`, `issuer_instrument` (ADR-0018) |
 | `core/tesouro.py` | Tesouro Direto → core `tesouro_bond`, `tesouro_price_daily` (versioned) |
 | `core/equities.py` | COTAHIST → core `instrument`, `instrument_identifier`, `price_daily` (ADR-0015) |
 | `quality/` | empty package, Stage D |

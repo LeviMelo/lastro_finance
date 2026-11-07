@@ -64,7 +64,7 @@ institution = "CVM"
 access = "HTTP file (.csv, cp1252)"
 tier = "P"
 ephemeral = true
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/cvm_cia_cadastro.md"
 
 [cvm_fca]

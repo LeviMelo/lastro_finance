@@ -24,6 +24,7 @@ from zoneinfo import ZoneInfo
 import polars as pl
 
 from fin.config import Zones
+from fin.core import issuers
 from fin.ingest import tesouro
 from fin.ingest.base import Connector, Mode, Parsed
 from fin.ingest.fetch import FetchSpec
@@ -58,9 +59,21 @@ def _archived_dates(zones: Zones, source_id: str, dataset_id: str) -> set[date]:
 
 
 class CvmCiaCadastro(Connector):
+    """CVM's register of listed companies, a daily snapshot. Parsed to staging `company` and core `issuer`,
+    `issuer_instrument` (`core/issuers.py`)."""
+
     source_id: ClassVar[str] = "cvm_cia_cadastro"
-    version: ClassVar[str] = "0-archive"
+    version: ClassVar[str] = "1"
     BASE = "https://dados.cvm.gov.br/dados/CIA_ABERTA/CAD"
+    dedup_staging: ClassVar[bool] = True  # replaced in full daily
+
+    contracts: ClassVar[dict[str, Contract]] = issuers.CONTRACTS
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return issuers.parse_payload(blob, row)
+
+    def derive(self, zones: Zones, run: Any) -> None:
+        issuers.build(zones, run)
 
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
         d = today_brt()

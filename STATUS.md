@@ -18,6 +18,7 @@ Day one (2026-11-07).
     `tesouro_price_daily` (150 bonds, 2004–);
   - the query layer: `data/catalog.duckdb`, views only, incl. `fundamental_fact` and `price_adjusted` (ADR-0017);
   - staging `expectation`: Focus market expectations 2000– (3.6 M statistics);
+  - core `issuer` (2,532 CNPJs) linked to 1,575 instruments (ADR-0018); `universe(date, class)` in the catalog;
   - staging: Tesouro Direto 2004–, FII distributions, CVM statements 2010– (66.8 M lines), intraday 5-minute bars
     (archived from 2026-11-07).
 - **Storage is lean by rule** (ADR-0014): re-sent files as deltas, CVM zips as member deltas, staging keeps changed
@@ -62,7 +63,7 @@ Day one (2026-11-07).
 ## Next
 
 1. **Prove events against CVM IPE** documents; ISIN changes and mergers as event legs (PLAN's event graph).
-2. **Universes** (point in time, delisted included) and issuers (`issuer` from CVM + B3, linked to instruments).
+2. **Issuer links before 2009 and across mergers** (events as legs), and FII issuers from Fundos.NET.
 3. **Fundamentals mapping** on `fundamental_fact`: accounts mapped per sector (banks differ), per-share figures once
    the unit of the CVM share counts is verified.
 4. **Remaining context parsers:** CFTC positioning (wide reports: a declared contract per report type), Copom,
