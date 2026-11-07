@@ -3,35 +3,34 @@
 Operating commands as the code has them (2026-11-07). Every command takes `--help`. Owner-facing output is pt-BR.
 
 ```bash
-PY=C:/Users/Galaxy/miniconda3/envs/pegasus/python.exe   # shared `pegasus` conda env (ADR-0013)
-PYTHONUTF8=1 $PY -m pip install -e . --no-deps            # once
-export PYTHONUTF8=1                                       # `fin` = envs/pegasus/Scripts/fin.exe
+uv sync                                    # once; uv lives in %APPDATA%\Python\Python312\Scripts
+export PYTHONUTF8=1
 ```
 
 ## Checks before a commit
 
 ```bash
-$PY -m pytest -q                           # ~5 s; network tests are opt-in: -m network
-$PY -m ruff check src tests && $PY -m ruff format --check src tests
-$PY -m pyright                             # strict
-$PY scripts/check_docs.py
+uv run pytest -q                           # ~5 s; network tests are opt-in: -m network
+uv run ruff check src tests && uv run ruff format --check src tests
+uv run pyright                             # strict
+uv run python scripts/check_docs.py
 ```
 
 ## Ingest
 
 ```bash
-fin ingest daily                    # calendar + every ephemeral source (ADR-0007)
-fin ingest anbima_calendar          # one source by source_id (see src/fin/reference/sources.toml)
-fin ingest b3_cotahist --mode backfill --years 1986-2025      # yearly COTAHIST files
-fin ingest b3_instruments --mode backfill                     # every B3 file served since 2025-06-10
-fin ingest b3_pesquisapregao --mode backfill --families TS    # curves 2001-; PR (2018-, 10-15 GB) is OQ-20
-fin ingest pyield_data bcb_sgs --mode backfill               # mirror (bonds 2020-, futures 2018-); SGS 1986-
-fin ingest snd_debentures b3_fundosnet --mode backfill       # trades 1993-11-; FII notices 2016-11- (~10 h)
-fin ingest yahoo_chart --mode snapshot [--tickers ITUB4,SLCE3]  # tier U; default: last year's traded tickers
-fin ingest <context sources> --mode backfill  # the catalogue in src/fin/reference/context_series.toml
-fin status                          # freshness per source, raw size, orphan objects, blockers, last runs
-fin verify-raw                      # re-hash every raw object
-fin rebuild --from-raw              # rebuild staging/core/derived/quarantine from raw + manifest
+uv run fin ingest daily                    # calendar + every ephemeral source (ADR-0007)
+uv run fin ingest anbima_calendar          # one source by source_id (see src/fin/reference/sources.toml)
+uv run fin ingest b3_cotahist --mode backfill --years 1986-2025      # yearly COTAHIST files
+uv run fin ingest b3_instruments --mode backfill                     # every B3 file served since 2025-06-10
+uv run fin ingest b3_pesquisapregao --mode backfill --families TS    # curves 2001-; PR (2018-, 10-15 GB) is OQ-20
+uv run fin ingest pyield_data bcb_sgs --mode backfill               # mirror (bonds 2020-, futures 2018-); SGS 1986-
+uv run fin ingest snd_debentures b3_fundosnet --mode backfill       # trades 1993-11-; FII notices 2016-11- (~10 h)
+uv run fin ingest yahoo_chart --mode snapshot [--tickers ITUB4,SLCE3]  # tier U; default: last year's traded tickers
+uv run fin ingest <context sources> --mode backfill  # the catalogue in src/fin/reference/context_series.toml
+uv run fin status                          # freshness per source, raw size, orphan objects, blockers, last runs
+uv run fin verify-raw                      # re-hash every raw object
+uv run fin rebuild --from-raw              # rebuild staging/core/derived/quarantine from raw + manifest
 ```
 
 ## The daily job on Windows

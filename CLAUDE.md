@@ -18,16 +18,14 @@ availability, quality, instrument identity through time and price adjustment.
 # 2. Run it
 
 ```bash
-PY=C:/Users/Galaxy/miniconda3/envs/pegasus/python.exe   # the shared `pegasus` conda env (ADR-0013)
-PYTHONUTF8=1 $PY -m pip install -e . --no-deps            # once; the env already holds the dependencies
-$PY -m pytest -q                                          # unit tests (network tests: -m network)
-$PY -m ruff check src tests && $PY -m pyright
-$PY scripts/check_docs.py
-fin status                                                # fin = envs/pegasus/Scripts/fin.exe
-fin ingest daily                                          # the daily snapshot job (ephemeral sources)
+uv sync                                   # Python 3.12 venv in .venv (uv at %APPDATA%\Python\Python312\Scripts)
+uv run pytest -q                          # unit tests (network tests: -m network)
+uv run ruff check src tests && uv run pyright
+uv run python scripts/check_docs.py
+uv run fin status                         # freshness, coverage, blockers
+uv run fin ingest daily                   # the daily snapshot job (ephemeral sources)
 ```
-- Install with `pip` only, never `conda install` into `pegasus` (the solver once swapped packages of the pegasus
-  projects) and never `uv`. `PYTHONUTF8=1` for owner-facing pt-BR output. Data home: `data/` (git-ignored) or `FIN_DATA_HOME`.
+- `PYTHONUTF8=1` for owner-facing pt-BR output. Data home: `data/` (git-ignored) or `FIN_DATA_HOME`.
 
 # 3. Invariants (PLAN §4.1, non-negotiable)
 
@@ -66,7 +64,7 @@ fin ingest daily                                          # the daily snapshot j
   engineering defaults, record them as ADRs.
 - **Respect source terms**: ≤ 1 request/s per host, generic UA with no personal email, no CAPTCHA bypass,
   no scraping behind logins.
-- **Dependencies** (owner): install the library the job needs into the `pegasus` env (pip) and declare it in
+- **Dependencies** (owner): install the library the job needs into the uv environment and declare it in
   `pyproject.toml`; never hand-roll a weaker substitute. Ask only for heavy or license-restricted ones.
 - **Agents** (owner, 2026-11-07): at most 3 subagents at a time, Sonnet for low/medium tasks (recon, surveys);
   they write their results to disk as they go.
