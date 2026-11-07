@@ -55,7 +55,7 @@ institution = "Banco Central do Brasil"
 access = "REST JSON, ≤ 10-year windows for daily series"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/bcb_sgs.md"
 
 [cvm_cia_cadastro]
@@ -262,7 +262,7 @@ institution = "IBGE"
 access = "REST JSON (apisidra)"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/ibge_sidra.md"
 
 [b3_pesquisapregao]
@@ -298,7 +298,7 @@ institution = "IPEA (originator FGV)"
 access = "OData v4 JSON, whole series per request"
 tier = "S"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/ipeadata.md"
 
 [b3_fundosnet]

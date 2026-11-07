@@ -6,3 +6,13 @@
   02/01/2024→01/04/2024 = **1,02621059**; 02/01/2024→02/01/2025 = **1,10875983**.
   Reproduced from `cdi2024_25.json`: product of (1+valor/100) over days d with start ≤ d < end (end excluded), rounded half-up to 8 dp
   (16-dp truncation of the running product gives the same 8 dp).
+
+## Series parser fixtures (copied byte-exact from raw, fetched 2026-11-07 18:19–20:21 UTC)
+- `meta_433.xml`, `meta_226.xml`: SOAP `getUltimoValorXML` (POST https://www3.bcb.gov.br/wssgs/services/FachadaWSSGS,
+  body `ingest/series.sgs_meta_envelope(code)`) — sha256 d4b2d95a…c221, 95d89ed5…d921
+- `tr_226_2026-10-08_2026-11-07.json`: sgs.226 `dataInicial=08/10/2026&dataFinal=07/11/2026` (rows with `dataFim`) —
+  sha256 390ea7f7…3e12
+- `m2_27810_all.json`: sgs.27810 whole history, `formato=json`; its first rows (2001-08..11) have `"valor": null` —
+  sha256 9fc5414c…a30a
+- `blocked_page_200.html`: sgs.25 `dataInicial=01/02/2021&dataFinal=07/11/2026` answered HTTP 200 with an HTML
+  "Requisição inválida!" page — sha256 b77c7683…4306

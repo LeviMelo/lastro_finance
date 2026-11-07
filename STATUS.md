@@ -10,7 +10,8 @@ Day one (2026-11-07).
 - **Collection terms** (ADR-0012): automating what the owner could fetch by hand for the owner's own portfolio is the personal
   use the sources' general terms allow. Collection stays polite and is never redistributed.
 - **Stage A passes its exit criteria.** **Stage B** has a note for every registered source (51). **Stage C** has
-  started: COTAHIST 1986–2026 is parsed.
+  started: COTAHIST 1986–2026 is parsed to staging; SGS, Ipeadata and SIDRA are parsed into core
+  `series_observation` (1,017 series, 204,136 values, every row with its unit; ADR-0013).
 - **Data gaps are mapped and ranked** ([gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md)). Everything
   priority 1 needs has a free route.
 
@@ -31,7 +32,7 @@ Day one (2026-11-07).
   - global rates (Treasury, Fed, ECB, BIS), VIX, oil, commodities (Pink Sheet 1960–, IMF, CEPEA), OECD leading
     indicators, CFTC positioning.
 - **Ephemeral sources are archived daily**: ANBIMA (6 datasets including IMA), B3 BDI tables (including investor
-  flows), index compositions, CVM registries, SND terms.
+  flows), index compositions, CVM registries, SND terms. The 2026-11-07 run was started by hand (0 errors).
 
 ## Not done, and waiting on whom
 
@@ -41,7 +42,8 @@ Day one (2026-11-07).
   - free FRED and Tiingo tokens (OQ-23);
   - paid sources (OQ-10); PLAN §12 OQ-11 and OQ-14 to OQ-16.
 - **Engineering:**
-  - parsers for every archived payload (ADR-0007); context series need units and scales checked per entry;
+  - parsers for the other archived payloads (ADR-0007): the global context sources, Focus, Copom, CEPEA, ANP into
+    `series_observation`; units and scales checked per entry;
   - the mirror-vs-ANBIMA overlap check; calendar 1986–2000 (OQ-22);
   - `price_daily`, identity resolution, universes.
 
@@ -52,5 +54,5 @@ Day one (2026-11-07).
    - events: B3 + Yahoo candidates proven against IPE;
    - FII distributions; Tesouro Direto prices; CDI, IPCA and VNA;
    - identity resolution from COTAHIST, FCA and the CVM registry.
-2. **Context parsers** into one long `series_observation` table: series_id, valid date, knowledge time, value, unit.
+2. **Context parsers** for the remaining catalogue sources into `series_observation` (SGS, Ipeadata, SIDRA done).
 3. **Fundamentals** from DFP/ITR, mapped per sector layout (banks differ from industrials).

@@ -30,6 +30,7 @@ uv run fin ingest yahoo_chart --mode snapshot [--tickers ITUB4,SLCE3]  # tier U;
 uv run fin ingest <context sources> --mode backfill  # the catalogue in src/fin/reference/context_series.toml
 uv run fin status                          # freshness per source, raw size, orphan objects, blockers, last runs
 uv run fin verify-raw                      # re-hash every raw object
+uv run fin reparse bcb_sgs ipeadata ibge_sidra  # re-parse archived raw of some sources (after a parser change)
 uv run fin rebuild --from-raw              # rebuild staging/core/derived/quarantine from raw + manifest
 ```
 

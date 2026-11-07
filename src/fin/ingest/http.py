@@ -70,6 +70,7 @@ class PoliteClient:
         params: Mapping[str, Any] | None = None,
         data: Mapping[str, Any] | None = None,
         json: Any = None,
+        content: bytes | None = None,
         headers: Mapping[str, str] | None = None,
     ) -> httpx.Response:
         host = urlsplit(url).netloc
@@ -77,7 +78,9 @@ class PoliteClient:
         for attempt in range(self.max_retries + 1):
             self._space(host)
             try:
-                resp = self._client.request(method, url, params=params, data=data, json=json, headers=headers)
+                resp = self._client.request(
+                    method, url, params=params, data=data, json=json, content=content, headers=headers
+                )
             except httpx.TransportError as e:
                 last_exc = e
                 if attempt < self.max_retries:

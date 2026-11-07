@@ -15,8 +15,9 @@ from typing import Any, ClassVar
 import polars as pl
 
 from fin.config import Zones
-from fin.ingest.base import Connector, Mode
-from fin.ingest.context import ContextConnector
+from fin.ingest import series
+from fin.ingest.base import Connector, Mode, Parsed
+from fin.ingest.context import ContextConnector, catalogue
 from fin.ingest.fetch import FetchSpec
 from fin.ingest.http import BROWSER_UA
 from fin.ingest.snapshots import held_rows as _held
@@ -28,6 +29,31 @@ def _last_fetch(zones: Zones, source_id: str, dataset_id: str) -> date | None:
     if m.is_empty():
         return None
     return m["fetched_at"].max().date()  # type: ignore[union-attr]
+
+
+META_EVERY_DAYS = 30
+
+
+def _meta_due(zones: Zones, source_id: str, dataset_id: str, locator: str, mode: Mode) -> bool:
+    """Series metadata is re-requested on backfill and when this code's last copy is a month old."""
+    if mode is Mode.BACKFILL:
+        return True
+    m = _held(zones, source_id, dataset_id)
+    if m.is_empty():
+        return True
+    m = m.filter(pl.col("notes") == locator)
+    seen = [at.date() for at in m["fetched_at"].to_list()]
+    return not seen or (today_brt() - max(seen)).days >= META_EVERY_DAYS
+
+
+class SeriesConnector(ContextConnector):
+    """A context source whose payloads are parsed into staging series and core `series_observation`
+    (`ingest/series.py`)."""
+
+    contracts: ClassVar[dict[str, Any]] = series.CONTRACTS
+
+    def derive(self, zones: Zones, run: Any) -> None:
+        series.build_core(zones, self.source_id, run)
 
 
 def month_windows(start: date, end: date) -> list[tuple[date, date]]:
@@ -59,17 +85,35 @@ class PyieldData(Connector):
             yield FetchSpec(self.source_id, name, f"{self.BASE}/{name}.parquet", "parquet", reference_date=today_brt())
 
 
-class Ipeadata(ContextConnector):
+class Ipeadata(SeriesConnector):
     """IPEA's OData API: FGV's IGP-M (1989-06–) and IGP-DI (1944–) index numbers, absent from BCB SGS
     (docs/sources/ipeadata.md). One request returns a whole series; unchanged days dedupe in raw."""
 
     source_id: ClassVar[str] = "ipeadata"
-    version: ClassVar[str] = "0-archive"
+    version: ClassVar[str] = "1"
     BASE = "https://www.ipeadata.gov.br/api/odata4"
     SERIES: ClassVar[tuple[str, ...]] = ("IGP12_IGPM12", "IGP12_IGPDI12", "IGP12_IGPMG12")
 
+    def codes(self) -> list[str]:
+        return [*self.SERIES, *(k for e in catalogue() if e.source == self.source_id for k in e.keys)]
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return series.parse_ipeadata_payload(blob, row)
+
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
         yield from super().discover(mode, zones, **options)  # catalogue entries (reference/context_series.toml)
+        for code in self.codes():
+            if _meta_due(zones, self.source_id, f"meta_{code.lower()}", code, mode):
+                yield FetchSpec(
+                    self.source_id,
+                    f"meta_{code.lower()}",
+                    f"{self.BASE}/Metadados('{code}')",
+                    "json",
+                    reference_date=today_brt(),
+                    conditional=False,
+                    min_bytes=100,
+                    locator=code,
+                )
         for code in self.SERIES:
             yield FetchSpec(
                 self.source_id,
@@ -80,6 +124,16 @@ class Ipeadata(ContextConnector):
                 conditional=False,
                 min_bytes=100,
             )
+
+
+class IbgeSidra(SeriesConnector):
+    """IBGE SIDRA tables of the context catalogue; each payload names its variables, periods and units."""
+
+    source_id: ClassVar[str] = "ibge_sidra"
+    version: ClassVar[str] = "1"
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return series.parse_sidra_payload(blob, row)
 
 
 class TesouroVna(Connector):
@@ -98,14 +152,16 @@ class TesouroVna(Connector):
             yield FetchSpec(self.source_id, dataset, url, "xlsx", reference_date=today_brt(), min_bytes=1000)
 
 
-class BcbSgs(ContextConnector):
+class BcbSgs(SeriesConnector):
     """BCB SGS daily series in ≤ 10-year windows (docs/sources/bcb_sgs.md). CDI (12) and Selic (11) publication
     days from 1986 are also the only business-day record found before ANBIMA's calendar starts in 2001
     (OQ-22). Backfill fetches whole history; otherwise the last 30 days, which catches BCB's one-day lag."""
 
     source_id: ClassVar[str] = "bcb_sgs"
-    version: ClassVar[str] = "0-archive"
+    version: ClassVar[str] = "1"
     BASE = "https://api.bcb.gov.br/dados/serie"
+    # names, frequency and unit per code: the legacy SOAP service (CKAN lacks 11 of our codes; measured 2026-11-07)
+    META_URL = "https://www3.bcb.gov.br/wssgs/services/FachadaWSSGS"
     SERIES: ClassVar[dict[int, date]] = {  # code -> first date served (measured)
         12: date(1986, 3, 6),  # CDI % a.d.
         11: date(1986, 6, 4),  # Selic % a.d.
@@ -134,8 +190,29 @@ class BcbSgs(ContextConnector):
             d = last + timedelta(days=1)
         return out
 
+    def codes(self) -> list[str]:
+        return [*(str(c) for c in self.SERIES), *(k for e in catalogue() if e.source == self.source_id for k in e.keys)]
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return series.parse_sgs_payload(blob, row)
+
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
         yield from super().discover(mode, zones, **options)  # monthly series of the context catalogue
+        for code in self.codes():
+            if _meta_due(zones, self.source_id, "sgs_meta", code, mode):
+                yield FetchSpec(
+                    self.source_id,
+                    "sgs_meta",
+                    self.META_URL,
+                    "xml",
+                    method="POST",
+                    content=series.sgs_meta_envelope(code),
+                    headers={"Content-Type": "text/xml; charset=utf-8", "SOAPAction": '""'},
+                    reference_date=today_brt(),
+                    conditional=False,
+                    min_bytes=200,
+                    locator=code,
+                )
         end = today_brt()
         for code, first in self.SERIES.items():
             start = first if mode is Mode.BACKFILL else end - timedelta(days=30)
@@ -148,6 +225,7 @@ class BcbSgs(ContextConnector):
                     params={"formato": "json", "dataInicial": f"{a:%d/%m/%Y}", "dataFinal": f"{b:%d/%m/%Y}"},
                     reference_date=b,
                     conditional=False,  # SGS answers unconditional 304s on some forms (docs/sources/bcb_sgs.md)
+                    content_types=("application/json",),  # its gateway serves error pages as HTTP 200
                     locator=f"{a:%Y-%m-%d}..{b:%Y-%m-%d}",
                 )
 

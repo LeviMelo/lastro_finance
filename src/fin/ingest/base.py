@@ -35,6 +35,12 @@ class Mode(StrEnum):
     SNAPSHOT = "snapshot"  # ephemeral sources: archive what is served today (PLAN §4.1 invariant 13)
 
 
+class NotData(ValueError):
+    """The archived object is not the data asked for: an error page served with HTTP 200. Raw keeps it (immutable);
+    parsing counts it under `<source>/not_data` and moves on. Fetchers should reject such pages up front
+    (`FetchSpec.content_types`)."""
+
+
 @dataclass(frozen=True)
 class Parsed:
     dataset_id: str
@@ -136,6 +142,9 @@ def _load_isolated(connector: Connector, zones: Zones, run: IngestRun, blob: byt
     object would otherwise block every later run and rebuild."""
     try:
         load(connector, zones, run, blob, row)
+    except NotData as e:
+        run.count(f"{connector.source_id}/not_data", in_=1, quarantined=1)
+        run.log("parse.not_data", raw_sha256=row["raw_sha256"], message=str(e))
     except Exception as e:
         run.error(f"{connector.source_id}/parse", f"{type(e).__name__}: {e}", raw_sha256=row["raw_sha256"])
 

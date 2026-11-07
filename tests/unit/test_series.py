@@ -1,0 +1,185 @@
+"""Series parsers read real SGS, Ipeadata and SIDRA payloads exactly; the core table labels periods by frequency,
+carries the unit on every row, keeps one version per change, and quarantines a series without a definition."""
+
+from __future__ import annotations
+
+import json
+from datetime import UTC, date, datetime
+from decimal import Decimal
+from pathlib import Path
+from typing import Any
+
+import httpx
+import polars as pl
+import pytest
+
+from fin.config import Zones
+from fin.ingest import series
+from fin.ingest.base import NotData
+from fin.ingest.fetch import Fetcher, FetchSpec
+from fin.ingest.http import FetchError, PoliteClient
+from fin.store.raw import RawStore
+from fin.store.runs import IngestRun
+from fin.store.tables import write_parquet
+
+FIX = Path(__file__).parents[1] / "fixtures"
+T0 = datetime(2026, 11, 7, 20, 0, tzinfo=UTC)
+
+
+def _row(dataset_id: str, url: str = "https://example.test/", at: datetime = T0, sha: str = "a" * 64) -> dict[str, Any]:
+    return {
+        "raw_sha256": sha,
+        "ingest_run_id": "run-1",
+        "fetched_at": at,
+        "dataset_id": dataset_id,
+        "request": json.dumps({"url": url}),
+    }
+
+
+def _ok(contract: series.Contract, df: pl.DataFrame) -> pl.DataFrame:
+    good, bad = contract.split(df)
+    assert bad.height == 0, bad
+    return good
+
+
+def test_sgs_metadata_gives_name_frequency_and_unit() -> None:
+    d = _ok(series.DEFINITION, series.parse_sgs_meta((FIX / "bcb_sgs/meta_433.xml").read_bytes(), _row("sgs_meta")))
+    r = d.row(0, named=True)
+    assert r["series_id"] == "bcb_sgs:433" and r["frequency"] == "M" and r["unit"] == "Var. % mensal"
+    assert "IPCA" in r["name"]
+    tr = series.parse_sgs_meta((FIX / "bcb_sgs/meta_226.xml").read_bytes(), _row("sgs_meta"))
+    assert tr["frequency"][0] == "D" and tr["unit"][0] == "% a.m."
+
+
+def test_sgs_nulls_are_marked_missing_not_quarantined() -> None:
+    df = _ok(series.OBSERVATION, series.parse_sgs((FIX / "bcb_sgs/m2_27810_all.json").read_bytes(), _row("x"), "27810"))
+    first = df.row(0, named=True)
+    assert first["vt_date"] == date(2001, 8, 1) and first["value"] is None and first["value_text"] == ""
+    assert df["value"][-1] == Decimal("7870395191")
+
+
+def test_sgs_error_page_served_as_200_is_not_data() -> None:
+    with pytest.raises(NotData):
+        series.parse_sgs((FIX / "bcb_sgs/blocked_page_200.html").read_bytes(), _row("sgs_25"), "25")
+
+
+def test_fetch_rejects_a_content_type_it_did_not_ask_for(zones: Zones) -> None:
+    page = (FIX / "bcb_sgs/blocked_page_200.html").read_bytes()
+    t = httpx.MockTransport(lambda r: httpx.Response(200, content=page, headers={"Content-Type": "text/html"}))
+    client = PoliteClient(transport=t, min_interval=0, sleep=lambda _s: None)
+    spec = FetchSpec("bcb_sgs", "sgs_25", "https://example.test/x", "json", content_types=("application/json",))
+    with IngestRun(zones, "test") as run, pytest.raises(FetchError):
+        Fetcher(run, RawStore(zones.raw), client, "1").fetch(spec)
+    assert list(RawStore(zones.raw).iter_objects()) == []
+
+
+def test_ipeadata_values_are_exact_and_metadata_frequency_is_mapped() -> None:
+    obs = _ok(series.OBSERVATION, series.parse_ipeadata((FIX / "ipeadata/IGP12_IGPM12.json").read_bytes(), _row("x")))
+    last = obs.filter(pl.col("vt_date") == date(2026, 10, 1)).row(0, named=True)
+    assert last["series_id"] == "ipeadata:IGP12_IGPM12" and last["value"] == Decimal("1243.905")
+    meta = series.parse_ipeadata_meta((FIX / "ipeadata/meta_IGP12_IGPM12.json").read_bytes(), _row("meta"))
+    assert meta["frequency"][0] == "M"
+    embi = series.parse_ipeadata_meta((FIX / "ipeadata/meta_JPM366_EMBI366.json").read_bytes(), _row("meta"))
+    assert embi["frequency"][0] == "D"
+
+
+SIDRA = "https://apisidra.ibge.gov.br/values/"
+
+
+def test_sidra_rolling_quarter_and_class_series() -> None:
+    blob = (FIX / "ibge_sidra/t6381_v4099_all.json").read_bytes()
+    obs, defs = series.parse_sidra(blob, _row("x", SIDRA + "t/6381/n1/all/v/4099/p/all"))
+    assert defs.row(0, named=True)["frequency"] == "M3" and defs["unit"][0] == "%"
+    last = obs.row(-1, named=True)
+    assert last["series_id"] == "ibge_sidra:6381/v4099" and last["vt_date"] == date(2026, 9, 1)
+    assert last["value"] == Decimal("5.2")
+
+    url = SIDRA + "t/5932/n1/all/v/6564,6561/p/all/c11255/90707"
+    obs, defs = series.parse_sidra((FIX / "ibge_sidra/t5932_v6564_6561_c11255_all.json").read_bytes(), _row("x", url))
+    obs = _ok(series.OBSERVATION, obs)
+    assert set(defs["series_id"]) == {"ibge_sidra:5932/v6564/c11255/90707", "ibge_sidra:5932/v6561/c11255/90707"}
+    assert set(defs["frequency"]) == {"Q"}
+    missing = obs.filter(pl.col("value").is_null())
+    assert missing["value_text"].to_list() == ["..."]
+
+
+def _obs(sid: str, d: date, value: str, at: datetime, sha: str) -> dict[str, Any]:
+    return {
+        "series_id": sid,
+        "vt_date": d,
+        "vt_until": None,
+        "period_text": str(d),
+        "value_text": value,
+        "raw_locator": "$[0]",
+    } | {"_at": at, "_sha": sha}
+
+
+def _staging(rows: list[dict[str, Any]]) -> pl.DataFrame:
+    frames = [
+        series._observations(  # pyright: ignore[reportPrivateUsage]
+            [{k: v for k, v in r.items() if not k.startswith("_")}], _row("x", at=r["_at"], sha=r["_sha"])
+        )
+        for r in rows
+    ]
+    return series.OBSERVATION.conform(pl.concat(frames))
+
+
+def test_versions_keep_first_value_and_each_change() -> None:
+    d, s = date(2026, 9, 1), "bcb_sgs:433"
+    t = [datetime(2026, 11, k, tzinfo=UTC) for k in (1, 2, 3, 4)]
+    df = _staging(
+        [
+            _obs(s, d, "0.82", t[0], "1" * 64),
+            _obs(s, d, "0.82", t[1], "2" * 64),
+            _obs(s, d, "0.83", t[2], "3" * 64),
+            _obs(s, d, "0.82", t[3], "4" * 64),
+        ]
+    )
+    v = series.versions(df)
+    assert v["value"].to_list() == [Decimal("0.82"), Decimal("0.83"), Decimal("0.82")]
+    assert v["version"].to_list() == [1, 2, 3] and v["raw_sha256"].to_list() == ["1" * 64, "3" * 64, "4" * 64]
+
+
+def test_core_labels_periods_and_quarantines_series_without_definition(zones: Zones) -> None:
+    src = zones.staging / "bcb_sgs"
+    sgs = series.parse_sgs((FIX / "bcb_sgs/tr_226_2026-10-08_2026-11-07.json").read_bytes(), _row("sgs_226"), "226")
+    write_parquet(_ok(series.OBSERVATION, sgs), src / "observation" / "sgs_226" / "a.parquet")
+    orphan = _staging([_obs("bcb_sgs:999", date(2026, 9, 1), "1", T0, "b" * 64)])
+    write_parquet(orphan, src / "observation" / "sgs_999" / "b.parquet")
+    meta = series.parse_sgs_meta((FIX / "bcb_sgs/meta_226.xml").read_bytes(), _row("sgs_meta"))
+    write_parquet(_ok(series.DEFINITION, meta), src / "definition" / "code=226" / "c.parquet")
+
+    good, bad = series.build_core(zones, "bcb_sgs")
+    assert (good, bad) == (sgs.height, 1)
+    core = pl.read_parquet(zones.core / "series_observation" / "source=bcb_sgs.parquet")
+    first = core.row(0, named=True)
+    assert first["vt_reference"] == "2026-10-08..2026-11-07" and first["vt_end"] == date(2026, 11, 7)
+    assert set(core["unit"]) == {"% a.m."} and core["vt_reference"].n_unique() == core.height
+    q = pl.read_parquet(zones.quarantine / "core" / "series_observation" / "source=bcb_sgs.parquet")
+    assert q["series_id"].to_list() == ["bcb_sgs:999"]
+
+
+def test_period_labels_per_frequency() -> None:
+    df = pl.DataFrame(
+        {
+            "f": ["D", "M", "Q", "A", "M3", "M"],
+            "d": [
+                date(2024, 3, 15),
+                date(2024, 3, 1),
+                date(2024, 4, 1),
+                date(2024, 1, 1),
+                date(2024, 3, 1),
+                date(2024, 3, 15),
+            ],
+        }
+    )
+    out = df.select(*series._period(pl.col("f"), pl.col("d"), pl.lit(None, dtype=pl.Date)))  # pyright: ignore[reportPrivateUsage]
+    assert out["vt_reference"].to_list() == ["2024-03-15", "2024-03", "2024Q2", "2024", "2024-01..2024-03", "2024-03"]
+    assert out["vt_end"].to_list()[:5] == [
+        date(2024, 3, 15),
+        date(2024, 3, 31),
+        date(2024, 6, 30),
+        date(2024, 12, 31),
+        date(2024, 3, 31),
+    ]
+    assert out["_aligned"].to_list() == [True, True, True, True, True, False]

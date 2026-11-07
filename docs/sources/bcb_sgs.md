@@ -8,7 +8,7 @@ Every statement below was measured on the recon date against a real response, un
 - `https://api.bcb.gov.br/dados/serie/bcdata.sgs.<code>/dados?formato=json&dataInicial=dd/mm/aaaa&dataFinal=dd/mm/aaaa`; `/dados/ultimos/N?formato=json`. No auth. Browser UA used; generic UA not tested.
 - `formato=csv` works (`"data";"valor"`, `;`-separated, quoted, pt-BR decimal comma); `formato=xml` → 400 `{"erro":"Formato invalido. Use json, csv, application/json ou text/csv."}`.
 - **Window cap, daily series: 10 years, inclusive.** 01/01/2015–01/01/2025 → 200; 01/01/2015–02/01/2025 → **HTTP 406** `{"error":"O sistema aceita uma janela de consulta de, no máximo, 10 anos em séries de periodicidade diária","message":…,"syntax":…}`. No dates at all on a daily series → same 406. Monthly series (433, 189) return full history with no dates (433: 20,880 B from 01/01/1980; 189 from 01/06/1989).
-- **Metadata:** no `/metadados` endpoint (404 `endpoint not found!`). Names/units/frequency/start are in BCB CKAN: `https://dadosabertos.bcb.gov.br/api/3/action/package_search?fq=codigo_sgs:<code>` (fields `title`, `periodicidade`, `unidade_medida`, `inicio_periodo`, `codigo_sgs`, licence ODbL). Legacy SOAP WSDL `https://www3.bcb.gov.br/wssgs/services/FachadaWSSGS?wsdl` answers 200 (not explored).
+- **Metadata:** no `/metadados` endpoint (404 `endpoint not found!`). Names/units/frequency/start are in BCB CKAN: `https://dadosabertos.bcb.gov.br/api/3/action/package_search?fq=codigo_sgs:<code>` (fields `title`, `periodicidade`, `unidade_medida`, `inicio_periodo`, `codigo_sgs`, licence ODbL). CKAN has no record for 11 of our 67 codes (12, 4389, 226, 433, 7478, 188, 189, 190, 24369, 3546, 11752). **The legacy SOAP service has all 67** (measured 2026-11-07): POST `https://www3.bcb.gov.br/wssgs/services/FachadaWSSGS`, `getUltimoValorXML(<code>)`, returns an escaped XML with `NOME`, `PERIODICIDADE` (D/M), `UNIDADE` (`% a.d.`, `Var. % mensal`, `R$ (milhões)`, `u.m.c. (mil)`…) and the last value. Archived as `sgs_meta` monthly (ADR-0013). Where CKAN and SOAP disagree (20539: CKAN "unidades monetárias correntes", SOAP `R$ (milhões)`) SOAP is used.
 
 ## 2. Datasets (codes confirmed by fetch; names from CKAN)
 | code | name (CKAN) | unit | sample (date: value) |
@@ -44,6 +44,10 @@ No CDI accumulated-factor series was found (not searched beyond the above).
 
 ## 6. Ephemerality
 - Full history available (within 10-year windows for daily series). No vintages: revisions overwrite (not verified directly); store kt timestamps.
+
+- **TR (226) periods:** one start date can carry several periods (`data` 01/05/1991 with `dataFim` 31/05 and with 01/06): a period is (`data`, `dataFim`).
+- **JSON null values:** 27810/27813 (M2/M3) start with `"valor": null` for 2001-08..11.
+- **HTTP 200 error page:** the gateway sometimes answers a valid request with an HTML "Requisição inválida!" page and status 200 (2 of ~300 requests on 2026-11-07; the same window succeeded on retry). Daily-series fetches now require `application/json`.
 
 ## 7. Open questions
 - Names/units for 12, 4389, 226, 433, 189 (CKAN fq returned none; try `q=`).

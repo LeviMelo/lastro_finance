@@ -26,6 +26,9 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `quarantine/…` (same layout) | rows that broke a contract rule, with `reject_rules` | rebuildable |
 | `core/reference/calendar_day/calendar_day.parquet` | the business-day calendar | rebuildable |
 | `staging/b3_cotahist/quote/year=YYYY/<sha>.parquet` | COTAHIST records, 1986–, one file per raw zip and year | rebuildable |
+| `staging/<source>/{observation,definition}/…` | series values and metadata as each payload served them (SGS, Ipeadata, SIDRA) | rebuildable |
+| `core/series_observation/source=<id>.parquet` | every series value with period, unit and version (ADR-0013) | rebuildable |
+| `core/series_definition/source=<id>.parquet` | latest name, frequency and unit per series | rebuildable |
 
 ## 3. Module map (`src/fin/`)
 
@@ -33,7 +36,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 |---|---|
 | `__init__.py` | version |
 | `config.py` | the data home and its zones |
-| `cli.py` | `fin`: `ingest`, `status`, `verify-raw`, `rebuild --from-raw` |
+| `cli.py` | `fin`: `ingest`, `status`, `verify-raw`, `reparse <sources>`, `rebuild --from-raw` |
 | `schema.py` | `Contract`, `Column`, `Rule`: typed columns with unit and pt/en meaning; conform and quarantine split (ADR-0005) |
 | `store/` | L1 and the operational tables |
 | `store/raw.py` | content-addressed raw store |
@@ -51,6 +54,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/snapshots.py` | archive-only connectors for the ephemeral sources (ADR-0007) and for files replaced in place (Tesouro, NEFIN) |
 | `ingest/context.py` | the context catalogue (`reference/context_series.toml`) → one generated archive connector per source, cadence per entry (ADR-0011) |
 | `ingest/alternates.py` | archive connectors for the routes that close data gaps: SND, Fundos.NET, BCB SGS, Ipeadata, Tesouro VNA, the `pyield_data` mirror, Yahoo (ADR-0010) |
+| `ingest/series.py` | series payloads (SGS JSON and SOAP metadata, Ipeadata OData, SIDRA) → staging `observation`/`definition` → core `series_observation`/`series_definition`, versioned (ADR-0013) |
 | `ingest/b3_cotahist.py` | COTAHIST fixed-width → staging `quote` (exact decimals as quoted), line repair and quarantine (ADR-0008) |
 | `reference/` | L0 reference data |
 | `reference/calendar.py` | `calendar_day` build and the `Calendar` API (`du`, shifts) (ADR-0006) |

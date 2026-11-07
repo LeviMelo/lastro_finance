@@ -122,6 +122,27 @@ def verify_raw() -> None:
         raise typer.Exit(1)
 
 
+@app.command("reparse")
+def reparse_cmd(
+    sources: Annotated[list[str], typer.Argument(help="fontes (source_id) a reprocessar a partir do bruto")],
+) -> None:
+    """Reprocessa o bruto já arquivado de algumas fontes (após um parser novo ou corrigido), sem buscar nada."""
+    z = zones()
+    with IngestRun(z, "reparse " + " ".join(sources)) as run:
+        manifest = Manifest(z.manifest).read()
+        for sid in sources:
+            reparse(connector(sid), z, run, manifest)
+        errors = list(run.errors)
+        counts = dict(run.counts)
+    for k, v in counts.items():
+        typer.echo(f"  {k}: {v}")
+    for e in errors:
+        typer.echo(f"  ERRO: {e['where']}: {e['message']}", err=True)
+    typer.echo(f"reprocessamento concluído, {len(errors)} objeto(s) com erro")
+    if errors:
+        raise typer.Exit(1)
+
+
 @app.command()
 def rebuild(
     from_raw: Annotated[bool, typer.Option("--from-raw", help="reconstrói L2-L4 só a partir do bruto")] = False,

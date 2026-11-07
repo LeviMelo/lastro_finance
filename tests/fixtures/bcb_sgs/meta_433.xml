@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><soapenv:Body><ns1:getUltimoValorXMLResponse soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:ns1="http://publico.ws.casosdeuso.sgs.pec.bcb.gov.br"><getUltimoValorXMLReturn xsi:type="soapenc:string" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/">&lt;?xml version='1.0' encoding='ISO-8859-1'?&gt;
+&lt;resposta status='2' descricao='Processado com sucesso'&gt;
+&lt;SERIE&gt;
+	&lt;NOME&gt;&#xCD;ndice nacional de pre&#xE7;os ao consumidor-amplo (IPCA)&lt;/NOME&gt;
+	&lt;CODIGO&gt;433&lt;/CODIGO&gt;
+	&lt;PERIODICIDADE&gt;M&lt;/PERIODICIDADE&gt;
+	&lt;UNIDADE&gt;Var. % mensal&lt;/UNIDADE&gt;
+	&lt;DATA&gt;
+		&lt;DIA&gt;1&lt;/DIA&gt;
+		&lt;MES&gt;9&lt;/MES&gt;
+		&lt;ANO&gt;2026&lt;/ANO&gt;
+	&lt;/DATA&gt;
+	&lt;VALOR&gt;0,82&lt;/VALOR&gt;
+&lt;/SERIE&gt;
+&lt;/resposta&gt;</getUltimoValorXMLReturn></ns1:getUltimoValorXMLResponse></soapenv:Body></soapenv:Envelope>

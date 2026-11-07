@@ -6,3 +6,8 @@ Unmodified responses fetched 2026-11-07 ~08:45 UTC (browser UA):
 - `t3065_v1117_last3.json` — IPCA-15 index, .../values/t/3065/n1/all/v/1117/p/last%203
 - `agregados_1737_metadados.json` — https://servicodados.ibge.gov.br/api/v3/agregados/1737/metadados
 Hashes: `sha256sum *`.
+
+Series parser fixtures (copied byte-exact from raw, fetched 2026-11-07 ~18:00 UTC):
+- `t6381_v4099_all.json` — .../values/t/6381/n1/all/v/4099/p/all (unemployment, "Trimestre Móvel") — sha256 258d78d0…6243
+- `t5932_v6564_6561_c11255_all.json` — .../values/t/5932/n1/all/v/6564,6561/p/all/c11255/90707 (GDP rates, one
+  class; one "..." value) — sha256 8575357e…dcdd

@@ -17,3 +17,4 @@ matters, and the result against the independent figure.
 | 2026-11-07 | [Archive coverage on day one](docs/evaluation/2026-11-07-archive-coverage-day-one.md) | every ephemeral source against its served window; B3 17-month backfill; compression; live crash recovery |
 | 2026-11-07 | [Data gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md) | 19 gaps against PLAN's scope: free, mirror, unofficial, scraping and paid routes, verified; what each closes |
 | 2026-11-07 | [Context catalogue backfill](docs/evaluation/2026-11-07-context-catalogue-backfill.md) | 21 context sources archived from their first date; Focus %20 and SGS window fixes |
+| 2026-11-07 | [Series core, first build](docs/evaluation/2026-11-07-series-core-first-build.md) | SGS, Ipeadata, SIDRA → `series_observation`: 1,017 series, 0 quarantined, IPCA SGS = SIDRA, reparse byte-identical |

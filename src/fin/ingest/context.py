@@ -178,7 +178,7 @@ def context_connectors() -> list[type[Connector]]:
     """One generated class per source in the catalogue (registry: `ingest/registry.py`)."""
     out: list[type[Connector]] = []
     for sid in dict.fromkeys(e.source for e in catalogue()):
-        if sid in {"bcb_sgs", "ipeadata"}:
+        if sid in {"bcb_sgs", "ipeadata", "ibge_sidra"}:
             continue  # these sources already have a connector; their catalogue entries are merged in there
         browser = any(e.browser for e in catalogue() if e.source == sid)
         attrs: dict[str, Any] = {"source_id": sid, "user_agent": BROWSER_UA if browser else None}

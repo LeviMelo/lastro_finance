@@ -9,6 +9,7 @@ from fin.ingest.alternates import (
     CvmFre,
     CvmIpe,
     FundosNetRendimentos,
+    IbgeSidra,
     Ipeadata,
     PyieldData,
     SndDebentures,
@@ -62,6 +63,7 @@ CONNECTORS: dict[str, type[Connector]] = {
         CvmFre,
         CvmIpe,
         FundosNetRendimentos,
+        IbgeSidra,
         Ipeadata,
         PyieldData,
         SndDebentures,
@@ -94,6 +96,7 @@ DAILY: tuple[str, ...] = (
     "b3_fundosnet",
     "bcb_sgs",
     "ipeadata",
+    "ibge_sidra",
     "tesouro_vna",
     # CVM keeps only the latest version of each filing: weekly/monthly versions keep restatements (cadence inside)
     "cvm_dfp_itr",

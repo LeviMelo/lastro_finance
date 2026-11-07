@@ -28,17 +28,29 @@ class FetchSpec:
     params: dict[str, Any] | None = None
     data: dict[str, Any] | None = None
     json: Any = None
+    content: str | None = None  # a raw request body (e.g. a SOAP envelope), sent UTF-8 encoded
     headers: dict[str, str] | None = None
     reference_date: date | None = None
     conditional: bool = True
     accept_status: frozenset[int] = field(default_factory=lambda: frozenset({200}))
     absent_status: frozenset[int] = frozenset()  # statuses meaning "not served (any more / yet)": logged, no error
     min_bytes: int = 0  # a 200 shorter than this is the source's "no data for that date" stub: absent, not stored
+    # a 200 whose Content-Type starts with none of these is an error page served as success: an error, not stored
+    content_types: tuple[str, ...] = ()
     locator: str | None = None  # e.g. "page=3"; the part of a multi-request payload this object is
     notes: str | None = None
 
     def request(self) -> dict[str, Any]:
-        return {"method": self.method, "url": self.url, "params": self.params, "data": self.data, "json": self.json}
+        out: dict[str, Any] = {
+            "method": self.method,
+            "url": self.url,
+            "params": self.params,
+            "data": self.data,
+            "json": self.json,
+        }
+        if self.content is not None:  # only when set: the request key of every other request stays as it was
+            out["content"] = self.content
+        return out
 
 
 @dataclass(frozen=True)
@@ -69,7 +81,13 @@ class Fetcher:
 
         fetched_at = utc_now()
         resp = self.client.request(
-            spec.method, spec.url, params=spec.params, data=spec.data, json=spec.json, headers=headers
+            spec.method,
+            spec.url,
+            params=spec.params,
+            data=spec.data,
+            json=spec.json,
+            content=spec.content.encode("utf-8") if spec.content is not None else None,
+            headers=headers,
         )
         if resp.status_code in spec.absent_status or (resp.status_code == 200 and len(resp.content) < spec.min_bytes):
             self.run.log(
@@ -106,6 +124,9 @@ class Fetcher:
 
         if resp.status_code not in spec.accept_status:
             raise FetchError(spec.url, f"HTTP {resp.status_code}", status=resp.status_code)
+        ctype = resp.headers.get("Content-Type") or ""
+        if spec.content_types and not ctype.startswith(spec.content_types):
+            raise FetchError(spec.url, f"HTTP {resp.status_code} with Content-Type {ctype!r}", status=resp.status_code)
 
         ref = self.raw.put_bytes(resp.content, spec.ext)
         row = ManifestRow(
