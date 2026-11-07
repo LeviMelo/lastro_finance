@@ -11,7 +11,7 @@
   (§8.3).
 
 **Decision (owner, 2026-11-07).**
-- LASTRO automates what the owner could fetch by hand for the management of his own portfolio. That is the
+- LASTRO automates what the owner could fetch by hand for the management of the owner's own portfolio. That is the
   personal, non-commercial use the general terms allow. The B3 and ANBIMA connectors keep running.
 - **Conditions that keep it so:**
   - at most 1 request/s per host;
@@ -23,9 +23,9 @@
   `fin status` blocker, never a silent gap.
 
 **Alternatives.**
-- *Stop and download by hand into the inbox*: rejected by the owner. It reproduces the failure mode of his
+- *Stop and download by hand into the inbox*: rejected by the owner. It reproduces the failure mode of the owner's
   previous attempt.
 - *Ask B3 for written permission*: not needed in the owner's reading.
 
-**What would reverse it.** A source blocking or contacting the owner, a change in his use (anything shared or
+**What would reverse it.** A source blocking or contacting the owner, a change in the owner's use (anything shared or
 commercial), or terms that withdraw personal use.

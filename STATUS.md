@@ -7,7 +7,7 @@ What is true now. Rewritten in place, never appended; history is in git. Last re
 Day one (2026-11-07).
 - **Scope set by the owner** (ADR-0011): the ledger starts in 2026; the holdings are stocks, FIIs, ETFs and Tesouro
   Direto; economic context data is a domain of its own.
-- **Collection terms** (ADR-0012): automating what the owner could fetch by hand for his own portfolio is the personal
+- **Collection terms** (ADR-0012): automating what the owner could fetch by hand for the owner's own portfolio is the personal
   use the sources' general terms allow. Collection stays polite and is never redistributed.
 - **Stage A passes its exit criteria.** **Stage B** has a note for every registered source (51). **Stage C** has
   started: COTAHIST 1986–2026 is parsed.
