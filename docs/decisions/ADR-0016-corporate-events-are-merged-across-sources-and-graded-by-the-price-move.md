@@ -35,12 +35,15 @@
   1/ratio for stock events and by (1 − cash / close of the data-com) for cash. Adjusted prices are computed on read
   (`adjusted_close`) and never stored as truth.
 
-**Evidence (docs/evaluation/2026-11-07-storage-and-price-daily.md and its corporate-events section).**
+**Evidence (docs/evaluation/2026-11-07-corporate-events.md).**
 - Split adjustment alone equals Yahoo's split-adjusted close monthly from 2010 for PETR4, ITUB4, VALE3, BBAS3, ABEV3,
   B3SA3 and SUZB3.
 - MGLU3 (2024-02) and LREN3 (2021-03) differ by Yahoo's rights-offering adjustment, which is not modelled.
 
+**Added the same day.** Rights offerings from the B3 Supplement's `subscriptions[]`: factor = theoretical ex-rights
+price / cum price, applied only when the subscription price is below the cum price. Identical cash rows are kept
+(distinct installments), taken from each issuer's latest run.
+
 **Not done.**
-- Subscription rights (B3 Supplement `subscriptions[]`).
 - Mergers and ISIN changes as event legs (PLAN's event graph).
 - Proving each event against its IPE document.

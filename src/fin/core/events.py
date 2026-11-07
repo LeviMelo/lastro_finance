@@ -341,14 +341,30 @@ def rights_events(zones: Zones, dates: pl.Series) -> pl.DataFrame:
     )
 
 
+def latest_cash_snapshot(zones: Zones, b3: pl.DataFrame) -> pl.DataFrame:
+    """The rows of each cash history (root, trading name) as served by its latest run. Identical rows are distinct
+    installments (GRND 2025-12-26: two of 0,221690166), so rows are never collapsed by value; staging keeps every
+    snapshot of this dataset whole (no changed-row staging) for that reason."""
+    from fin.store.manifest import Manifest
+
+    runs = (
+        Manifest(zones.manifest)
+        .read()
+        .filter((pl.col("source_id") == "b3_company_events") & (pl.col("dataset_id") == "cash"))
+        .select("raw_sha256", pl.col("ingest_run_id").alias("_run"))
+        .unique("raw_sha256", keep="first")
+    )
+    b3 = b3.join(runs, on="raw_sha256", how="left")
+    latest = pl.col("_run").max().over("root", "trading_name")
+    return b3.filter(pl.col("_run") == latest).drop("_run")
+
+
 def cash_events(zones: Zones, dates: pl.Series) -> pl.DataFrame:
     frames: list[pl.DataFrame] = []
     ids = _ids(zones)
     b3 = _staging(zones, "b3_company_events", "cash_event")
     if b3 is not None and b3.height:
-        b3 = b3.unique(
-            ["root", "type_stock", "kind", "last_date_prior", "value_cash", "quoted_per_shares", "approved_on"]
-        )
+        b3 = latest_cash_snapshot(zones, b3)
         cls = share_classes(zones)
         b3 = b3.join(cls, on=["root", "type_stock"], how="inner").filter(
             (pl.col("last_date_prior") >= pl.col("first_trade")) & (pl.col("last_date_prior") <= pl.col("last_trade"))

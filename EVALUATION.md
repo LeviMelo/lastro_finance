@@ -19,3 +19,4 @@ matters, and the result against the independent figure.
 | 2026-11-07 | [Context catalogue backfill](docs/evaluation/2026-11-07-context-catalogue-backfill.md) | 21 context sources archived from their first date; Focus %20 and SGS window fixes |
 | 2026-11-07 | [Series core, first build](docs/evaluation/2026-11-07-series-core-first-build.md) | SGS, Ipeadata, SIDRA → `series_observation`: 1,017 series, 0 quarantined, IPCA SGS = SIDRA, reparse byte-identical |
 | 2026-11-07 | [Storage and price_daily](docs/evaluation/2026-11-07-storage-and-price-daily.md) | raw deltas, changed-row staging, compaction measured; price_daily 7.34 M sessions, identity, 172/173 closes equal Yahoo |
+| 2026-11-07 | [Corporate events](docs/evaluation/2026-11-07-corporate-events.md) | 35,056 events; golden stock and cash cases exact; split adjustment equals Yahoo on 7 large caps; total-return differences explained |

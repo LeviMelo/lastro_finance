@@ -61,6 +61,7 @@ class Connector(ABC):
     user_agent: ClassVar[str | None] = None  # None: the default generic UA
     min_interval: ClassVar[float] = 1.0
     dedup_staging: ClassVar[bool] = False  # its files are re-sent whole: keep only rows that changed (ADR-0014)
+    whole_datasets: ClassVar[frozenset[str]] = frozenset()  # exempt: identical rows there are distinct facts
 
     @abstractmethod
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
@@ -104,7 +105,9 @@ def load(
     for parsed in connector.parse(blob, row):
         contract = connector.contracts[parsed.dataset_id]
         frame = parsed.frame
-        old = before.get((parsed.dataset_id, parsed.partition))
+        old = (
+            None if parsed.dataset_id in connector.whole_datasets else before.get((parsed.dataset_id, parsed.partition))
+        )
         if old is not None and frame.height:
             cols = _data_columns(frame)
             kept = frame.join(old.select(cols).unique(), on=cols, how="anti", nulls_equal=True, maintain_order="left")

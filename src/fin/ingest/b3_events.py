@@ -310,6 +310,8 @@ class B3CompanyEvents(Connector):
     user_agent: ClassVar[str | None] = BROWSER_UA
     contracts: ClassVar[dict[str, Contract]] = CONTRACTS
     dedup_staging: ClassVar[bool] = True  # every refresh re-serves the whole history
+    # identical cash rows are distinct installments, and pages shift as rows are added: staged whole, chosen by run
+    whole_datasets: ClassVar[frozenset[str]] = frozenset({"cash_event"})
 
     def __init__(self) -> None:
         self._roots: set[str] = set()

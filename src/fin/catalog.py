@@ -11,7 +11,8 @@ Views:
   (`received_on`, knowledge date) and `issuer_cnpj` as 14 digits;
 - `price_adjusted`: standard-lot closes with split and cash adjustment to today's basis (derived on read);
 - `fii_distribution`: FII/Fiagro distributions with their delivery minute;
-- `intraday_bar`: Yahoo 5-minute bars (tier U).
+- `intraday_bar`: Yahoo 5-minute bars (tier U);
+- macro `universe(date, asset_class)`: instruments trading in the 30 days up to a date, delisted later or not.
 """
 
 from __future__ import annotations
@@ -110,6 +111,20 @@ def build(z: Zones) -> list[str]:
                 made.append(name)
             except duckdb.Error:
                 con.execute(f"DROP VIEW IF EXISTS {name}")  # its files do not exist yet
+        if {"instrument", "price_daily"} <= set(made):
+            # point-in-time universe (PLAN §4.4): instruments with a standard-lot session in the 30 days up to `d`,
+            # whatever happened to them later (delisted ones included: no survivorship bias)
+            con.execute(
+                """
+                CREATE OR REPLACE MACRO universe(d, cls) AS TABLE
+                SELECT i.instrument_id, i.asset_class, max(p.trade_date) AS last_session_on_or_before
+                FROM instrument i JOIN price_daily p USING (instrument_id)
+                WHERE p.market_segment = 'lote_padrao' AND p.trade_date BETWEEN CAST(d AS DATE) - INTERVAL 30 DAY
+                      AND CAST(d AS DATE) AND (cls IS NULL OR i.asset_class = cls)
+                GROUP BY ALL
+                """
+            )
+            made.append("universe()")
     finally:
         con.close()
     tmp.replace(z.catalog)
