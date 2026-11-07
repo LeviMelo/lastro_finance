@@ -14,6 +14,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
+from conftest import FIXTURES
 from fin.config import Zones
 from fin.ingest.fetch import Fetcher, FetchSpec
 from fin.ingest.http import FetchError, PoliteClient
@@ -33,6 +34,21 @@ def test_raw_round_trip_and_layout(zones: Zones) -> None:
     assert store.read(sha) == data
     store.verify(sha)
     assert not os.access(ref.path, os.W_OK)  # read-only once written
+
+
+def test_large_text_is_compressed_at_rest_and_read_back_exactly(zones: Zones) -> None:
+    store = RawStore(zones.raw)
+    data = (FIXTURES / "b3_cotahist" / "COTAHIST_A2025_excerpt.TXT").read_bytes()
+    assert len(data) >= 64 * 1024
+    ref = store.put_bytes(data, "txt")
+    assert ref.path.name.endswith(".txt.zst") and ref.path.stat().st_size < len(data) / 3
+    assert ref.sha256 == hashlib.sha256(data).hexdigest()  # named by the original bytes
+    assert store.read(ref.sha256) == data
+    store.verify(ref.sha256)
+    again = store.put_stream(io.BytesIO(data), "txt")
+    assert not again.created and again.path == ref.path
+    zipped = store.put_bytes(b"PK" + data, "zip")  # archives are kept as they are
+    assert zipped.path.suffix == ".zip"
 
 
 def test_raw_put_is_idempotent_and_stream_equals_bytes(zones: Zones) -> None:

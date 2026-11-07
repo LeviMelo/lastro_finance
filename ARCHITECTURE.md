@@ -25,6 +25,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `staging/<source>/<dataset>/<partition>/<sha>.parquet` | L2, source-shaped, with provenance | rebuildable |
 | `quarantine/…` (same layout) | rows that broke a contract rule, with `reject_rules` | rebuildable |
 | `core/reference/calendar_day/calendar_day.parquet` | the business-day calendar | rebuildable |
+| `staging/b3_cotahist/quote/year=YYYY/<sha>.parquet` | COTAHIST records, 1986–, one file per raw zip and year | rebuildable |
 
 ## 3. Module map (`src/fin/`)
 
@@ -47,7 +48,8 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/base.py` | `Connector` interface (`discover`, `follow`, `parse`, `derive`), `run_connector`, `reparse` |
 | `ingest/registry.py` | source → connector, the daily job's list, ephemeral sources not archived |
 | `ingest/anbima_calendar.py` | ANBIMA holidays → staging `holiday` → core `calendar_day` |
-| `ingest/snapshots.py` | archive-only connectors for the ephemeral sources (ADR-0007) |
+| `ingest/snapshots.py` | archive-only connectors for the ephemeral sources (ADR-0007) and for files replaced in place (Tesouro, NEFIN) |
+| `ingest/b3_cotahist.py` | COTAHIST fixed-width → staging `quote` (exact decimals as quoted), line repair and quarantine (ADR-0008) |
 | `reference/` | L0 reference data |
 | `reference/calendar.py` | `calendar_day` build and the `Calendar` API (`du`, shifts) (ADR-0006) |
 | `reference/sources.py` | loads and validates `reference/sources.toml`, the source registry |

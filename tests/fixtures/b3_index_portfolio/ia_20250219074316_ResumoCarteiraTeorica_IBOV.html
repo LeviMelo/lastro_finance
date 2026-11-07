@@ -1,0 +1,1639 @@
+
+<!doctype html>
+<html class="no-js" lang="pt-br">
+<head id="ctl00_Head1"><link href="../aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/Calendar/Skins/SiteBmfBovespa/Calendar.css" type="text/css" rel="stylesheet" /><link href="../aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/Calendar/Skins/SiteBmfBovespa/RadTimePicker.css" type="text/css" rel="stylesheet" /><link href="../aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/Combobox/Skins/SiteBmfBovespa/Styles.css" type="text/css" rel="stylesheet" /><link href="../aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/Estrutura.css" type="text/css" rel="stylesheet" /><link href="../aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/foundation.css" type="text/css" rel="stylesheet" /><link href="../aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/Grid/Skins/SiteBmfBovespa/Styles.css" type="text/css" rel="stylesheet" /><link href="../aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/Input/Skins/SiteBmfBovespa/styles.css" type="text/css" rel="stylesheet" /><link href="../aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/jquery.ui.datepicker.css" type="text/css" rel="stylesheet" /><link href="../aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/Panelbar/Scripts/4_3_4/panelbar.css" type="text/css" rel="stylesheet" /><link href="../aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/Panelbar/Skins/SiteBmfBovespa/styles.css" type="text/css" rel="stylesheet" /><link href="../aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/Tabstrip/Scripts/3_6_4/tabstrip.css" type="text/css" rel="stylesheet" /><link href="../aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/Tabstrip/Scripts/3_6_4/vtabstrip.css" type="text/css" rel="stylesheet" /><link href="../aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/Tabstrip/Skins/SiteBmfBovespa/styles.css" type="text/css" rel="stylesheet" /><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script type="text/javascript" src="/ruxitagentjs_ICANVfgqru_10305250107141607.js" data-dtconfig="rid=RID_-1345648782|rpid=1547789390|domain=bmfbovespa.com.br|reportUrl=/rb_ea8d7b8f-040c-423b-b726-54310cab2c40|app=a8c099ff7888fac8|cuc=kju5m9kg|mel=100000|featureHash=ICANVfgqru|dpvc=1|lastModification=1738417336724|tp=500,50,0|rdnt=1|uxrgce=1|agentUri=/ruxitagentjs_ICANVfgqru_10305250107141607.js"></script><script src="/aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/js/vendor/modernizr.js"></script>
+    <script src="/aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/js/vendor/jquery.js"></script>
+    <script src="/aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/js/foundation.min.js"></script>
+    <script src="/aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/js/responsive.tables.min.js"></script>
+
+    <script src="/aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/js/jquery.ui.core.js"></script>
+    <script src="/aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/js/jquery.ui.datepicker.js"></script>
+		
+    <script type="text/javascript" src="/shared/js/ferramentas.js"></script>
+    <script type="text/javascript" src="/shared/js/GlobalizacaoMsgValidacao.js"></script>
+    <script type="text/javascript" src="/shared/js/DicionarioFinanceiro.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function ($) {
+            //$('#mega-menu-1').dcMegaMenu({
+              //  rowItems: '4',
+              //  speed: 0,
+              //  fullWidth: false
+            //});
+            
+            $("a.mega-menu-navbar-").addClass("active");
+        });
+    </script>
+    
+    <style type="text/css">
+        .divBorderTop {border-top: solid 1px #cccfd1; padding:8px 0;}
+        .GridBovespaCSS tfoot tr td div {padding:8px 8px;}
+        table tfoot tr.rgFooter td {padding:8px 0;}
+        table tfoot tr td {padding:8px;} 
+    </style>
+    <script language="javascript" type="text/javascript">
+		if (getParameterByName("Indice").toUpperCase() == "IBOV" || getParameterByName("Indice").toUpperCase() == "IBOVESPA")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-amplos/indice-ibovespa-ibovespa-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/broad-indices/indice-ibovespa-ibovespa-composition-index-portfolio.htm";
+			}
+		}
+		if (getParameterByName("Indice").toUpperCase() == "IBRA")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-amplos/indice-brasil-amplo-ibra-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/broad-indices/brazil-broad-based-index-ibra-composition-index-portfolio.htm";
+			}
+		}		
+		if (getParameterByName("Indice").toUpperCase() == "IBXL")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-amplos/indice-brasil-50-ibrx-50-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/broad-indices/indice-brasil-50-ibrx-50-composition-index-portfolio.htm";
+			}
+		}		
+		if (getParameterByName("Indice").toUpperCase() == "IBRX")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-amplos/indice-brasil-100-ibrx-100-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/broad-indices/indice-brasil-100-ibrx-100-composition-index-portfolio.htm";
+			}
+		}
+
+		if (getParameterByName("Indice").toUpperCase() == "ICO2")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-sustentabilidade/indice-carbono-eficiente-ico2-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/sustainability-indices/carbon-efficient-index-ico2-composition-index-portfolio.htm";
+			}
+		}
+		if (getParameterByName("Indice").toUpperCase() == "ISE")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-sustentabilidade/indice-de-sustentabilidade-empresarial-ise-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/sustainability-indices/corporate-sustainability-index-ise-composition-index-portfolio.htm";
+			}
+		}
+	
+		if (getParameterByName("Indice").toUpperCase() == "ICON")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-segmentos-e-setoriais/indice-bm-fbovespa-consumo-icon-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/indices-de-segmentos-e-setoriais/consumer-stock-index-icon-composition-index-portfolio.htm";
+			}
+		}
+		if (getParameterByName("Indice").toUpperCase() == "BDRX")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-segmentos-e-setoriais/indice-de-bdrs-nao-patrocinados-global-bdrx-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/indices-de-segmentos-e-setoriais/unsponsored-bdr-index-global-bdrx-composition-index-portfolio.htm";
+			}
+		}		
+		if (getParameterByName("Indice").toUpperCase() == "MLCX")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-segmentos-e-setoriais/indice-midlarge-cap-mlcx-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/indices-de-segmentos-e-setoriais/midlargecap-index-mlcx-composition-index-portfolio.htm";
+			}
+		}
+		if (getParameterByName("Indice").toUpperCase() == "IDIV")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-segmentos-e-setoriais/indice-dividendos-idiv-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/indices-de-segmentos-e-setoriais/dividend-index-idiv-composition-index-portfolio.htm";
+			}
+		}
+		if (getParameterByName("Indice").toUpperCase() == "IEEX")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-segmentos-e-setoriais/indice-energia-eletrica-iee-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/indices-de-segmentos-e-setoriais/electric-utilities-index-iee-composition-index-portfolio.htm";
+			}
+		}
+		if (getParameterByName("Indice").toUpperCase() == "IFIX")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-segmentos-e-setoriais/indice-fundos-de-investimentos-imobiliarios-ifix-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/indices-de-segmentos-e-setoriais/real-estate-fund-index-ifix-composition-index-portfolio.htm";
+			}
+		}
+		if (getParameterByName("Indice").toUpperCase() == "IFNC")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-segmentos-e-setoriais/indice-financeiro-ifnc-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/indices-de-segmentos-e-setoriais/financials-index-ifnc-composition-index-portfolio.htm";
+			}
+		}
+		if (getParameterByName("Indice").toUpperCase() == "IMAT")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-segmentos-e-setoriais/indice-materiais-basicos-imat-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/indices-de-segmentos-e-setoriais/basic-materials-index-imat-composition-index-portfolio.htm";
+			}
+		}
+		if (getParameterByName("Indice").toUpperCase() == "IMOB")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-segmentos-e-setoriais/indice-imobiliario-imob-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/indices-de-segmentos-e-setoriais/real-estate-index-imob-composition-index-portfolio.htm";
+			}
+		}
+		if (getParameterByName("Indice").toUpperCase() == "INDX")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-segmentos-e-setoriais/indice-industrial-indx-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/indices-de-segmentos-e-setoriais/industrials-index-indx-composition-index-portfolio.htm";
+			}
+		}
+		if (getParameterByName("Indice").toUpperCase() == "IVBX")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-segmentos-e-setoriais/indice-valor-2-linha-ivbx-2-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/indices-de-segmentos-e-setoriais/valor-index-ivbx-2-composition-index-portfolio.htm";
+			}
+		}
+		if (getParameterByName("Indice").toUpperCase() == "SMLL")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-segmentos-e-setoriais/indice-small-cap-smll-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/indices-de-segmentos-e-setoriais/smallcap-index-smll-composition-index-portfolio.htm";
+			}
+		}		
+		if (getParameterByName("Indice").toUpperCase() == "UTIL")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-segmentos-e-setoriais/indice-utilidade-publica-util-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/indices-de-segmentos-e-setoriais/public-utilities-index-util-composition-index-portfolio.htm";
+			}
+		}
+
+		
+		if (getParameterByName("Indice").toUpperCase() == "IGCT")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-governanca/indice-governanca-corporativa-trade-igct-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/corporate-governance-indices/corporate-governance-trade-index-igct-composition-index-portfolio.htm";
+			}
+		}
+		if (getParameterByName("Indice").toUpperCase() == "IGCX")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-governanca/indice-de-acoes-com-governanca-corporativa-diferenciada-igcx-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/corporate-governance-indices/special-corporate-governance-stock-index-igcx-composition-index-portfolio.htm";
+			}
+		}
+		if (getParameterByName("Indice").toUpperCase() == "IGNM")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-governanca/indice-governanca-corporativa-novo-mercado-igc-nm-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/corporate-governance-indices/novo-mercado-corporate-governance-equity-index-igc-nm-composition-index-portfolio.htm";
+			}
+		}
+		if (getParameterByName("Indice").toUpperCase() == "ITAG")
+		{
+			if (getParameterByName("idioma") == null || getParameterByName("idioma") == "pt-br")		
+			{
+				window.location.href = "https://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-de-governanca/indice-de-acoes-com-tag-along-diferenciado-itag-composicao-da-carteira.htm";
+			}
+			else 
+			{
+				window.location.href = "https://www.b3.com.br/en_us/market-data-and-indices/indices/corporate-governance-indices/special-tag-along-stock-index-itag-composition-index-portfolio.htm";
+			}
+		}
+		
+		function getParameterByName(name, url) 
+		{
+			if (!url) url = window.location.href;
+			name = name.replace(/[\[\]]/g, "\\$&");
+			var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+				results = regex.exec(url);
+			if (!results) return null;
+			if (!results[2]) return '';
+			return decodeURIComponent(results[2].replace(/\+/g, " "));
+		}	
+	
+	
+        var reposicionarBotaoExportarGridInterval;
+        
+        function ReposicionarBotaoExportarGrid() {
+            var divIconeExportar = document.getElementById("divIconeExportar");
+            var spanTextoExportar = document.getElementById("spanTextoExportar");
+            var exportDataGrid = document.getElementById("ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl01_ctl02_ctl00_ctl00_ExportDataGrid");
+            
+            if (!divIconeExportar || !spanTextoExportar || !exportDataGrid) {
+                //return false;
+            }
+            
+            if (exportDataGrid.parentNode.id == "ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl01_ctl02_ctl00_ctl00_toolBarRightGrid") {
+                //divIconeExportar.appendChild(exportDataGrid);
+                
+                //exportDataGrid.removeChild(exportDataGrid.childNodes[2], true);
+                
+                //exportDataGrid.appendChild(spanTextoExportar);
+            }
+        }
+        
+        function StartReposicionarBotaoExportarGridInterval() {
+            if (!reposicionarBotaoExportarGridInterval) {
+                //reposicionarBotaoExportarGridInterval = window.setInterval(ReposicionarBotaoExportarGrid, 1000);
+            }
+        }
+        
+        function StopReposicionarBotaoExportarGridInterval() {
+            if (reposicionarBotaoExportarGridInterval) {
+                //window.clearInterval(reposicionarBotaoExportarGridInterval);
+            }
+        }
+        
+        if (window.attachEvent) {
+            //window.attachEvent("onload", StartReposicionarBotaoExportarGridInterval);
+        }
+        else {
+            //window.addEventListener("load", StartReposicionarBotaoExportarGridInterval, false);
+        }
+    </script>
+
+    <script type="text/javascript">
+
+        window.addEventListener('click', iframe_resize);
+
+        function iframe_resize(altura) {
+
+            var height = 0
+            height = $("#divContainerIframe").height() + 24;
+
+            if (parent.postMessage) {
+				
+				if (navigator.userAgent.indexOf("Chrome") > - 1)
+					var parentURL = document.location.ancestorOrigins[0];
+				else
+					var parentURL = document.referrer;					
+													
+				if (parentURL.indexOf(window.location.hostname) > -1 || parentURL.indexOf("bmfbovespa.com.br") > -1)
+					parent.postMessage(height, "http://www.bmfbovespa.com.br");
+				else
+					parent.postMessage(height, "http://www.b3.com.br");
+				
+            }
+        }
+
+        function LimpaEstilo() {
+            $("input.radEnabledCss_SiteBmfBovespa").each(function () { $(this).removeAttr("style") });
+            $("input").mouseover(function () { $(this).removeAttr("style") });
+            $("input").mouseout(function () { $(this).removeAttr("style") });
+            $("input").focus(function () { $(this).removeAttr("style") });
+            $("input").blur(function () { $(this).removeAttr("style") });
+        }
+
+        function downloadFile(fileTitle, downloadKey, downloadArgs) {
+            var downloadUrl = "/download.ashx?key=" + downloadKey;
+
+            if (downloadArgs != null) {
+                downloadUrl += "&p=" + downloadArgs.join("&p=");
+            }
+
+            dcsMultiTrack("DCS.dcsuri", downloadUrl, "WT.ti", fileTitle);
+
+            window.top.location.href = downloadUrl;
+        }
+
+        function aplicarOrdenacao(idTabela) {
+            var tabela = document.getElementById(idTabela);
+            var style = document.createElement("style");
+
+            var initialBackgroundImageUrl = "/aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/Grid/Skins/SiteBmfBovespa/img/SortDesc.gif";
+            var sortUpBackgroundImageUrl = "/aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/Grid/Skins/SiteBmfBovespa/img/SortDesc.gif";
+            var sortDownBackgroundImageUrl = "/aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/Grid/Skins/SiteBmfBovespa/img/SortAsc.gif";
+
+            var columnsInitialBackgroundImage = [];
+            var columnsSortUpBackgroundImage = [];
+            var columnsSortDownBackgroundImage = [];
+
+            var styleHtml = [];
+
+            $(tabela).tablesorter();
+
+            style.type = "text/css";
+
+            $(tabela).find("th").each(function (index, element) {
+                var columnClassName = idTabela + "_col" + index;
+                var leftPosition = element.firstChild.offsetLeft + element.firstChild.offsetWidth;
+                var middleSpot = element.firstChild.offsetTop + (element.firstChild.offsetHeight / 2);
+                var initialTop = middleSpot - 4;
+                var sortUpTop = initialTop;
+                var sortDownTop = middleSpot - 7;
+
+                columnsInitialBackgroundImage.push("#" + idTabela + " th." + columnClassName + " { background-position: " + leftPosition + "px " + initialTop + "px; }");
+                columnsSortUpBackgroundImage.push("#" + idTabela + " th.headerSortUp." + columnClassName + " { background-position: " + leftPosition + "px " + sortUpTop + "px; }");
+                columnsSortDownBackgroundImage.push("#" + idTabela + " th.headerSortDown." + columnClassName + " { background-position: " + leftPosition + "px " + sortDownTop + "px; }");
+
+                $(element).addClass(columnClassName);
+            });
+
+            styleHtml.push("#" + idTabela + " th                { background-image: url('" + initialBackgroundImageUrl + "'); background-repeat: no-repeat; }");
+            styleHtml.push("#" + idTabela + " th.headerSortUp   { background-image: url('" + sortUpBackgroundImageUrl + "'); }");
+            styleHtml.push("#" + idTabela + " th.headerSortDown { background-image: url('" + sortDownBackgroundImageUrl + "'); }");
+
+            styleHtml.push(columnsInitialBackgroundImage.join("\n"));
+            styleHtml.push(columnsSortUpBackgroundImage.join("\n"));
+            styleHtml.push(columnsSortDownBackgroundImage.join("\n"));
+
+            if (style.styleSheet) {
+                style.styleSheet.cssText = styleHtml.join("\n");
+            }
+            else {
+                style.appendChild(document.createTextNode(styleHtml.join("\n")));
+            }
+
+            document.getElementsByTagName("head")[0].appendChild(style);
+        }
+	</script>
+    
+<meta /><meta /><link type="text/css" rel="stylesheet" href="/WebResource.axd?d=g0X_oR3TDN2ctNM9N8pJwSLfL1UCprW0H729487CUHwGfteErTADbwec5Wh8M5b_ZPo5LaRnI7x_4TE6KejuhUnzg_ryIWOhMo1iU1DKQPsmgaXnAz9OEuZHACajQnGckesQj1NFRsvrFQZvCcCTX540ZO4CajSlXYUaS52G97KLCFnSRF745Vk6qnjjjWAj4U-0AGfdQAP9jOmvxQSoRjj0hyg1&amp;amp;t=636213524822372796" /><link type="text/css" rel="stylesheet" href="/RadControls/TabStrip/Skins/SiteBmfBovespa/styles.css" /><title>
+	 
+</title></head>
+<body id="ctl00_bovespa">
+<!-- Google Tag Manager -->
+<noscript><iframe src="//www.googletagmanager.com/ns.html?id=GTM-KPF8G3"
+height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<script>    (function (w, d, s, l, i) {
+        w[l] = w[l] || []; w[l].push({ 'gtm.start':
+new Date().getTime(), event: 'gtm.js'
+        }); var f = d.getElementsByTagName(s)[0],
+j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+'//www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+    })(window, document, 'script', 'dataLayer', 'GTM-KPF8G3');</script>
+<!-- End Google Tag Manager -->
+
+<form name="aspnetForm" method="post" action="ResumoCarteiraTeorica.aspx?Indice=IBOV&amp;%3bidioma=pt-br&amp;idioma=pt-br" id="aspnetForm">
+<input type="hidden" name="ctl00_contentPlaceHolderConteudo_RadScriptManager1_TSM" id="ctl00_contentPlaceHolderConteudo_RadScriptManager1_TSM" value="" />
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="/wEPDwULLTEyMDUwOTc5NjIPZBYCZg9kFgICAw9kFgICAQ9kFgQCAQ9kFgoCAw9kFgJmD2QWBAIBDxQrAAJkFCsAAxQrAAIPFggeClBhZ2VWaWV3SUQFCVBhZ2VWaWV3MR4EVGV4dAUUTyBxdWUgw6kgbyBJYm92ZXNwYT8eC05hdmlnYXRlVXJsBSVSZXN1bW9JbmRpY2UuYXNweD9JbmRpY2U9SUJPViZPcGNhbz0wHgdWaXNpYmxlaGRkFCsAAmQUKwADFCsAAg8WAh8DaGRkFCsAAmRkFCsAAmRkFCsAAg8WBh8BBRhFc3RhdGlzdGljYXMgaGlzdMOzcmljYXMfAgUlUmVzdW1vRXZvbHVjYW9EaWFyaWEuYXNweD9JbmRpY2U9SUJPVh8DaGQUKwAHFCsAAg8WAh8BBRNFdm9sdcOnw6NvIGRpw6FyaWEgZGQUKwACDxYCHwEFG1RheGEgbcOpZGlhIGRlIGNyZXNjaW1lbnRvIGRkFCsAAg8WAh8BBRtWYXJpYcOnw6NvIGFudWFsIChSJC9VUyQpICBkZBQrAAIPFgIfAQURRXZvbHXDp8OjbyBtZW5zYWxkZBQrAAIPFgIfAQUTVm9sYXRpbGlkYWRlIG1lbnNhbGRkFCsAAg8WAh8BBRFWYWxvciBkZSBtZXJjYWRvIGRkFCsAAg8WAh8BBRBSZWNvcmRlcyBhbnVhaXMgZGRkAgUPDxYCHgVDb3VudAIBZBYCZg8PFgQeAklEBQlQYWdlVmlldzEfA2hkZAIFDw8WAh8BBTNDYXJ0ZWlyYSBUZcOzcmljYSBkbyBJYm92ZXNwYSB2w6FsaWRhIHBhcmEgMDIvMDMvMjFkZAIJDxBkZBYBZmQCCw8WAh8DaGQCDQ9kFggCAw88KwANAgAUKwACDxYOHglneGxzc19fZm0LKX5UZWxlcmlrLldlYi5VSS5HcmlkRXhjZWxFeHBvcnRGb3JtYXQsIFRlbGVyaWsuV2ViLlVJLCBWZXJzaW9uPTIwMDkuMy4xMjA4LjM1LCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPTEyMWZhZTc4MTY1YmEzZDQAHhdFbmFibGVBamF4U2tpblJlbmRlcmluZ2geC18hSXRlbUNvdW50AgEeC18hRGF0YUJvdW5kZx4HZ2VzX19mbgUTMjAyNS4wMi4xOSBJYm92ZXNwYR4IZ2VzX19lb2RoHgtFZGl0SW5kZXhlcxYAZBcBBQ9TZWxlY3RlZEluZGV4ZXMWAAEWAhYKDwIFFCsABRQrAAUWBB4IRGF0YVR5cGUZKwIeBG9pbmQCAmRkZAUGQ29kaWdvFCsABRYEHw0ZKwIfDgIDZGRkBQRBY2FvFCsABRYEHw0ZKwIfDgIEZGRkBQRUaXBvFCsABRYEHw0ZKwIfDgIFZGRkBQtRdGRlVGVvcmljYRQrAAUWBB8NGSsCHw4CBmRkZAUEUGFydGRlFCsAAAspelRlbGVyaWsuV2ViLlVJLkdyaWRDaGlsZExvYWRNb2RlLCBUZWxlcmlrLldlYi5VSSwgVmVyc2lvbj0yMDA5LjMuMTIwOC4zNSwgQ3VsdHVyZT1uZXV0cmFsLCBQdWJsaWNLZXlUb2tlbj0xMjFmYWU3ODE2NWJhM2Q0ATwrAAcACyl1VGVsZXJpay5XZWIuVUkuR3JpZEVkaXRNb2RlLCBUZWxlcmlrLldlYi5VSSwgVmVyc2lvbj0yMDA5LjMuMTIwOC4zNSwgQ3VsdHVyZT1uZXV0cmFsLCBQdWJsaWNLZXlUb2tlbj0xMjFmYWU3ODE2NWJhM2Q0ARYCHgRfZWZzFgQeBF9lY2NkHgVfZnRmc2RkFgofCWceBV9xZWx0GSlnU3lzdGVtLkRhdGEuRGF0YVJvd1ZpZXcsIFN5c3RlbS5EYXRhLCBWZXJzaW9uPTIuMC4wLjAsIEN1bHR1cmU9bmV1dHJhbCwgUHVibGljS2V5VG9rZW49Yjc3YTVjNTYxOTM0ZTA4OR4IRGF0YUtleXMWAB4FXyFDSVMXAB8IAlJmFgRmDxQrAANkZGRkAgEPFgQUKwACDxYKHwlnHxIZKwcfExYAHxQXAB8IAlJkFwMFBl8hRFNJQwJSBQtfIUl0ZW1Db3VudAJSBQhfIVBDb3VudGQWAh4DX3NlFgQeAl9jAgEeATAWBB4DX2ZuBQZDb2RpZ28eA19zbwspdlRlbGVyaWsuV2ViLlVJLkdyaWRTb3J0T3JkZXIsIFRlbGVyaWsuV2ViLlVJLCBWZXJzaW9uPTIwMDkuMy4xMjA4LjM1LCBDdWx0dXJlPW5ldXRyYWwsIFB1YmxpY0tleVRva2VuPTEyMWZhZTc4MTY1YmEzZDQBZBYFZGRkZGQWAmYPZBbM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" />
+
+
+<script src="/WebResource.axd?d=8XO1QZm4RZKm_MhlXR65ejPDafYHZuoF5OBY0Le3CUTWtPPcZfC5_dF5a9h8JGBcPcfaIiCcWg5jehi55Fz7fEwdcu_HOYdAc2KC5u_XdESzs2xOgr6FRcUHKn0Le5q5M98OTOhcxyqnP7Okqfj7PKm7PtauVTjYPyCtOagoTicTERKM0&amp;t=636213524813466454" type="text/javascript"></script>
+<script src="/Telerik.Web.UI.WebResource.axd?_TSM_HiddenField_=ctl00_contentPlaceHolderConteudo_RadScriptManager1_TSM&amp;compress=1&amp;_TSM_CombinedScripts_=%3b%3bSystem.Web.Extensions%2c+Version%3d3.5.0.0%2c+Culture%3dneutral%2c+PublicKeyToken%3d31bf3856ad364e35%3apt-BR%3a25f23ad5-9eec-4de7-a92d-14f140ae0b8d%3aea597d4b%3bTelerik.Web.UI%2c+Version%3d2009.3.1208.35%2c+Culture%3dneutral%2c+PublicKeyToken%3d121fae78165ba3d4%3apt-BR%3a6ed19be3-4ef3-4060-9b74-4985886ad7d9%3a16e4e7cd%3a58366029" type="text/javascript"></script>
+<input type="hidden" name="__VIEWSTATEGENERATOR" id="__VIEWSTATEGENERATOR" value="E1F7E29B" />
+<input type="hidden" name="__EVENTVALIDATION" id="__EVENTVALIDATION" value="/wEWDgL+k8jsCQK28fahBwLN4YHaCALCu4fGBwLBu4fGBwLEu4fGBwLDu4fGBwK+u4fGBwK9u4fGBwLU7ov2DgKG55a5AwL0oo0sAruK5IgKArSz5PIOIqlQj6OaSEyIS5HzgUWGU3kYC8o=" />
+<div id="divContainerIframe">
+<div class="row collapse">
+    <div class="large-12 columns">
+        
+    
+    <div id="ctl00_contentPlaceHolderConteudo_pnlGeral">
+	<div id="ctl00_contentPlaceHolderConteudo_pnlIndice">
+		    
+        <div id="ctl00_contentPlaceHolderConteudo_tabIndice" class="tabstrip RadTabStrip_SiteBmfBovespa ">
+			<!-- 3.6.4 --><script type="text/javascript" src="/WebResource.axd?d=4_i8nphUh5rGmRIwHa0b8XlNkrVyjaEwi-WEHsmjEnUgKiQN-b9KKiQzgqfaR8sT5z26xlACC3V7B804GFq5jSPFy2DO48UkNXH5R1v0sadYRWdnQbdURhSEbESZYSMkLb_5lSdjeWTTdHQ-EL2wbwNAs80XW66UQk7ZDV_BV7k2A9dME17WWagt12DIpp40RalgG0med8eb8qCaPCLMLhiy2941&amp;t=636213524822372796"></script><span id="ctl00_contentPlaceHolderConteudo_tabIndiceStyleSheetHolder" style="display:none;"></span><div class="levelwrap level1">
+				<ul>
+					<li class="first last"><a href="/indices/ResumoCarteiraTeorica.aspx?Indice=IBOV" id="ctl00_contentPlaceHolderConteudo_tabIndice_Tab2" class="selected"><span class="wrap"><span class="innerWrap"></span></span></a>
+						<ul style="display:none;">
+
+								<li class="first"><a href="/indices/ResumoCarteiraQuadrimestre.aspx?Indice=IBOV" id="ctl00_contentPlaceHolderConteudo_tabIndice_Tab2_tabQuadrimestral"><span class="wrap"><span class="innerWrap">Carteira  - Jan. a Abr. 2021</span></span></a></li>
+								<li class="last"><a href="/indices/ResumoCarteiraTeorica.aspx?Indice=IBOV" id="ctl00_contentPlaceHolderConteudo_tabIndice_Tab2_tabTeorica" class="selected"><span class="wrap"><span class="innerWrap">Carteira do Dia - 02/03/21</span></span></a></li>
+
+						</ul>
+					</li>
+				</ul>
+			</div><input type="hidden" id="ctl00_contentPlaceHolderConteudo_tabIndice_Hidden" name="ctl00$contentPlaceHolderConteudo$tabIndice" /><script type="text/javascript">window["ctl00_contentPlaceHolderConteudo_tabIndice"] = new RadTabStrip("ctl00_contentPlaceHolderConteudo_tabIndice");window["ctl00_contentPlaceHolderConteudo_tabIndice"].Initialize({"MultiPageID":"rmpIndice","MultiPageClientID":"ctl00_contentPlaceHolderConteudo_rmpIndice","Skin":"SiteBmfBovespa","Enabled":true},{"ctl00_contentPlaceHolderConteudo_tabIndice_Tab1":{"NavigateAfterClick":true,"PageViewID":"PageView1"},"ctl00_contentPlaceHolderConteudo_tabIndice_Tab2":{"NavigateAfterClick":true,"Selected":true},"ctl00_contentPlaceHolderConteudo_tabIndice_Tab2_tabPrevia":{"NavigateAfterClick":true},"ctl00_contentPlaceHolderConteudo_tabIndice_Tab2_tabQuadrimestral":{"NavigateAfterClick":true},"ctl00_contentPlaceHolderConteudo_tabIndice_Tab2_tabTeorica":{"NavigateAfterClick":true,"Selected":true},"ctl00_contentPlaceHolderConteudo_tabIndice_Tab3":{"NavigateAfterClick":true},"ctl00_contentPlaceHolderConteudo_tabIndice_Tab3_Tab4":{"NavigateAfterClick":true},"ctl00_contentPlaceHolderConteudo_tabIndice_Tab3_Tab5":{"NavigateAfterClick":true},"ctl00_contentPlaceHolderConteudo_tabIndice_Tab3_Tab6":{"NavigateAfterClick":true},"ctl00_contentPlaceHolderConteudo_tabIndice_Tab3_Tab9":{"NavigateAfterClick":true},"ctl00_contentPlaceHolderConteudo_tabIndice_Tab3_Tab8":{"NavigateAfterClick":true},"ctl00_contentPlaceHolderConteudo_tabIndice_Tab3_Tab10":{"NavigateAfterClick":true},"ctl00_contentPlaceHolderConteudo_tabIndice_Tab3_Tab7":{"NavigateAfterClick":true}});</script>
+		</div>
+        
+        <div id="ctl00_contentPlaceHolderConteudo_rmpIndice">
+			<div>
+				<input type="hidden" name="ctl00$contentPlaceHolderConteudo$rmpIndice_Selected" id="ctl00_contentPlaceHolderConteudo_rmpIndice_Selected" value="0" />
+			</div><script type="text/javascript">
+				window["ctl00_contentPlaceHolderConteudo_rmpIndice"] = new RadMultiPage('ctl00_contentPlaceHolderConteudo_rmpIndice', [{"ID":"PageView1","ClientID":"ctl00_contentPlaceHolderConteudo_PageView1"}]);
+			</script>
+		</div>
+        
+
+	</div>
+</div>
+        
+
+    <p><strong><span id="ctl00_contentPlaceHolderConteudo_lblTitulo">Carteira Teórica do Ibovespa válida para 02/03/21</span></strong></p>
+
+	<div class="row collapse">	
+	<div class="large-4 medium-4 small-12 columns">
+        <div class="row collapse">
+            <label><span id="ctl00_contentPlaceHolderConteudo_lblConsultar">Consultar por:</span></label>
+            <div class="large-8 small-12 columns">
+                <select name="ctl00$contentPlaceHolderConteudo$ddlTipoConsulta" id="ctl00_contentPlaceHolderConteudo_ddlTipoConsulta">
+	<option selected="selected" value="Codigo">C&#243;digo</option>
+	<option value="Setor">Setor de Atua&#231;&#227;o</option>
+
+</select>
+            </div>
+        </div>
+        </div>
+	</div>
+
+        
+        <div id="ctl00_contentPlaceHolderConteudo_Pnltabela" class="tabela">
+	
+
+            <p><span id="ctl00_contentPlaceHolderConteudo_lblAvisoTabela" class="label">Esta tabela considera as variações na participação de cada um dos papéis na composição total do índice, apuradas para a abertura do dia.</span></p>
+
+            <div id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica" class="RadGrid RadGrid_SiteBmfBovespa GridBovespaCSS" AllowCustomAction="False" CustomActionText="" EnableAJAXLoadingTemplate="True" LoadingTemplateTransparency="30" EnableExportButton="true" SkinsPath="~/aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/Grid/Skins">
+
+	<!-- 2009.3.1208.35 --><table cellspacing="0" class="rgMasterTable" border="0" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00" style="width:100%;table-layout:auto;empty-cells:show;">
+	<colgroup>
+		<col  />
+		<col  />
+		<col  />
+		<col  />
+		<col  />
+	</colgroup>
+<thead>
+		<tr>
+			<th scope="col" class="rgHeader GridBovespaHeaderStyle rgSorted"><a title="Click here to sort" href="javascript:__doPostBack('ctl00$contentPlaceHolderConteudo$grdResumoCarteiraTeorica$ctl00$ctl02$ctl00$ctl00','')">Código</a>&nbsp;<input type="image" name="ctl00$contentPlaceHolderConteudo$grdResumoCarteiraTeorica$ctl00$ctl02$ctl00$ctl01" title="Sorted asc" src="http://bvmf.bmfbovespa.com.br/indices/img/SortDesc.gif" alt="Sorted asc" /></th><th scope="col" class="rgHeader GridBovespaHeaderStyle"><a title="Click here to sort" href="javascript:__doPostBack('ctl00$contentPlaceHolderConteudo$grdResumoCarteiraTeorica$ctl00$ctl02$ctl00$ctl02','')">Ação</a></th><th scope="col" class="rgHeader GridBovespaHeaderStyle"><a title="Click here to sort" href="javascript:__doPostBack('ctl00$contentPlaceHolderConteudo$grdResumoCarteiraTeorica$ctl00$ctl02$ctl00$ctl03','')">Tipo</a></th><th scope="col" class="rgHeader GridBovespaHeaderStyle"><a title="Click here to sort" href="javascript:__doPostBack('ctl00$contentPlaceHolderConteudo$grdResumoCarteiraTeorica$ctl00$ctl02$ctl00$ctl04','')">Qtde. Teórica</a></th><th scope="col" class="rgHeader GridBovespaHeaderStyle"><a title="Click here to sort" href="javascript:__doPostBack('ctl00$contentPlaceHolderConteudo$grdResumoCarteiraTeorica$ctl00$ctl02$ctl00$ctl05','')">Part. (%)</a></th>
+		</tr>
+	</thead><tfoot>
+		<tr class="rgFooter" style="font-weight:normal;font-style:normal;text-decoration:none;">
+			<td>
+                                <div id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl03_ctl00_pnlQuantidadeTeoricaTotal1">
+				
+                                    <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl03_ctl00_lblQuantidadeTeoricaTotal">Quantidade Teórica Total</span>
+                                
+			</div>
+                                <div id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl03_ctl00_pnlRedutor1" class="divBorderTop">
+				
+                                    <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl03_ctl00_lblRedutor">Redutor</span>
+                                
+			</div>
+                            </td><td>
+                                <div id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl03_ctl00_pnlQuantidadeTeoricaTotal2" class="text-right">
+				
+                                    &nbsp;
+                                
+			</div>
+                                <div id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl03_ctl00_pnlRedutor2" class="divBorderTop text-right">
+				
+                                    &nbsp;
+                                
+			</div>
+                            </td><td>
+                                <div id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl03_ctl00_pnlQuantidadeTeoricaTotal3" class="text-right">
+				
+                                    &nbsp;
+                                
+			</div>
+                                <div id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl03_ctl00_pnlRedutor3" class="divBorderTop text-right">
+				
+                                    &nbsp;
+                                
+			</div>
+                            </td><td>
+                                <div id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl03_ctl00_pnlQuantidadeTeoricaTotal4" class="text-right">
+				
+                                    <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl03_ctl00_lblQuantidadeTeoricaResultado" class="label">74.813.385.730</span>
+                                
+			</div>
+                                <div id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl03_ctl00_pnlRedutor4" class="divBorderTop text-right">
+				
+                                    <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl03_ctl00_lblRedutorResultado" class="label">18.407.674,22271572</span>
+                                
+			</div>
+                            </td><td>
+                                <div id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl03_ctl00_pnlQuantidadeTeoricaTotal5" class="text-right">
+				
+                                    <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl03_ctl00_lblParticipacaoResultado" class="label">100,000</span>
+                                
+			</div>
+                                <div id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl03_ctl00_pnlRedutor5" class="divBorderTop text-right">
+				
+                                    &nbsp;
+                                
+			</div>                                
+                            </td>
+		</tr>
+	</tfoot><tbody>
+	<tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__0" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl04_lblCodigo">ABEV3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl04_lblAcao">AMBEV S/A</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl04_lblTipo">ON</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl04_lblQtdeTeorica_Formatada">4.355.174.839</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl04_lblPart_Formatada">2,953</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__1" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl06_lblCodigo">ASAI3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl06_lblAcao">ASSAI</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl06_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl06_lblQtdeTeorica_Formatada">157.635.935</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl06_lblPart_Formatada">0,554</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__2" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl08_lblCodigo">AZUL4</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl08_lblAcao">AZUL</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl08_lblTipo">PN      N2</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl08_lblQtdeTeorica_Formatada">327.283.207</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl08_lblPart_Formatada">0,645</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__3" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl10_lblCodigo">B3SA3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl10_lblAcao">B3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl10_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl10_lblQtdeTeorica_Formatada">1.930.877.944</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl10_lblPart_Formatada">5,167</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__4" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl12_lblCodigo">BBAS3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl12_lblAcao">BRASIL</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl12_lblTipo">ON  ERJ NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl12_lblQtdeTeorica_Formatada">1.283.197.221</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl12_lblPart_Formatada">1,760</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__5" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl14_lblCodigo">BBDC3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl14_lblAcao">BRADESCO</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl14_lblTipo">ON  EJ  N1</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl14_lblQtdeTeorica_Formatada">1.147.260.246</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl14_lblPart_Formatada">1,125</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__6" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl16_lblCodigo">BBDC4</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl16_lblAcao">BRADESCO</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl16_lblTipo">PN  EJ  N1</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl16_lblQtdeTeorica_Formatada">4.261.649.634</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl16_lblPart_Formatada">4,663</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__7" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl18_lblCodigo">BBSE3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl18_lblAcao">BBSEGURIDADE</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl18_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl18_lblQtdeTeorica_Formatada">671.584.841</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl18_lblPart_Formatada">0,820</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__8" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl20_lblCodigo">BEEF3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl20_lblAcao">MINERVA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl20_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl20_lblQtdeTeorica_Formatada">239.331.676</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl20_lblPart_Formatada">0,114</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__9" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl22_lblCodigo">BPAC11</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl22_lblAcao">BTGP BANCO</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl22_lblTipo">UNT     N2</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl22_lblQtdeTeorica_Formatada">263.871.572</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl22_lblPart_Formatada">1,319</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__10" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl24_lblCodigo">BRAP4</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl24_lblAcao">BRADESPAR</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl24_lblTipo">PN      N1</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl24_lblQtdeTeorica_Formatada">222.075.664</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl24_lblPart_Formatada">0,706</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__11" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl26_lblCodigo">BRDT3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl26_lblAcao">PETROBRAS BR</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl26_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl26_lblQtdeTeorica_Formatada">1.164.958.126</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl26_lblPart_Formatada">1,129</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__12" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl28_lblCodigo">BRFS3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl28_lblAcao">BRF SA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl28_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl28_lblQtdeTeorica_Formatada">811.759.800</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl28_lblPart_Formatada">0,867</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__13" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl30_lblCodigo">BRKM5</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl30_lblAcao">BRASKEM</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl30_lblTipo">PNA     N1</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl30_lblQtdeTeorica_Formatada">264.640.575</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl30_lblPart_Formatada">0,414</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__14" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl32_lblCodigo">BRML3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl32_lblAcao">BR MALLS PAR</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl32_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl32_lblQtdeTeorica_Formatada">843.728.684</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl32_lblPart_Formatada">0,339</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__15" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl34_lblCodigo">BTOW3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl34_lblAcao">B2W DIGITAL</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl34_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl34_lblQtdeTeorica_Formatada">201.549.295</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl34_lblPart_Formatada">0,801</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__16" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl36_lblCodigo">CCRO3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl36_lblAcao">CCR SA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl36_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl36_lblQtdeTeorica_Formatada">1.115.695.556</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl36_lblPart_Formatada">0,600</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__17" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl38_lblCodigo">CIEL3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl38_lblAcao">CIELO</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl38_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl38_lblQtdeTeorica_Formatada">1.112.196.638</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl38_lblPart_Formatada">0,185</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__18" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl40_lblCodigo">CMIG4</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl40_lblAcao">CEMIG</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl40_lblTipo">PN      N1</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl40_lblQtdeTeorica_Formatada">969.723.092</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl40_lblPart_Formatada">0,551</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__19" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl42_lblCodigo">COGN3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl42_lblAcao">COGNA ON</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl42_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl42_lblQtdeTeorica_Formatada">1.847.994.874</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl42_lblPart_Formatada">0,328</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__20" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl44_lblCodigo">CPFE3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl44_lblAcao">CPFL ENERGIA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl44_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl44_lblQtdeTeorica_Formatada">187.714.249</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl44_lblPart_Formatada">0,259</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__21" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl46_lblCodigo">CPLE6</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl46_lblAcao">COPEL</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl46_lblTipo">PNB     N1</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl46_lblQtdeTeorica_Formatada">128.297.543</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl46_lblPart_Formatada">0,373</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__22" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl48_lblCodigo">CRFB3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl48_lblAcao">CARREFOUR BR</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl48_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl48_lblQtdeTeorica_Formatada">391.758.726</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl48_lblPart_Formatada">0,368</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__23" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl50_lblCodigo">CSAN3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl50_lblAcao">COSAN</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl50_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl50_lblQtdeTeorica_Formatada">129.314.042</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl50_lblPart_Formatada">0,525</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__24" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl52_lblCodigo">CSNA3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl52_lblAcao">SID NACIONAL</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl52_lblTipo">ON</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl52_lblQtdeTeorica_Formatada">642.398.790</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl52_lblPart_Formatada">1,075</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__25" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl54_lblCodigo">CVCB3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl54_lblAcao">CVC BRASIL</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl54_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl54_lblQtdeTeorica_Formatada">172.756.818</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl54_lblPart_Formatada">0,136</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__26" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl56_lblCodigo">CYRE3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl56_lblAcao">CYRELA REALT</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl56_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl56_lblQtdeTeorica_Formatada">281.154.098</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl56_lblPart_Formatada">0,339</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__27" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl58_lblCodigo">ECOR3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl58_lblAcao">ECORODOVIAS</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl58_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl58_lblQtdeTeorica_Formatada">171.109.276</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl58_lblPart_Formatada">0,090</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__28" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl60_lblCodigo">EGIE3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl60_lblAcao">ENGIE BRASIL</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl60_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl60_lblQtdeTeorica_Formatada">254.792.279</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl60_lblPart_Formatada">0,504</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__29" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl62_lblCodigo">ELET3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl62_lblAcao">ELETROBRAS</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl62_lblTipo">ON      N1</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl62_lblQtdeTeorica_Formatada">358.018.408</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl62_lblPart_Formatada">0,556</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__30" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl64_lblCodigo">ELET6</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl64_lblAcao">ELETROBRAS</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl64_lblTipo">PNB     N1</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl64_lblQtdeTeorica_Formatada">242.977.127</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl64_lblPart_Formatada">0,383</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__31" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl66_lblCodigo">EMBR3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl66_lblAcao">EMBRAER</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl66_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl66_lblQtdeTeorica_Formatada">736.143.105</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl66_lblPart_Formatada">0,443</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__32" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl68_lblCodigo">ENBR3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl68_lblAcao">ENERGIAS BR</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl68_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl68_lblQtdeTeorica_Formatada">250.403.441</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl68_lblPart_Formatada">0,217</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__33" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl70_lblCodigo">ENEV3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl70_lblAcao">ENEVA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl70_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl70_lblQtdeTeorica_Formatada">287.844.670</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl70_lblPart_Formatada">0,948</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__34" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl72_lblCodigo">ENGI11</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl72_lblAcao">ENERGISA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl72_lblTipo">UNT     N2</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl72_lblQtdeTeorica_Formatada">250.679.709</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl72_lblPart_Formatada">0,527</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__35" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl74_lblCodigo">EQTL3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl74_lblAcao">EQUATORIAL</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl74_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl74_lblQtdeTeorica_Formatada">1.010.286.085</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl74_lblPart_Formatada">0,988</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__36" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl76_lblCodigo">EZTC3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl76_lblAcao">EZTEC</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl76_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl76_lblQtdeTeorica_Formatada">95.756.217</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl76_lblPart_Formatada">0,146</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__37" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl78_lblCodigo">FLRY3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl78_lblAcao">FLEURY</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl78_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl78_lblQtdeTeorica_Formatada">303.800.430</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl78_lblPart_Formatada">0,388</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__38" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl80_lblCodigo">GGBR4</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl80_lblAcao">GERDAU</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl80_lblTipo">PN      N1</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl80_lblQtdeTeorica_Formatada">995.903.643</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl80_lblPart_Formatada">1,308</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__39" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl82_lblCodigo">GNDI3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl82_lblAcao">INTERMEDICA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl82_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl82_lblQtdeTeorica_Formatada">588.176.771</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl82_lblPart_Formatada">2,597</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__40" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl84_lblCodigo">GOAU4</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl84_lblAcao">GERDAU MET</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl84_lblTipo">PN      N1</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl84_lblQtdeTeorica_Formatada">693.699.918</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl84_lblPart_Formatada">0,407</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__41" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl86_lblCodigo">GOLL4</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl86_lblAcao">GOL</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl86_lblTipo">PN      N2</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl86_lblQtdeTeorica_Formatada">137.725.788</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl86_lblPart_Formatada">0,145</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__42" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl88_lblCodigo">HAPV3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl88_lblAcao">HAPVIDA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl88_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl88_lblQtdeTeorica_Formatada">1.085.256.490</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl88_lblPart_Formatada">0,872</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__43" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl90_lblCodigo">HGTX3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl90_lblAcao">CIA HERING</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl90_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl90_lblQtdeTeorica_Formatada">126.186.408</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl90_lblPart_Formatada">0,091</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__44" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl92_lblCodigo">HYPE3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl92_lblAcao">HYPERA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl92_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl92_lblQtdeTeorica_Formatada">410.147.968</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl92_lblPart_Formatada">0,635</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__45" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl94_lblCodigo">IGTA3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl94_lblAcao">IGUATEMI</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl94_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl94_lblQtdeTeorica_Formatada">85.796.919</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl94_lblPart_Formatada">0,129</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__46" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl96_lblCodigo">IRBR3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl96_lblAcao">IRBBRASIL RE</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl96_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl96_lblQtdeTeorica_Formatada">1.255.327.516</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl96_lblPart_Formatada">0,360</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__47" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl98_lblCodigo">ITSA4</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl98_lblAcao">ITAUSA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl98_lblTipo">PN  ED  N1</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl98_lblQtdeTeorica_Formatada">4.515.538.171</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl98_lblPart_Formatada">2,139</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__48" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl100_lblCodigo">ITUB4</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl100_lblAcao">ITAUUNIBANCO</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl100_lblTipo">PN  EDJ N1</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl100_lblQtdeTeorica_Formatada">4.757.466.114</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl100_lblPart_Formatada">5,802</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__49" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl102_lblCodigo">JBSS3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl102_lblAcao">JBS</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl102_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl102_lblQtdeTeorica_Formatada">1.500.315.048</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl102_lblPart_Formatada">1,982</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__50" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl104_lblCodigo">JHSF3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl104_lblAcao">JHSF PART</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl104_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl104_lblQtdeTeorica_Formatada">288.952.690</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl104_lblPart_Formatada">0,093</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__51" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl106_lblCodigo">KLBN11</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl106_lblAcao">KLABIN S/A</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl106_lblTipo">UNT     N2</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl106_lblQtdeTeorica_Formatada">788.757.519</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl106_lblPart_Formatada">1,195</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__52" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl108_lblCodigo">LAME4</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl108_lblAcao">LOJAS AMERIC</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl108_lblTipo">PN      N1</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl108_lblQtdeTeorica_Formatada">843.325.974</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl108_lblPart_Formatada">1,025</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__53" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl110_lblCodigo">LCAM3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl110_lblAcao">LOCAMERICA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl110_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl110_lblQtdeTeorica_Formatada">323.763.077</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl110_lblPart_Formatada">0,386</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__54" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl112_lblCodigo">LREN3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl112_lblAcao">LOJAS RENNER</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl112_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl112_lblQtdeTeorica_Formatada">785.417.914</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl112_lblPart_Formatada">1,437</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__55" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl114_lblCodigo">MGLU3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl114_lblAcao">MAGAZ LUIZA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl114_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl114_lblQtdeTeorica_Formatada">2.668.955.512</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl114_lblPart_Formatada">3,226</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__56" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl116_lblCodigo">MRFG3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl116_lblAcao">MARFRIG</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl116_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl116_lblQtdeTeorica_Formatada">368.864.634</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl116_lblPart_Formatada">0,260</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__57" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl118_lblCodigo">MRVE3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl118_lblAcao">MRV</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl118_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl118_lblQtdeTeorica_Formatada">298.796.441</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl118_lblPart_Formatada">0,243</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__58" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl120_lblCodigo">MULT3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl120_lblAcao">MULTIPLAN</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl120_lblTipo">ON      N2</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl120_lblQtdeTeorica_Formatada">276.848.567</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl120_lblPart_Formatada">0,264</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__59" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl122_lblCodigo">NTCO3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl122_lblAcao">GRUPO NATURA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl122_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl122_lblQtdeTeorica_Formatada">841.083.922</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl122_lblPart_Formatada">1,919</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__60" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl124_lblCodigo">PCAR3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl124_lblAcao">P.ACUCAR-CBD</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl124_lblTipo">ON  EC  NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl124_lblQtdeTeorica_Formatada">157.635.935</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl124_lblPart_Formatada">0,181</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__61" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl126_lblCodigo">PETR3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl126_lblAcao">PETROBRAS</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl126_lblTipo">ON      N2</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl126_lblQtdeTeorica_Formatada">3.307.982.840</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl126_lblPart_Formatada">3,585</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__62" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl128_lblCodigo">PETR4</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl128_lblAcao">PETROBRAS</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl128_lblTipo">PN      N2</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl128_lblQtdeTeorica_Formatada">4.566.457.037</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl128_lblPart_Formatada">4,946</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__63" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl130_lblCodigo">PRIO3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl130_lblAcao">PETRORIO</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl130_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl130_lblQtdeTeorica_Formatada">164.860.900</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl130_lblPart_Formatada">0,716</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__64" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl132_lblCodigo">QUAL3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl132_lblAcao">QUALICORP</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl132_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl132_lblQtdeTeorica_Formatada">283.467.789</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl132_lblPart_Formatada">0,444</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__65" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl134_lblCodigo">RADL3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl134_lblAcao">RAIADROGASIL</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl134_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl134_lblQtdeTeorica_Formatada">1.072.645.150</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl134_lblPart_Formatada">1,203</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__66" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl136_lblCodigo">RAIL3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl136_lblAcao">RUMO S.A.</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl136_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl136_lblQtdeTeorica_Formatada">1.218.081.171</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl136_lblPart_Formatada">1,084</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__67" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl138_lblCodigo">RENT3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl138_lblAcao">LOCALIZA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl138_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl138_lblQtdeTeorica_Formatada">592.069.308</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl138_lblPart_Formatada">1,725</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__68" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl140_lblCodigo">SANB11</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl140_lblAcao">SANTANDER BR</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl140_lblTipo">UNT</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl140_lblQtdeTeorica_Formatada">355.666.691</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl140_lblPart_Formatada">0,647</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__69" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl142_lblCodigo">SBSP3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl142_lblAcao">SABESP</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl142_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl142_lblQtdeTeorica_Formatada">339.999.111</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl142_lblPart_Formatada">0,593</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__70" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl144_lblCodigo">SULA11</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl144_lblAcao">SUL AMERICA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl144_lblTipo">UNT     N2</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl144_lblQtdeTeorica_Formatada">279.572.852</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl144_lblPart_Formatada">0,451</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__71" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl146_lblCodigo">SUZB3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl146_lblAcao">SUZANO S.A.</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl146_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl146_lblQtdeTeorica_Formatada">724.921.241</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl146_lblPart_Formatada">2,659</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__72" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl148_lblCodigo">TAEE11</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl148_lblAcao">TAESA</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl148_lblTipo">UNT     N2</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl148_lblQtdeTeorica_Formatada">218.568.274</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl148_lblPart_Formatada">0,325</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__73" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl150_lblCodigo">TIMS3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl150_lblAcao">TIM</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl150_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl150_lblQtdeTeorica_Formatada">808.485.985</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl150_lblPart_Formatada">0,506</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__74" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl152_lblCodigo">TOTS3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl152_lblAcao">TOTVS</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl152_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl152_lblQtdeTeorica_Formatada">480.228.410</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl152_lblPart_Formatada">0,744</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__75" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl154_lblCodigo">UGPA3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl154_lblAcao">ULTRAPAR</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl154_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl154_lblQtdeTeorica_Formatada">1.087.056.490</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl154_lblPart_Formatada">1,004</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__76" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl156_lblCodigo">USIM5</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl156_lblAcao">USIMINAS</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl156_lblTipo">PNA     N1</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl156_lblQtdeTeorica_Formatada">513.729.947</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl156_lblPart_Formatada">0,426</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__77" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl158_lblCodigo">VALE3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl158_lblAcao">VALE</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl158_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl158_lblQtdeTeorica_Formatada">2.837.320.141</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl158_lblPart_Formatada">13,770</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__78" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl160_lblCodigo">VIVT3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl160_lblAcao">TELEF BRASIL</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl160_lblTipo">ON  EJ</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl160_lblQtdeTeorica_Formatada">444.219.852</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl160_lblPart_Formatada">0,947</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__79" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl162_lblCodigo">VVAR3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl162_lblAcao">VIAVAREJO</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl162_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl162_lblQtdeTeorica_Formatada">1.595.083.594</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl162_lblPart_Formatada">0,951</span>
+                            </td>
+	</tr><tr class="rgRow GridBovespaItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__80" style="font-weight:normal;font-style:normal;text-decoration:none;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl164_lblCodigo">WEGE3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl164_lblAcao">WEG</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl164_lblTipo">ON  ED  NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl164_lblQtdeTeorica_Formatada">741.148.001</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl164_lblPart_Formatada">2,847</span>
+                            </td>
+	</tr><tr class="rgAltRow GridBovespaAlternatingItemStyle" id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00__81" style="font-weight:normal;font-style:normal;text-decoration:none;text-align:center;">
+		<td class="rgSorted" align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl166_lblCodigo">YDUQ3</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl166_lblAcao">YDUQS PART</span>
+                            </td><td align="left">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl166_lblTipo">ON      NM</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl166_lblQtdeTeorica_Formatada">300.483.575</span>
+                            </td><td class="text-right">
+                                <span id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00_ctl166_lblPart_Formatada">0,426</span>
+                            </td>
+	</tr>
+	</tbody>
+
+</table><input id="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ClientState" name="ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ClientState" type="hidden" />
+		</div>
+	
+
+            <input type="hidden" name="ctl00$contentPlaceHolderConteudo$hdfQuantidadeTeoricaResultado" id="ctl00_contentPlaceHolderConteudo_hdfQuantidadeTeoricaResultado" value="74.813.385.730" />
+            <input type="hidden" name="ctl00$contentPlaceHolderConteudo$hdfParticipacaoResultado" id="ctl00_contentPlaceHolderConteudo_hdfParticipacaoResultado" value="100,000" />
+            <input type="hidden" name="ctl00$contentPlaceHolderConteudo$hdfRedutorResultado" id="ctl00_contentPlaceHolderConteudo_hdfRedutorResultado" value="18.407.674,22271572" />
+
+        
+</div>
+
+        <p class="legenda"></p>
+
+       
+	    <div class="list-avatar">
+            <div class="list-avatar-row">
+                <div class="primary-action">
+                    <img src="/aspnet_client/system_web/2_0_50727/Themes/SiteBmfBovespa/img/ic_cloud_download_black_48dp.png" alt="">
+                </div>
+                <div class="content">
+                    <p class="primary-text"><a id="ctl00_contentPlaceHolderConteudo_Export_Test" href="javascript:__doPostBack('ctl00$contentPlaceHolderConteudo$Export_Test','')">Download do arquivo</a></p>
+                </div>
+            </div>
+        </div>
+
+
+
+    </div>
+</div>
+<div class="row">
+    <div class="large-12 columns"><div class="right"><input type="submit" name="ctl00$botaoNavegacaoVoltar" value="Voltar" onclick="history.back(); return false;" id="ctl00_botaoNavegacaoVoltar" class="button secondary" /></div></div>
+</div>
+</div>
+
+
+<script type="text/javascript">
+//<![CDATA[
+Sys.Application.initialize();
+Sys.Application.add_init(function() {
+    $create(Telerik.Web.UI.RadGrid, {"ClientID":"ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica","ClientSettings":{"AllowAutoScrollOnDragDrop":true,"ShouldCreateRows":true,"DataBinding":{},"Selecting":{},"Scrolling":{},"Resizing":{},"ClientMessages":{"DragToGroupOrReorder":"","DragToResize":"","DropHereToReorder":""},"KeyboardNavigationSettings":{"AllowActiveRowCycle":false,"EnableKeyboardShortcuts":true,"FocusKey":89,"InitInsertKey":73,"RebindKey":82,"ExitEditInsertModeKey":27,"UpdateInsertItemKey":13,"DeleteActiveRow":127}},"Skin":"SiteBmfBovespa","UniqueID":"ctl00$contentPlaceHolderConteudo$grdResumoCarteiraTeorica","_activeRowIndex":"","_controlToFocus":"","_currentPageIndex":0,"_editIndexes":"[]","_embeddedSkin":false,"_gridTableViewsData":"[{\"ClientID\":\"ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00\",\"UniqueID\":\"ctl00$contentPlaceHolderConteudo$grdResumoCarteiraTeorica$ctl00\",\"PageSize\":10,\"PageCount\":1,\"EditMode\":\"EditForms\",\"CurrentPageIndex\":0,\"VirtualItemCount\":0,\"AllowMultiColumnSorting\":false,\"AllowNaturalSort\":false,\"IsItemInserted\":false,\"clientDataKeyNames\":[],\"_dataBindTemplates\":false,\"_selectedItemStyle\":\"\",\"_selectedItemStyleClass\":\"rgSelectedRow GridBovespaSelectedItemStyle\",\"_columnsData\":[{\"UniqueName\":\"Codigo\",\"Resizable\":false,\"Reorderable\":true,\"Groupable\":true,\"ColumnType\":\"GridTemplateColumn\",\"Display\":true},{\"UniqueName\":\"Acao\",\"Resizable\":false,\"Reorderable\":true,\"Groupable\":true,\"ColumnType\":\"GridTemplateColumn\",\"Display\":true},{\"UniqueName\":\"Tipo\",\"Resizable\":false,\"Reorderable\":true,\"Groupable\":true,\"ColumnType\":\"GridTemplateColumn\",\"Display\":true},{\"UniqueName\":\"QtdeTeorica\",\"Resizable\":false,\"Reorderable\":true,\"Groupable\":true,\"ColumnType\":\"GridTemplateColumn\",\"Display\":true},{\"UniqueName\":\"Part\",\"Resizable\":false,\"Reorderable\":true,\"Groupable\":true,\"ColumnType\":\"GridTemplateColumn\",\"Display\":true}]}]","_masterClientID":"ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ctl00","_shouldFocusOnPage":false,"allowMultiRowSelection":false,"clientStateFieldID":"ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica_ClientState"}, null, null, $get("ctl00_contentPlaceHolderConteudo_grdResumoCarteiraTeorica"));
+});
+//]]>
+</script>
+</form>
+
+<script type="text/javascript">
+    $(document).foundation();
+    $("table").addClass("responsive");
+    LimpaEstilo();
+</script>
+
+</body>
+<script type="text/javascript">iframe_resize();</script> 
+</html>

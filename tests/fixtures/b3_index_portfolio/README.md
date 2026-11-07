@@ -1,0 +1,9 @@
+# Fixtures: b3_index_portfolio (fetched 2026-11-07 ~09:00-09:15 UTC, byte-exact whole responses)
+Base `https://sistemaswebb3-listados.b3.com.br/indexProxy/indexCall/<Endpoint>/<base64(json, compact)>` (GET, browser UA).
+| file | request json | sha256 |
+|---|---|---|
+| GetPortfolioDay_IBOV_full.json | `GetPortfolioDay` `{"language":"pt-br","pageNumber":1,"pageSize":120,"index":"IBOV","segment":"1"}` (76 rows; header.date "09/11/26") | 4c873affc491e9cbc02de52dc4a88083c9eb551ef2c3905db8af8dc68d39ca6d |
+| GetTheoricalPortfolio_IBOV_full.json | `GetTheoricalPortfolio` same json | 37d78e5af192a8ce73194ec08d1e06db38a48f2da3f85d705ee0836b75eafa4f |
+| GetDownloadPortfolioTheorical_IBOV.b64 | `GetDownloadPortfolioTheorical` `{"index":"IBOV","language":"pt-br"}`; response is base64 of a Latin-1 CSV titled `IBOV - Carteira Set. a Dez. 2026` | 036c3de7329eb9b87e91d6d06ece22389fca1f2b5ee5f676e6ceb6837a2c8a8f |
+| IndexStatistics_GetPortfolioDay_IBOVESPA_{1968,2026}.json | base `https://sistemaswebb3-listados.b3.com.br/indexStatisticsProxy/IndexCall/GetPortfolioDay/…` json `{"index":"IBOVESPA","language":"pt-br","year":"1968"}`; daily closing levels, one row per day of month, columns rateValue1..12 = months | 8cd35bce45dadbb159923e5ae8e53fc72d0646857353c11cf3bda73e43bd3045 (1968), 67e3938d2c101436bc0660be3cdcc785eb0629f5d03f8233346dac11d856a6f7 (2026) |
+| ia_20250219074316_ResumoCarteiraTeorica_IBOV.html | Internet Archive raw capture `https://web.archive.org/web/20250219074316id_/https://bvmf.bmfbovespa.com.br/indices/ResumoCarteiraTeorica.aspx?Indice=IBOV&%3Bidioma=pt-br&idioma=pt-br` (168,527 bytes, whole). Its visible content is a frozen 2021 page ("Carteira do Dia - 02/03/21", "Jan. a Abr. 2021"): the capture date is NOT the content date. | a51ee93982ee0e82b48cedfb4ddbe0f541eef2cabbaa53c677f9fec718d14d54 |

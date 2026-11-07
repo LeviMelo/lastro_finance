@@ -12,6 +12,7 @@ dependencies = [
     "typer>=0.12",
     "xlrd>=2.0",
     "tzdata>=2024.1",
+    "zstandard>=0.25.0",
 ]
 
 [project.scripts]

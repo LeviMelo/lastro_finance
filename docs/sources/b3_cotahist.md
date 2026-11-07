@@ -65,6 +65,27 @@ What was confirmed: the record length, the header and trailer parse, and plausib
 - CODISI is never blank in the three files. In 1986 it holds B3 internal codes; the PDF says ISIN is used from 15-05-1995 *(from docs)*.
 - The 1986 header generation date is 19991210, so old years are re-generated files.
 
+### Measured on the full history (2026-11-07, parser `fin/ingest/b3_cotahist.py`)
+- **Rows.** 1986–2025 yearly files: 21,394,322 records; every line was 245 bytes; every trailer matched (n or n+2).
+- **FATCOT.** Also takes **100000** (2005, 49 rows) and **1000000** (2016–2017, 28 rows), and **0** (2007, 4 rows,
+  quarantined). The rule accepts the powers of ten 1…10⁶.
+- **Out-of-range opens/closes.** 1,237 rows have an open or close outside [low, high] (most in 2005 and 2020;
+  e.g. `MVI 2` 1986-05-06: open 1199.99 > high 1199.90). 2 rows have low > high. They are quarantined, not dropped.
+- **Sessions vs the ANBIMA calendar** (2001-01-01…2025-12-31). B3 traded on no day ANBIMA calls a holiday or
+  weekend, but did not trade on 287 ANBIMA business days:
+  - 24/12 and 31/12 (18 each);
+  - 09/07 (16) and 25/01 (15): São Paulo state and city holidays;
+  - 20/11 (11) before it became national;
+  - some last business days of the year;
+  - 2014-06-12 (World Cup opening).
+
+  So B3's calendar is observed from COTAHIST sessions, not derived from ANBIMA's (OQ-1).
+- **Cross-check against B3's TradeInformationConsolidated (2026-11-06).**
+  - BOVA11 and HGLG11 agree on low, high, last, trades, quantity and volume, exactly.
+  - PETR4 agrees on prices and trades (70,037) but not on quantity: 48,069,700 there vs 47,669,700 here. Volume is
+    R$ 2,182,862,133 there vs R$ 2,164,746,133 here.
+  - PETR4F (199,437) and PETR4T (206,200) do not explain the 400,000-share gap (OQ-17).
+
 ## 5. Identity fields
 - CODNEG → TICKER, valid at DATPRE.
 - CODISI → ISIN; before 1995-05-15 it holds an internal code.

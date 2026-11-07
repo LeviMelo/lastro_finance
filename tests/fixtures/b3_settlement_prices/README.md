@@ -4,3 +4,10 @@
 | bdi_ConsolidatedTradesDerivatives_20261106_p1_take5.json | POST https://arquivos.b3.com.br/bdi/table/ConsolidatedTradesDerivatives/2026-11-06/2026-11-06/1/5 body `{}` (Content-Type: application/json) | 9cd8e082de75aa8889162aa52612714947e6783390a3a2f29a67a530dd928545 |
 | bdi_ConsolidatedTradesDerivatives_20261106_DI1F27.json | same, take=100, `?filter=` base64("DI1F27") = RElGMjc= | 1b19b4e684a03f380db897a88fe38700b39eb8be4af882020e7df30ce680c435 |
 | bdi_workdays_20261106.json | GET https://arquivos.b3.com.br/bdi/table/workdays?date=2026-11-06&limitDate=D-21 | a0cba4515f1e6e5cd38956d8b96fc476785453763a5562d68cd1bc29a7ec604d |
+
+## Added by recon pass 2 (fetched 2026-11-07 ~08:40-09:00 UTC)
+| file | request | cut | sha256 of the full original |
+|---|---|---|---|
+| PR261106_BVBG086_excerpt.xml | `GET https://www.b3.com.br/pesquisapregao/download?filelist=PR261106.zip,` (11,079,662 bytes; zip of one zip of 4 BVBG.086.01 XML, 128-132 MB each) | 8 whole `<PricRpt>` elements (DI1F27, DI1F28, DI1F35, DOLZ26, INDZ26, WINZ26, PETR4, BOVA11) from the first XML (`..._1839488043.xml`), byte-exact, stream-extracted by regex; one first-line comment and `<!-- file: -->` separators were added | 536b557fed14ddb912c0f716c6a7808d355a0fd979663fe80625ce45b2c263b9 |
+| PR180102_BVBG086_excerpt.xml | same, `filelist=PR180102.zip,` (1,247,543 bytes; 3 XML of ~21 MB; first served date) | 6 elements (DI1F19, DI1F20, DOLG18, INDG18, PETR4, DI1N18) from the first XML, plus INDG18 again from the second XML (`..._1914586047.xml`): the first snapshot has no AdjstdQt for INDG18 | 027cc91499a41ff59095521df3d735c7d92c1b39c5ce643cf3e1e7decd5e3df4 |
+| TradeInformationConsolidatedFile_20261106_excerpt.csv | `GET https://arquivos.b3.com.br/api/download/requestname?fileName=TradeInformationConsolidatedFile&date=2026-11-06` then `GET /api/download/?token=<token>` (81,666 lines, Latin-1/ASCII, `;`, decimal comma) | header lines + 9 whole lines (DI1F27/28/35, DOLZ26, INDZ26, WINZ26, PETR4, BOVA11, HGLG11) | 39eab660d08e1ddf3d70f921f95bc73da615badd4dbfe9fa7d81dfbb42f53d6e |

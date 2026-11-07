@@ -292,3 +292,53 @@
               <MinTradLmt Ccy="BRL">6.11</MinTradLmt>
             </FinInstrmAttrbts>
           </PricRpt>
+<!-- file: BVBG.086.01_BV000328201801020328000001914586047.xml -->
+<PricRpt>
+            <TradDt>
+              <Dt>2018-01-02</Dt>
+            </TradDt>
+            <SctyId>
+              <TckrSymb>INDG18</TckrSymb>
+            </SctyId>
+            <FinInstrmId>
+              <OthrId>
+                <Id>100000068264</Id>
+                <Tp>
+                  <Prtry>8</Prtry>
+                </Tp>
+              </OthrId>
+              <PlcOfListg>
+                <MktIdrCd>BVMF</MktIdrCd>
+              </PlcOfListg>
+            </FinInstrmId>
+            <TradDtls>
+              <TradQty>8706</TradQty>
+            </TradDtls>
+            <FinInstrmAttrbts>
+              <MktDataStrmId>E</MktDataStrmId>
+              <NtlFinVol Ccy="BRL">4246642525</NtlFinVol>
+              <IntlFinVol Ccy="USD">1298786593.57</IntlFinVol>
+              <OpnIntrst>369265</OpnIntrst>
+              <FinInstrmQty>54460</FinInstrmQty>
+              <BestBidPric Ccy="BRL">78295</BestBidPric>
+              <BestAskPric Ccy="BRL">78300</BestAskPric>
+              <FrstPric Ccy="BRL">77195</FrstPric>
+              <MinPric Ccy="BRL">76985</MinPric>
+              <MaxPric Ccy="BRL">78420</MaxPric>
+              <TradAvrgPric Ccy="BRL">77977</TradAvrgPric>
+              <LastPric Ccy="BRL">78300</LastPric>
+              <RglrTxsQty>8706</RglrTxsQty>
+              <RglrTraddCtrcts>54460</RglrTraddCtrcts>
+              <NtlRglrVol Ccy="BRL">4246642525</NtlRglrVol>
+              <IntlRglrVol Ccy="USD">1298786593.57</IntlRglrVol>
+              <AdjstdQt Ccy="BRL">78313</AdjstdQt>
+              <AdjstdQtStin>F</AdjstdQtStin>
+              <PrvsAdjstdQt Ccy="BRL">76843</PrvsAdjstdQt>
+              <PrvsAdjstdQtStin>F</PrvsAdjstdQtStin>
+              <OscnPctg>1.89</OscnPctg>
+              <VartnPts Ccy="BRL">1470</VartnPts>
+              <AdjstdValCtrct Ccy="BRL">1470</AdjstdValCtrct>
+              <MaxTradLmt Ccy="BRL">84525</MaxTradLmt>
+              <MinTradLmt Ccy="BRL">69160</MinTradLmt>
+            </FinInstrmAttrbts>
+          </PricRpt>

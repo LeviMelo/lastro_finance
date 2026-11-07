@@ -1,6 +1,8 @@
 ## ADR-0007: Ephemeral sources are archived daily before their parsers exist; B3's BDI replaces the old settlement page
 
-**Date:** 2026-11-07. **Status:** active.
+**Date:** 2026-11-07. **Status:** active. *Note 2026-11-07, later the same day: long-history routes were found for
+B3 settlements, curves and instruments (`pesquisapregao` PR 2018–, TS 2000–, IN 2018–); BDI's daily job stays for
+the tables those files do not carry (docs/sources/b3_settlement_prices.md).*
 
 **Context.** PLAN §4.1 invariant 13 and §4.13 (no parser before a layout is confirmed on a real file) pull in opposite
 directions for sources that serve only a short window. Recon on 2026-11-07 measured:

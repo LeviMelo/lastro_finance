@@ -26,6 +26,8 @@ app = typer.Typer(help="LASTRO: dados e análise de investimentos pessoais.", no
 def ingest(
     sources: Annotated[list[str], typer.Argument(help="fontes (source_id) ou 'daily' para o job diário")],
     mode: Annotated[Mode, typer.Option(help="backfill | incremental | snapshot")] = Mode.INCREMENTAL,
+    years: Annotated[str | None, typer.Option(help="backfill: anos, ex. 2020-2025 ou 2024")] = None,
+    families: Annotated[str | None, typer.Option(help="b3_pesquisapregao: famílias, ex. TS ou PR,TS")] = None,
 ) -> None:
     """Busca, arquiva e carrega as fontes pedidas."""
     z = zones()
@@ -35,7 +37,14 @@ def ingest(
         for sid in ids:
             typer.echo(f"→ {sid}")
             try:
-                errors += run_connector(connector(sid), z, run, mode)
+                errors += run_connector(
+                    connector(sid),
+                    z,
+                    run,
+                    mode,
+                    years=_years(years),
+                    families=families.split(",") if families else None,
+                )
             except Exception as e:  # one source failing never stops the others; the run records it
                 errors += 1
                 run.error(sid, f"{type(e).__name__}: {e}")
@@ -45,6 +54,13 @@ def ingest(
         typer.echo(f"execução {run.run_id}: {errors} erro(s)")
     if errors:
         raise typer.Exit(1)
+
+
+def _years(spec: str | None) -> list[int] | None:
+    if not spec:
+        return None
+    a, _, b = spec.partition("-")
+    return list(range(int(a), int(b or a) + 1))
 
 
 @app.command()
@@ -121,22 +137,30 @@ def rebuild(
             aside.mkdir(parents=True, exist_ok=True)
             shutil.move(p, aside / p.name)
             moved.append(p)
+    errors: list[dict[str, object]] = []
     try:
         with IngestRun(z, "rebuild --from-raw") as run:
             manifest = Manifest(z.manifest).read()
-            for sid in DAILY + tuple(s for s in CONNECTORS if s not in DAILY):
+            for sid in dict.fromkeys(DAILY + tuple(CONNECTORS)):
                 reparse(connector(sid), z, run, manifest)
+            errors = list(run.errors)
     except BaseException:
         for p in z.rebuildable():
             if p.exists():
                 shutil.rmtree(p)
         for p in moved:
             shutil.move(aside / p.name, p)
+        if aside.exists():
+            shutil.rmtree(aside)
         typer.echo("reconstrução falhou; o estado anterior foi restaurado", err=True)
         raise
     if aside.exists():
         shutil.rmtree(aside)
-    typer.echo("reconstrução concluída a partir do bruto")
+    for e in errors:
+        typer.echo(f"  ERRO: {e['where']}: {e['message']}", err=True)
+    typer.echo(f"reconstrução concluída a partir do bruto, {len(errors)} objeto(s) com erro")
+    if errors:
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":

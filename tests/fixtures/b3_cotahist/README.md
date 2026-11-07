@@ -12,3 +12,7 @@ the original file's count, so it does not match the excerpt length.
 
 Layout PDF (not committed): https://www.b3.com.br/data/files/C8/F3/08/B4/297BE410F816C9E492D828A8/SeriesHistoricas_Layout.pdf
 (rev. 01, 13/04/2017; sha256 fc4f35066ddd8e1a359f5f3f1e2318b8faec9f3b3075216636d6811dd10e7dfd).
+
+`COTAHIST_A2026_utf8_excerpt.TXT`: from `COTAHIST_A2026.ZIP` fetched 2026-11-07 09:02 UTC (zip sha256
+26f2a0c96e37f2cfdca02e467f472d764a91e1c908a38edc0002c2c8ef913021): header, original lines 2072134-2072136 (the middle
+one, FR0T5L "FROTA OCEÂNI", is 246 bytes because B3 wrote the Â as UTF-8), trailer. Original bytes.

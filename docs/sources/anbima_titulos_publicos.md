@@ -33,4 +33,17 @@
 **EPHEMERAL.** Only ~6 business days are served; everything older is 404. Archive daily from now on (fetch whole window each day to catch retifications). Older history: Tesouro Transparente (own rates, not ANBIMA) or paid ANBIMA Data/Feed *(not verified)*.
 
 ## 7. Open questions
-- Publication time of day; whether ANBIMA Data (data.anbima.com.br) serves free history *(not verified)*.
+- Publication time of day; see §8 for history routes (ANBIMA Data needs a token; Wayback replay to be retried).
+
+## 8. Long-history routes tried (2026-11-07)
+| route | result |
+|---|---|
+| Server window of the form files (txt/xls/asp, ETTJ, VNA, debentures) | all four ANBIMA free forms: 6 business days (29/10..06/11/2026); enforced server-side (POST/GET of older dates returns 404 or a stub). |
+| ANBIMA Data `https://data.anbima.com.br/` (Next.js SPA, 200) | page JS reveals the backend `https://data-api.prd.anbima.com.br/web-bff/v1/{titulos-publicos,debentures,certificado-recebiveis,fidc,feriados/periodo}` and `/v2/fundos`; unauthenticated GET → **401 `{"msg":"token cannot be blank"}`** (titulos-publicos?view=precos, debentures, feriados). Token comes from the app's Firebase sign-in: **not attempted (no login)**. The app itself shows "Quer acesso ao histórico completo de preços da ANBIMA?" linking to ANBIMA Feed. Credentials embedded in the public JS were not used. Whether the logged-in free tier gives history: *(not verified)*. |
+| ANBIMA Feed `https://feed.anbima.com.br/` (200) | paid API (Títulos Públicos package listed at R$ 686,50 fixed monthly fee *(from page)*; free to ANBIMA associates; sandbox exists); covers VNA, curvas, intradiário, projeções, debêntures, índices. Full-history terms *(not verified)*. |
+| Internet Archive CDX, new path `/informacoes/merc-sec/arqs/*` | only 5 distinct 200 files: ms260925, ms260928, ms260929, ms261023, ms261026 (captured 2026-10-01 and 2026-10-28, i.e. recent ad-hoc captures; ms260925 replay returned a real file, 6,684 B). 404 captures of ms210326/ms220602 (2022-23). |
+| Internet Archive CDX, old path `/merc_sec/arqs/*` (host `anbima.com.br:80`) | 135 distinct 200 URLs: **85 distinct daily dates, 2012-05-30 → 2018-11-07** (txt 85, xls 46; per year 2012:5, 2013:8, 2014:6, 2015:29, 2016:28, 2017:8, 2018:1) out of ~1,600 business days → ~5 % coverage, irregular. Content not verified: replay (`web/<ts>id_/…`) of 2015 captures returned **HTTP 429 "suspected abusive bot traffic"** on 3 attempts (10–15 s apart, two URL variants) while CDX queries and a 2026 replay worked. Worth retrying later, politely (one request per several seconds), before concluding. |
+| Tesouro Transparente | own Tesouro Direto morning rates/PUs 2004-12-31 → today: the free long-history substitute (not ANBIMA secondary-market indicative rates). |
+| B3 reference rates / BCB | curves (DI x pré) from B3 for the pré curve; not ANBIMA. |
+
+**Implication:** ANBIMA indicative rates, ETTJ, VNA and debenture rates have **no free systematic history**: LASTRO must archive all four daily from now on (≈ 180 KB + 3 KB + 1 KB + 3 KB per day), and treat 2012–2018 Wayback files as a sparse best-effort backfill.

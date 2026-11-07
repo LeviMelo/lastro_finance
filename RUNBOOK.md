@@ -21,6 +21,9 @@ uv run python scripts/check_docs.py
 ```bash
 uv run fin ingest daily                    # calendar + every ephemeral source (ADR-0007)
 uv run fin ingest anbima_calendar          # one source by source_id (see src/fin/reference/sources.toml)
+uv run fin ingest b3_cotahist --mode backfill --years 1986-2025      # yearly COTAHIST files
+uv run fin ingest b3_instruments --mode backfill                     # every B3 file served since 2025-06-10
+uv run fin ingest b3_pesquisapregao --mode backfill --families TS    # curves 2001-; PR (2018-, 10-15 GB) is OQ-20
 uv run fin status                          # freshness per source, raw size, orphan objects, blockers, last runs
 uv run fin verify-raw                      # re-hash every raw object
 uv run fin rebuild --from-raw              # rebuild staging/core/derived/quarantine from raw + manifest

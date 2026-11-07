@@ -33,6 +33,7 @@ class FetchSpec:
     conditional: bool = True
     accept_status: frozenset[int] = field(default_factory=lambda: frozenset({200}))
     absent_status: frozenset[int] = frozenset()  # statuses meaning "not served (any more / yet)": logged, no error
+    min_bytes: int = 0  # a 200 shorter than this is the source's "no data for that date" stub: absent, not stored
     locator: str | None = None  # e.g. "page=3"; the part of a multi-request payload this object is
     notes: str | None = None
 
@@ -70,8 +71,14 @@ class Fetcher:
         resp = self.client.request(
             spec.method, spec.url, params=spec.params, data=spec.data, json=spec.json, headers=headers
         )
-        if resp.status_code in spec.absent_status:
-            self.run.log("fetch.absent", url=spec.url, status=resp.status_code, reference_date=spec.reference_date)
+        if resp.status_code in spec.absent_status or (resp.status_code == 200 and len(resp.content) < spec.min_bytes):
+            self.run.log(
+                "fetch.absent",
+                url=spec.url,
+                status=resp.status_code,
+                bytes=len(resp.content),
+                reference_date=spec.reference_date,
+            )
             return None
 
         if resp.status_code == 304 and previous is not None:

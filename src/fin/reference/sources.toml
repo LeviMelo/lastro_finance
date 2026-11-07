@@ -37,16 +37,16 @@ institution = "B3"
 access = "HTTP zip files (yearly, monthly, daily), fixed-width"
 tier = "P"
 ephemeral = false
-status = "recon"
+status = "parsed"
 recon = "docs/sources/b3_cotahist.md"
 
 [b3_reference_rates]
 name = "Taxas referenciais (curvas)"
 institution = "B3"
-access = "unknown: old page gone"
+access = "TS files via pesquisapregao (2000-); web CSV since 2026-10-05"
 tier = "P"
-ephemeral = true
-status = "recon"
+ephemeral = false
+status = "archiving"
 recon = "docs/sources/b3_reference_rates.md"
 
 [bcb_sgs]
@@ -163,52 +163,52 @@ institution = "Tesouro Nacional"
 access = "CKAN CSV"
 tier = "P"
 ephemeral = false
-status = "recon"
+status = "archiving"
 recon = "docs/sources/tesouro_transparente.md"
 
 [anbima_ettj]
 name = "Estrutura a termo das taxas de juros (ETTJ)"
 institution = "ANBIMA"
-access = "not verified"
+access = "POST form CZ-down.asp, 6 business days"
 tier = "P"
-ephemeral = false
-status = "recon"
+ephemeral = true
+status = "archiving"
 recon = "docs/sources/anbima_ettj.md"
 
 [anbima_vna]
 name = "Valor nominal atualizado (VNA)"
 institution = "ANBIMA"
-access = "not verified"
+access = "POST form vna-down.asp, 6 business days"
 tier = "P"
-ephemeral = false
-status = "recon"
+ephemeral = true
+status = "archiving"
 recon = "docs/sources/anbima_vna.md"
 
 [anbima_projecoes]
 name = "Projeções de inflação (IPCA, IGP-M)"
 institution = "ANBIMA"
-access = "not verified"
+access = "HTML page Quadro Indicadores, latest only"
 tier = "P"
-ephemeral = false
-status = "recon"
+ephemeral = true
+status = "archiving"
 recon = "docs/sources/anbima_projecoes.md"
 
 [anbima_debentures]
 name = "Mercado secundário de debêntures"
 institution = "ANBIMA"
-access = "not verified"
+access = "HTTP files arqs/dbYYMMDD.txt, 6 business days"
 tier = "P"
-ephemeral = false
-status = "recon"
+ephemeral = true
+status = "archiving"
 recon = "docs/sources/anbima_debentures.md"
 
 [nefin]
 name = "Fatores de risco brasileiros"
 institution = "NEFIN-FEA/USP"
-access = "not verified"
+access = "HTTP CSVs under /nefindata/risk-factors/"
 tier = "S"
 ephemeral = false
-status = "recon"
+status = "archiving"
 recon = "docs/sources/nefin.md"
 
 [snd_debentures]
@@ -219,3 +219,66 @@ tier = "P"
 ephemeral = false
 status = "recon"
 recon = "docs/sources/snd_debentures.md"
+
+[b3_instruments]
+name = "Cadastro de instrumentos (InstrumentsConsolidatedFile) e TradeInformationConsolidatedFile"
+institution = "B3"
+access = "token download via arquivos.b3.com.br/api/download; served since 2025-06-10"
+tier = "P"
+ephemeral = true
+status = "archiving"
+recon = "docs/sources/b3_instruments.md"
+
+[b3_company_events]
+name = "Proventos e eventos societários (backend do site de empresas listadas)"
+institution = "B3"
+access = "undocumented JSON, base64 parameters"
+tier = "U"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/b3_company_events.md"
+
+[bcb_ptax]
+name = "PTAX (Olinda OData)"
+institution = "Banco Central do Brasil"
+access = "OData JSON, full history per call"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/bcb_ptax.md"
+
+[bcb_focus]
+name = "Expectativas de mercado Focus (Olinda OData)"
+institution = "Banco Central do Brasil"
+access = "OData JSON, paged"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/bcb_focus.md"
+
+[ibge_sidra]
+name = "SIDRA (IPCA número-índice, IPCA-15)"
+institution = "IBGE"
+access = "REST JSON (apisidra)"
+tier = "P"
+ephemeral = false
+status = "recon"
+recon = "docs/sources/ibge_sidra.md"
+
+[b3_pesquisapregao]
+name = "Pesquisa por pregão: PR (BVBG.086 preços, ajustes, contratos em aberto) e TS (TaxaSwap: curvas)"
+institution = "B3"
+access = "HTTP GET download?filelist=<NAME>,; PR 2018-, TS 2000-"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/b3_settlement_prices.md"
+
+[b3_index_portfolio]
+name = "Carteiras de índices (do dia, teórica, prévia)"
+institution = "B3"
+access = "undocumented JSON (indexProxy), current composition only"
+tier = "P"
+ephemeral = true
+status = "archiving"
+recon = "docs/sources/b3_index_portfolio.md"

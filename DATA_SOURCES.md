@@ -2,56 +2,84 @@
 
 Verified facts about the sources LASTRO reads: **measured, not remembered**. The facts live in one recon note per
 source, `docs/sources/<source_id>.md` (template `docs/sources/_TEMPLATE.md`, PLAN §4.13). This file indexes them and
-keeps the facts that cut across sources. Where a note disagrees with PLAN.md, a brief or a code comment, the note
-wins, and the discrepancy is recorded (ADR-0001). Facts are dated by the recon that measured them; a source can
-change without notice.
+keeps the facts that cut across sources. Where a note disagrees with PLAN.md, a brief or a code comment, the note wins
+and the discrepancy is recorded (ADR-0001). Facts are dated by the recon that measured them; a source can change
+without notice. The golden cases of PLAN §4.11.8, verified against three sources each:
+[golden_events](docs/sources/golden_events.md).
 
-Registry: `src/fin/reference/sources.toml` (tier, ephemeral, status). `uv run fin status` shows freshness.
+Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness and blockers.
 
 ## Index
 
-| source | institution | tier | ephemeral | status | note |
+| source | institution | tier | window / history | status | note |
 |---|---|---|---|---|---|
-| `anbima_calendar` | ANBIMA | P | no | parsed | [note](docs/sources/anbima_calendar.md) |
-| `anbima_titulos_publicos` | ANBIMA | P | **yes: ~6 business days** | archiving | [note](docs/sources/anbima_titulos_publicos.md) |
-| `b3_bdi` | B3 | P | **yes: 21 business days** | archiving | [note](docs/sources/b3_settlement_prices.md) |
-| `cvm_cia_cadastro` | CVM | P | **yes: today's snapshot** | archiving | [note](docs/sources/cvm_cia_cadastro.md) |
-| `cvm_fi_cadastro` | CVM | P | **yes: today's snapshot** | archiving | [note](docs/sources/cvm_fi_cadastro.md) |
-| `b3_reference_rates` | B3 | P | yes, until shown otherwise | recon (location unknown, OQ-5) | [note](docs/sources/b3_reference_rates.md) |
-| `b3_cotahist` | B3 | P | no (1986–) | recon | [note](docs/sources/b3_cotahist.md) |
-| `bcb_sgs` | BCB | P | no | recon | [note](docs/sources/bcb_sgs.md) |
-| `cvm_fca` | CVM | P | no (2010–) | recon | [note](docs/sources/cvm_fca.md) |
-| `cvm_fre` | CVM | P | no (2010–) | recon | [note](docs/sources/cvm_fre.md) |
-| `cvm_dfp_itr` | CVM | P | no | recon | [note](docs/sources/cvm_dfp_itr.md) |
-| `cvm_ipe` | CVM | P | no (2003–) | recon | [note](docs/sources/cvm_ipe.md) |
-| `cvm_vlmo` | CVM | P | no (2018–) | recon | [note](docs/sources/cvm_vlmo.md) |
-| `cvm_fi_inf_diario` | CVM | P | no (2000–) | recon | [note](docs/sources/cvm_fi_inf_diario.md) |
-| `cvm_fi_cda` | CVM | P | no (2005–) | recon | [note](docs/sources/cvm_fi_cda.md) |
-| `cvm_fii` | CVM | P | no (2016–) | recon | [note](docs/sources/cvm_fii.md) |
-| `cvm_fie` | CVM | P | no (2017–) | recon | [note](docs/sources/cvm_fie.md) |
-| `tesouro_transparente` | Tesouro Nacional | P | no | recon | [note](docs/sources/tesouro_transparente.md) |
-| `anbima_ettj` | ANBIMA | P | not verified | recon | [note](docs/sources/anbima_ettj.md) |
-| `anbima_vna` | ANBIMA | P | not verified | recon | [note](docs/sources/anbima_vna.md) |
-| `anbima_projecoes` | ANBIMA | P | not verified | recon | [note](docs/sources/anbima_projecoes.md) |
-| `anbima_debentures` | ANBIMA | P | not verified | recon | [note](docs/sources/anbima_debentures.md) |
-| `nefin` | NEFIN-FEA/USP | S | not verified | recon | [note](docs/sources/nefin.md) |
+| `anbima_calendar` | ANBIMA | P | 2001–2099 | parsed | [note](docs/sources/anbima_calendar.md) |
+| `anbima_titulos_publicos` | ANBIMA | P | **ephemeral: 6 business days** | archiving since 2026-10-29 | [note](docs/sources/anbima_titulos_publicos.md) |
+| `anbima_ettj` | ANBIMA | P | **ephemeral: 6 business days** | archiving since 2026-10-29 | [note](docs/sources/anbima_ettj.md) |
+| `anbima_vna` | ANBIMA | P | **ephemeral: 6 business days** | archiving since 2026-10-29 | [note](docs/sources/anbima_vna.md) |
+| `anbima_debentures` | ANBIMA | P | **ephemeral: 6 business days** | archiving since 2026-10-29 | [note](docs/sources/anbima_debentures.md) |
+| `anbima_projecoes` | ANBIMA | P | **ephemeral: latest values only** | archiving since 2026-11-07 | [note](docs/sources/anbima_projecoes.md) |
+| `b3_bdi` | B3 | P | **ephemeral: 21 business days** | archiving since 2026-10-07 | [note](docs/sources/b3_settlement_prices.md) |
+| `b3_instruments` | B3 | P | **since 2025-06-10, start may roll (OQ-19)** | archiving; served history backfilled | [note](docs/sources/b3_instruments.md) |
+| `b3_pesquisapregao` | B3 | P | PR 2018-01-02–, TS 2000-01-14– | archiving daily since 2026-11-07 | [note](docs/sources/b3_settlement_prices.md) |
+| `b3_reference_rates` | B3 | P | via TS files 2000–; web CSV since 2026-10-05 | archiving (as `b3_pesquisapregao` TS) | [note](docs/sources/b3_reference_rates.md) |
+| `b3_index_portfolio` | B3 | P | **ephemeral: current composition only** | archiving since 2026-11-07 | [note](docs/sources/b3_index_portfolio.md) |
+| `b3_cotahist` | B3 | P | yearly 1986–, daily 2014– | parsed (1986–2026) | [note](docs/sources/b3_cotahist.md) |
+| `b3_company_events` | B3 | **U** | cash since 1995, incomplete for stock events | recon | [note](docs/sources/b3_company_events.md) |
+| `cvm_cia_cadastro` | CVM | P | **ephemeral: today's snapshot** | archiving since 2026-11-07 | [note](docs/sources/cvm_cia_cadastro.md) |
+| `cvm_fi_cadastro` | CVM | P | **ephemeral: today's snapshot** | archiving since 2026-11-07 | [note](docs/sources/cvm_fi_cadastro.md) |
+| `cvm_fca` | CVM | P | 2010– (tickers from ~2018) | recon | [note](docs/sources/cvm_fca.md) |
+| `cvm_fre` | CVM | P | 2010– | recon | [note](docs/sources/cvm_fre.md) |
+| `cvm_dfp_itr` | CVM | P | DFP 2010–, ITR 2011– | recon | [note](docs/sources/cvm_dfp_itr.md) |
+| `cvm_ipe` | CVM | P | 2003– | recon | [note](docs/sources/cvm_ipe.md) |
+| `cvm_vlmo` | CVM | P | 2018– | recon | [note](docs/sources/cvm_vlmo.md) |
+| `cvm_fi_inf_diario` | CVM | P | 2000– (real size from 2004) | recon | [note](docs/sources/cvm_fi_inf_diario.md) |
+| `cvm_fi_cda` | CVM | P | 2005– | recon | [note](docs/sources/cvm_fi_cda.md) |
+| `cvm_fii` | CVM | P | 2016– | recon | [note](docs/sources/cvm_fii.md) |
+| `cvm_fie` | CVM | P | 2017– | recon | [note](docs/sources/cvm_fie.md) |
+| `tesouro_transparente` | Tesouro Nacional | P | 2004-12-31– (file replaced daily) | archiving since 2026-11-07 | [note](docs/sources/tesouro_transparente.md) |
+| `bcb_sgs` | BCB | P | full; ≤ 10-year windows for daily series | recon | [note](docs/sources/bcb_sgs.md) |
+| `bcb_ptax` | BCB | P | 1984– in one call | recon | [note](docs/sources/bcb_ptax.md) |
+| `bcb_focus` | BCB | P | 2000– | recon | [note](docs/sources/bcb_focus.md) |
+| `ibge_sidra` | IBGE | P | IPCA number index (Dec-1993 = 100), monthly | recon | [note](docs/sources/ibge_sidra.md) |
+| `nefin` | NEFIN-FEA/USP | S | 2001– (last date 2026-09-08) | archiving since 2026-11-07 | [note](docs/sources/nefin.md) |
 | `snd_debentures` | SND | P | not verified | recon | [note](docs/sources/snd_debentures.md) |
 
 ## Cross-source facts (2026-11-07)
 
 - **Where PLAN.md §4.4 is wrong or incomplete.**
-  - B3's settlement page and TxRef curve page are gone; settlements are in BDI with a 21-day window (ADR-0007).
-  - ANBIMA's bond rates are ephemeral, and the file is `msYYMMDD.txt`.
-  - COTAHIST's `FATCOT` takes 1, 10, 100, 1,000 and 10,000, and 1986 prices are in CZ$/CR$.
-  - FCA gives tickers only from about 2018, one snapshot a year.
-  - FRE's capital-change tables thin out in 2023 and are gone in 2025.
+  - B3's settlement and TxRef pages are gone; BDI keeps 21 business days (ADR-0007). The long-history routes are
+    B3's `pesquisapregao` files:
+    - PR (BVBG.086: settlements, open interest) from 2018-01-02. A zip holds 3–4 same-day snapshots; merge them,
+      because the first one can lack a settlement.
+    - TS (every reference curve) from 2000-01-14.
+    - IN (BVBG.028 instruments) from 2018-01-02.
+  - Index compositions are served for the current day only. Index levels go back to 1968 (IBOVESPA).
+  - Five ANBIMA datasets are ephemeral: bond rates, ETTJ, VNA, debentures, projections. The debenture link printed on
+    ANBIMA's page 404s; the working file is `arqs/dbYYMMDD.txt`. ANBIMA Data needs a login and points to the paid
+    Feed for history (OQ-4).
+  - COTAHIST `FATCOT` takes 1…10⁶. 1986 prices are in CZ$/CR$. One 2026 line is UTF-8 (ADR-0008).
+  - FCA gives tickers only from ~2018. FRE's capital-change tables are gone in 2025.
+  - Tesouro Direto history starts 2004-12-31, not 2002.
+  - IGP-M index numbers are FGV's and are not in SGS (189 is % only); the only free carrier found is ANBIMA's
+    Quadro Indicadores, latest value only.
+  - NEFIN moved to `/nefindata/risk-factors/`; its last date was 2026-09-08 on 2026-11-07.
+- **Corporate events.**
+  - B3's backend is not complete for stock events. It misses ITUB's 10% bonificação of 2025-03 and the 2023 ones of
+    SLCE and RADL (OQ-18). It does not list mergers, ticker changes or ISIN changes.
+  - PLAN's ARZZ3→AZZA3 case is a ticker and ISIN change on the survivor; SOMA3 is the absorbed company.
+  - B3 `BONIFICACAO` factors are percents, `GRUPAMENTO` factors fractions.
+  - The ex-date comes from the filing (ITUB 23→26/12/2025; SLCE 30/12/2025→02/01/2026).
+  - Equal same-day payouts can be separate installments (GRND3), so never dedupe on (date, value).
 - **CDI.**
-  - SGS 12 is % a.d. with 6 decimals: SGS 4389 (% a.a., 2 decimals) converted by (1+r)^(1/252)−1 and rounded.
-  - It matched on 5,021 of 5,021 days; truncating instead fails on 2,112.
+  - SGS 12 is % a.d. with 6 decimals: SGS 4389 (% a.a.) converted and rounded (5,021 of 5,021 days).
   - BCB's accumulated factors reproduce over [start, end) with the ANBIMA calendar (ADR-0006).
-  - SGS daily series accept at most 10-year windows (HTTP 406 beyond).
-- **CVM's portal** (dados.cvm.gov.br) honours ETag/Last-Modified with 304 and byte ranges (206). Files are cp1252,
-  `;`-separated, CRLF. Recent years are rewritten (weekly cycle observed); older years are frozen.
-- **Fund schema change (CVM 175).** Informe Diário switches from `TP_FUNDO;CNPJ_FUNDO` to
-  `TP_FUNDO_CLASSE;CNPJ_FUNDO_CLASSE;ID_SUBCLASSE` in 2023-12.
-- **Hosts behind Cloudflare** (B3, CVM) are fetched politely at ≤ 1 request/s; B3's need a browser User-Agent.
+- **PTAX** before 1994 is in the currency of the day (1986, 1989, 1993, 1994 reforms); 9 days have duplicate rows.
+- **B3 sessions vs ANBIMA's calendar.** B3 never trades on an ANBIMA non-business day, and skipped 287 ANBIMA business
+  days in 2001–2025 (OQ-1).
+- **CVM's portal** honours ETag/Last-Modified with 304 and byte ranges. Files are cp1252, `;`-separated. Recent years
+  are rewritten; older years are frozen. IPE download links answered an empty HTML shell 4 times in 16 first tries.
+- **Fund schema change (CVM 175).** Informe Diário switches to `TP_FUNDO_CLASSE;CNPJ_FUNDO_CLASSE;ID_SUBCLASSE` in
+  2023-12.
+- **Hosts behind Cloudflare** (B3, CVM, ANBIMA) are fetched at ≤ 1 request/s. B3 and ANBIMA forms are fetched with a
+  browser User-Agent.

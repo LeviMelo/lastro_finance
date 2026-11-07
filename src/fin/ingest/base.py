@@ -111,7 +111,7 @@ def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode
                 "fetched_at": out.row.fetched_at,
                 "request": out.row.request,
             }
-            load(connector, zones, run, blob, row)
+            _load_isolated(connector, zones, run, blob, row)
         connector.derive(zones, run)
     finally:
         client.close()
@@ -127,8 +127,17 @@ def reparse(connector: Connector, zones: Zones, run: IngestRun, manifest: pl.Dat
         .unique(subset=["dataset_id", "raw_sha256"], keep="first", maintain_order=True)
     )
     for row in rows.iter_rows(named=True):
-        load(connector, zones, run, raw.read(row["raw_sha256"]), row)
+        _load_isolated(connector, zones, run, raw.read(row["raw_sha256"]), row)
     connector.derive(zones, run)
+
+
+def _load_isolated(connector: Connector, zones: Zones, run: IngestRun, blob: bytes, row: dict[str, Any]) -> None:
+    """An object that cannot be parsed is an error of the run, never the end of it: raw is immutable, so one bad
+    object would otherwise block every later run and rebuild."""
+    try:
+        load(connector, zones, run, blob, row)
+    except Exception as e:
+        run.error(f"{connector.source_id}/parse", f"{type(e).__name__}: {e}", raw_sha256=row["raw_sha256"])
 
 
 def _default_ua() -> str:

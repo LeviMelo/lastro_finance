@@ -3,16 +3,64 @@
 from __future__ import annotations
 
 from fin.ingest.anbima_calendar import AnbimaCalendar
+from fin.ingest.b3_cotahist import B3Cotahist
 from fin.ingest.base import Connector
-from fin.ingest.snapshots import AnbimaTitulosPublicos, B3Bdi, CvmCiaCadastro, CvmFiCadastro
+from fin.ingest.snapshots import (
+    AnbimaDebentures,
+    AnbimaEttj,
+    AnbimaIndicadores,
+    AnbimaTitulosPublicos,
+    AnbimaVna,
+    B3Bdi,
+    B3Files,
+    B3IndexPortfolio,
+    B3PesquisaPregao,
+    CvmCiaCadastro,
+    CvmFiCadastro,
+    NefinFactors,
+    TesouroPrecoTaxa,
+)
 from fin.reference.sources import registry
 
 CONNECTORS: dict[str, type[Connector]] = {
-    c.source_id: c for c in (AnbimaCalendar, AnbimaTitulosPublicos, B3Bdi, CvmCiaCadastro, CvmFiCadastro)
+    c.source_id: c
+    for c in (
+        AnbimaCalendar,
+        AnbimaTitulosPublicos,
+        AnbimaEttj,
+        AnbimaVna,
+        AnbimaDebentures,
+        AnbimaIndicadores,
+        B3Bdi,
+        B3Files,
+        B3IndexPortfolio,
+        B3PesquisaPregao,
+        B3Cotahist,
+        CvmCiaCadastro,
+        CvmFiCadastro,
+        TesouroPrecoTaxa,
+        NefinFactors,
+    )
 }
 
 # The calendar first: the windowed snapshots compute their dates from it.
-DAILY: tuple[str, ...] = ("anbima_calendar", "anbima_titulos_publicos", "b3_bdi", "cvm_cia_cadastro", "cvm_fi_cadastro")
+DAILY: tuple[str, ...] = (
+    "anbima_calendar",
+    "anbima_titulos_publicos",
+    "anbima_ettj",
+    "anbima_vna",
+    "anbima_debentures",
+    "anbima_projecoes",
+    "b3_bdi",
+    "b3_instruments",
+    "b3_index_portfolio",
+    "b3_pesquisapregao",
+    "cvm_cia_cadastro",
+    "cvm_fi_cadastro",
+    "b3_cotahist",  # not ephemeral (daily files back to 2014): keeps prices current
+    "tesouro_transparente",  # replaced in full daily: each replacement is a version (304 when unchanged)
+    "nefin",
+)
 
 
 def connector(source_id: str) -> Connector:

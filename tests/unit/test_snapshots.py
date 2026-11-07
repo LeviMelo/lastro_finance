@@ -75,3 +75,36 @@ def test_fetchspec_request_identity_includes_json_body() -> None:
     a = FetchSpec("s", "d", "u", "json", method="POST", json={})
     b = FetchSpec("s", "d", "u", "json", method="POST", json={"x": 1})
     assert a.request() != b.request()
+
+
+def test_b3_files_follow_the_token_and_skip_weekends(calendar_zones: Zones) -> None:
+    c = snapshots.B3Files()
+    specs = list(c.discover(Mode.SNAPSHOT, calendar_zones))
+    assert {s.params["fileName"] for s in specs if s.params} == set(c.FILES)
+    first = specs[0]
+    assert first.params == {"fileName": "InstrumentsConsolidatedFile", "date": "2026-11-06"}
+    assert 400 in first.absent_status  # no-session days (2025-12-24, 2025-12-31)
+    nxt = list(c.follow(first, b'{"redirectUrl":"~/download?token=abc","token":"abc"}'))
+    assert len(nxt) == 1 and nxt[0].params == {"token": "abc"} and nxt[0].dataset_id == "InstrumentsConsolidatedFile"
+    assert list(c.follow(first, b'{"redirectUrl":null,"token":null}')) == []
+    assert list(c.follow(nxt[0], b"csv")) == []
+
+
+def test_pesquisapregao_names_and_backfill_bounds(calendar_zones: Zones) -> None:
+    c = snapshots.B3PesquisaPregao()
+    daily = list(c.discover(Mode.SNAPSHOT, calendar_zones))
+    names = {s.params["filelist"] for s in daily if s.params}
+    assert "PR261106.zip," in names and "TS261106.ex_," in names
+    back = list(c.discover(Mode.BACKFILL, calendar_zones, families=["PR"], years=[2018]))
+    assert back[-1].params == {"filelist": "PR180102.zip,"}  # first served date, 2018-01-02
+    assert all(s.dataset_id == "PR" for s in back)
+
+
+def test_index_portfolio_requests_decode_to_the_documented_json(calendar_zones: Zones) -> None:
+    import base64
+
+    specs = list(snapshots.B3IndexPortfolio().discover(Mode.SNAPSHOT, calendar_zones))
+    assert len(specs) == 14 * 3
+    ibov = next(s for s in specs if s.dataset_id == "GetPortfolioDay" and s.locator == "index=IBOV")
+    payload = json.loads(base64.b64decode(ibov.url.rsplit("/", 1)[1]))
+    assert payload == {"language": "pt-br", "pageNumber": 1, "pageSize": 120, "index": "IBOV", "segment": "1"}
