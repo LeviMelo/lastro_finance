@@ -460,7 +460,7 @@ institution = "CFTC"
 access = "zip per year"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/context_global.md"
 
 [b3_index_levels]

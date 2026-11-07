@@ -194,6 +194,17 @@ def context_connectors() -> list[type[Connector]]:
             continue  # these sources already have a connector; their catalogue entries are merged in there
         browser = any(e.browser for e in catalogue() if e.source == sid)
         attrs: dict[str, Any] = {"source_id": sid, "user_agent": BROWSER_UA if browser else None}
+        if sid == "cftc_cot":  # positions are their own staging table (ingest/cftc.py)
+            from fin.ingest import cftc
+
+            attrs |= {
+                "version": "1",
+                "contracts": cftc.CONTRACTS,
+                "parse": _parse_with(cftc.parse_payload),
+                "dedup_staging": True,
+            }
+            out.append(type(f"Context_{sid}", (ContextConnector,), attrs))
+            continue
         if sid == "bcb_copom":  # decisions are their own staging table (ingest/copom.py)
             from fin.ingest import copom
 

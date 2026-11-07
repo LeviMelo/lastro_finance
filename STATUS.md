@@ -66,5 +66,5 @@ Day one (2026-11-07).
 2. **Issuer links before 2009 and across mergers** (events as legs), and FII issuers from Fundos.NET.
 3. **Fundamentals mapping** on `fundamental_fact`: accounts mapped per sector (banks differ), per-share figures once
    the unit of the CVM share counts is verified.
-4. **Remaining context parsers:** CFTC positioning (wide reports: a declared contract per report type). Focus
-   (3.6 M rows, 2000–), Copom (290 decisions), CEPEA, ANP and ANBIMA IMA are parsed.
+4. **Context:** every archived context source is parsed (Focus, Copom, CEPEA, ANP, ANBIMA IMA, CFTC included).
+   The IMA history before 2026-10-29 remains a gap.

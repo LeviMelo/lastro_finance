@@ -132,3 +132,8 @@ Recommendation: `httpx` + `polars` for the CSV/SDMX-CSV routes (all verified abo
 - **imf:** `imf:PCPS.G001.<indicator>.USD.M`; units from IMF's `CL_PCPS_INDICATOR` (archived monthly).
 - **Cross-check 1992-01→ (417 months):** IMF vs World Bank gold and copper agree (median 0.05 %, max 1.2 %); Brent
   does not (median 0.64 %, max 15 %): IMF "Dated Brent" and the World Bank's "UK Brent 38 API" are different series.
+- **cftc_cot:** staged long (`ingest/cftc.py`): one row per (report, market, Tuesday, trader group, side) for the
+  "All" positions and open interest. Legacy 771 markets, disaggregated 630, financial 141 (from 2010-07-20); 5.17 M
+  rows, 20 MB. Older files put a space after a closing quote, which a strict CSV reader refuses; Python's csv reads it.
+  The disaggregated and financial reports of 2010-2012 name their date column `Report_Date_as_MM_DD_YYYY` but hold
+  ISO dates. Changes, percentages and trader counts stay in raw.
