@@ -81,9 +81,26 @@ class ManifestRow:
 class Manifest:
     def __init__(self, directory: Path) -> None:
         self.journal = Journal(directory, SCHEMA)
+        self._snapshot: pl.DataFrame | None = None  # what was on disk at the first lookup of this run
+        self._appended: list[dict[str, Any]] = []  # rows this object appended since
+        self._view: pl.DataFrame | None = None
 
     def append(self, row: ManifestRow) -> None:
         self.journal.append(row.ingest_run_id, asdict(row))
+        if self._snapshot is not None:
+            self._appended.append(asdict(row))
+            self._view = None
+
+    def cached(self) -> pl.DataFrame:
+        """The manifest as of this run's first lookup plus the rows this run appended: lookups made at every fetch
+        (conditional requests, delta bases, staging dedup) must not re-read every journal each time. Rows other
+        processes append meanwhile are not seen; they belong to other sources."""
+        if self._snapshot is None:
+            self._snapshot = self.read()
+        if self._view is None:
+            extra = pl.DataFrame(self._appended, schema=self._snapshot.schema, orient="row") if self._appended else None
+            self._view = self._snapshot if extra is None else pl.concat([self._snapshot, extra])
+        return self._view
 
     def seal(self, run_id: str) -> None:
         self.journal.seal(run_id)
@@ -96,7 +113,7 @@ class Manifest:
 
     def previous_version(self, source_id: str, dataset_id: str, notes: str | None) -> str | None:
         """The newest object stored for the same source, dataset and locator: the base of a delta (ADR-0014)."""
-        df = self.read().filter(
+        df = self.cached().filter(
             (pl.col("source_id") == source_id)
             & (pl.col("dataset_id") == dataset_id)
             & (pl.col("http_status") == 200)
@@ -108,7 +125,7 @@ class Manifest:
 
     def latest_for_request(self, request_key: str) -> dict[str, Any] | None:
         """The newest row of a request that stored or confirmed an object; used for conditional requests."""
-        df = self.read().filter((pl.col("request_key") == request_key) & pl.col("http_status").is_in([200, 304]))
+        df = self.cached().filter((pl.col("request_key") == request_key) & pl.col("http_status").is_in([200, 304]))
         if df.is_empty():
             return None
         return df.sort("fetched_at").row(-1, named=True)

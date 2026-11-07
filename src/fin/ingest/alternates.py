@@ -15,7 +15,7 @@ from typing import Any, ClassVar
 import polars as pl
 
 from fin.config import Zones
-from fin.ingest import cvm_statements, fundosnet, series
+from fin.ingest import b3_events, cvm_statements, fundosnet, series
 from fin.ingest.base import Connector, Mode, Parsed
 from fin.ingest.context import ContextConnector, catalogue
 from fin.ingest.fetch import FetchSpec
@@ -377,6 +377,11 @@ class FundosNetRendimentos(Connector):
     def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
         return fundosnet.parse_payload(blob, row)
 
+    def derive(self, zones: Zones, run: Any) -> None:
+        from fin.core import events
+
+        events.build(zones, run)
+
     def follow(self, spec: FetchSpec, blob: bytes) -> Iterable[FetchSpec]:
         if spec.dataset_id != "listagem":
             return []
@@ -399,7 +404,20 @@ class YahooChart(Connector):
     Default tickers: the standard-lot shares and units, and the FIIs, that traded in COTAHIST in the last year."""
 
     source_id: ClassVar[str] = "yahoo_chart"
-    version: ClassVar[str] = "0-archive"
+    version: ClassVar[str] = "1"
+    contracts: ClassVar[dict[str, Any]] = {"split": b3_events.YAHOO_SPLIT, "dividend": b3_events.YAHOO_DIVIDEND}
+    dedup_staging: ClassVar[bool] = True
+
+    def derive(self, zones: Zones, run: Any) -> None:
+        from fin.core import events
+
+        events.build(zones, run)
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        splits, dividends = b3_events.parse_yahoo_events(blob, row)
+        yield Parsed("split", "all", splits)
+        yield Parsed("dividend", "all", dividends)
+
     user_agent: ClassVar[str | None] = BROWSER_UA
     URL = "https://query1.finance.yahoo.com/v8/finance/chart/{symbol}"
     # COTAHIST CODBDI (layout PDF): 02 standard lot, 08 judicial recovery, 12 FII.

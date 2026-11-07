@@ -25,7 +25,7 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `b3_reference_rates` | B3 | P | via TS files 2000–; web CSV since 2026-10-05 | archiving (as `b3_pesquisapregao` TS) | [note](docs/sources/b3_reference_rates.md) |
 | `b3_index_portfolio` | B3 | P | **ephemeral: current composition only** | archiving since 2026-11-07 | [note](docs/sources/b3_index_portfolio.md) |
 | `b3_cotahist` | B3 | P | yearly 1986–, daily 2014– | parsed (1986–2026) | [note](docs/sources/b3_cotahist.md) |
-| `b3_company_events` | B3 | **U** | cash since 1995, incomplete for stock events | recon | [note](docs/sources/b3_company_events.md) |
+| `b3_company_events` | B3 | **U** | cash since 1995, incomplete for stock events | parsed (weekly per issuer) | [note](docs/sources/b3_company_events.md) |
 | `cvm_cia_cadastro` | CVM | P | **ephemeral: today's snapshot** | archiving since 2026-11-07 | [note](docs/sources/cvm_cia_cadastro.md) |
 | `cvm_fi_cadastro` | CVM | P | **ephemeral: today's snapshot** | archiving since 2026-11-07 | [note](docs/sources/cvm_fi_cadastro.md) |
 | `cvm_fca` | CVM | P | 2010– (tickers from ~2018) | recon | [note](docs/sources/cvm_fca.md) |

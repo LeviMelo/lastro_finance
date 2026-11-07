@@ -235,7 +235,7 @@ institution = "B3"
 access = "undocumented JSON, base64 parameters"
 tier = "U"
 ephemeral = false
-status = "recon"
+status = "parsed"
 recon = "docs/sources/b3_company_events.md"
 
 [bcb_ptax]
@@ -253,7 +253,7 @@ institution = "Banco Central do Brasil"
 access = "OData JSON, paged"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/bcb_focus.md"
 
 [ibge_sidra]

@@ -146,7 +146,7 @@ def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode
             for mrow, new in out.members:
                 if new:
                     member = asdict(mrow)
-                    prev = _previous(connector, raw, run.manifest.read(), member) if connector.dedup_staging else None
+                    prev = _previous(connector, raw, run.manifest.cached(), member) if connector.dedup_staging else None
                     _load_isolated(connector, zones, run, raw.read(mrow.raw_sha256), member, prev)
             if not out.new_object:
                 continue  # already archived and parsed when first seen; a rebuild re-parses it from raw
@@ -159,7 +159,7 @@ def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode
                 "request": out.row.request,
                 "notes": out.row.notes,
             }
-            prev = _previous(connector, raw, run.manifest.read(), row) if connector.dedup_staging else None
+            prev = _previous(connector, raw, run.manifest.cached(), row) if connector.dedup_staging else None
             _load_isolated(connector, zones, run, blob, row, prev)
         connector.derive(zones, run)
     finally:
@@ -184,6 +184,9 @@ def reparse(connector: Connector, zones: Zones, run: IngestRun, manifest: pl.Dat
     for row in rows.iter_rows(named=True):
         group = (row["dataset_id"], row["notes"])
         prev_row = last.get(group) if connector.dedup_staging else None
+        if prev_row is None and connector.dedup_staging and "|" in (row["notes"] or ""):
+            legacy = last.get((row["dataset_id"], str(row["notes"]).split("|", 1)[0]))
+            prev_row = legacy if legacy is not None and legacy["raw_ext"] == "zip" else None
         prev = (raw.read(prev_row["raw_sha256"]), prev_row) if prev_row is not None else None
         _load_isolated(connector, zones, run, raw.read(row["raw_sha256"]), row, prev)
         last[group] = row
@@ -202,6 +205,17 @@ def _previous(
         & (pl.col("fetched_at") < row["fetched_at"])
         & (pl.col("notes").is_null() if row.get("notes") is None else pl.col("notes") == row["notes"])
     )
+    if m.is_empty() and "|" in (row.get("notes") or ""):
+        # the first unpacked member of a zip that used to be archived whole: compare with that zip (ADR-0014)
+        container = str(row["notes"]).split("|", 1)[0]
+        m = manifest.filter(
+            (pl.col("source_id") == connector.source_id)
+            & (pl.col("dataset_id") == row["dataset_id"])
+            & (pl.col("http_status") == 200)
+            & (pl.col("notes") == container)
+            & (pl.col("raw_ext") == "zip")
+            & (pl.col("fetched_at") < row["fetched_at"])
+        )
     if m.is_empty():
         return None
     prev = m.sort("fetched_at").row(-1, named=True)

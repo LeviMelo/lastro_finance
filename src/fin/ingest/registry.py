@@ -18,6 +18,7 @@ from fin.ingest.alternates import (
 )
 from fin.ingest.anbima_calendar import AnbimaCalendar
 from fin.ingest.b3_cotahist import B3Cotahist
+from fin.ingest.b3_events import B3CompanyEvents
 from fin.ingest.base import Connector
 from fin.ingest.context import context_connectors
 from fin.ingest.intraday import YahooIntraday
@@ -71,6 +72,7 @@ CONNECTORS: dict[str, type[Connector]] = {
         TesouroVna,
         YahooChart,
         YahooIntraday,
+        B3CompanyEvents,
         *context_connectors(),
     )
 }
@@ -106,6 +108,7 @@ DAILY: tuple[str, ...] = (
     "cvm_fre",
     "cvm_ipe",
     "yahoo_intraday",  # tier U: 5-minute bars exist only ~60 days back, so they are archived as they pass
+    "b3_company_events",  # each issuer weekly: the Supplement is current state only
     # the context catalogue (reference/context_series.toml): each entry carries its own cadence
     *(c.source_id for c in context_connectors()),
 )

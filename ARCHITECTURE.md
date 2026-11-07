@@ -27,6 +27,10 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `core/reference/calendar_day/calendar_day.parquet` | the business-day calendar | rebuildable |
 | `raw/<sha[0:2]>/<sha>.<ext>.zsd` | a re-sent file stored as a delta of its previous version | write-once (ADR-0014) |
 | `core/instrument/instrument.parquet`, `core/instrument_identifier/instrument_identifier.parquet` | exchange-traded instruments and their time-ranged ISIN, B3 code and tickers | rebuildable (ADR-0015) |
+| `core/corporate_event/corporate_event.parquet` | dividends, JCP, FII income, bonuses, splits, rights, with sources and grade | rebuildable (ADR-0016) |
+| `derived/adjustment_factor/adjustment_factor.parquet` | split and cash factors per instrument and ex-date | rebuildable |
+| `catalog.duckdb` | views only | rebuilt by `fin catalog` (ADR-0017) |
+| `core/tesouro_bond/tesouro_bond.parquet`, `core/tesouro_price_daily/tesouro_price_daily.parquet` | Tesouro Direto bonds 2004– and daily rates/PUs | rebuildable |
 | `core/price_daily/year=YYYY.parquet` | spot and odd-lot sessions per unit, 1986– | rebuildable (ADR-0015) |
 | `staging/yahoo_intraday/bar/symbol=<s>/` | 5-minute bars (tier U), archived daily from 2026-11-07 | rebuildable |
 | `staging/b3_cotahist/quote/year=YYYY/<sha>.parquet` | COTAHIST records, 1986–, one file per raw zip and year | rebuildable |
@@ -43,7 +47,8 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 |---|---|
 | `__init__.py` | version |
 | `config.py` | the data home and its zones |
-| `cli.py` | `fin`: `ingest`, `status`, `verify-raw`, `reparse <sources>`, `compact-raw`, `compact-staging`, `rebuild --from-raw` |
+| `catalog.py` | `catalog.duckdb`: views over the Parquet zones, `fundamental_fact` and `price_adjusted` on read (ADR-0017) |
+| `cli.py` | `fin`: `ingest`, `status`, `verify-raw`, `reparse <sources>`, `compact-raw`, `compact-staging`, `catalog`, `rebuild --from-raw` |
 | `schema.py` | `Contract`, `Column`, `Rule`: typed columns with unit and pt/en meaning; conform and quarantine split (ADR-0005) |
 | `store/` | L1 and the operational tables |
 | `store/raw.py` | content-addressed raw store; zstd at rest; deltas of previous versions (ADR-0014) |
@@ -64,7 +69,9 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/alternates.py` | archive connectors for the routes that close data gaps: SND, Fundos.NET, BCB SGS, Ipeadata, Tesouro VNA, the `pyield_data` mirror, Yahoo (ADR-0010) |
 | `ingest/series.py` | series payloads (SGS JSON and SOAP metadata, Ipeadata OData, SIDRA, Tesouro VNA workbooks, Treasury/NY Fed/Cboe CSVs, SDMX-CSV with the sources' unit codelists) → staging `observation`/`definition` → core `series_observation`/`series_definition`, versioned (ADR-0013) |
 | `ingest/cvm_statements.py` | CVM DFP/ITR zips → staging `statement_line` (every account line, value as written with its scale), `document` (every version and its delivery date), `share_capital` |
+| `ingest/focus.py` | BCB Focus expectations (8 tables) → staging `expectation` |
 | `ingest/fundosnet.py` | Fundos.NET notices → staging `distribution` (per Provento and kind, exact BRL per quota) and `listing` (delivery minute = knowledge time, version) |
+| `ingest/b3_events.py` | B3 listed-companies backend: issuers, cash history, stock events, subscriptions; Yahoo chart events (tier U) |
 | `ingest/intraday.py` | Yahoo 5-minute bars for the most traded shares and FIIs, Ibovespa and USD/BRL (tier U) |
 | `ingest/tesouro.py` | Tesouro Direto `PrecoTaxaTesouroDireto.csv` → staging `price_rate` (exact decimals; 0,00 PU = not offered) |
 | `ingest/b3_cotahist.py` | COTAHIST fixed-width → staging `quote` (exact decimals as quoted), line repair and quarantine (ADR-0008) |
@@ -72,6 +79,8 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `reference/calendar.py` | `calendar_day` build and the `Calendar` API (`du`, shifts) (ADR-0006) |
 | `reference/sources.py` | loads and validates `reference/sources.toml`, the source registry |
 | `core/` | core tables built from staging |
+| `core/events.py` | corporate events (B3, Yahoo, Fundos.NET) merged and graded by the price move; derived adjustment factors; `adjusted_close` (ADR-0016) |
+| `core/tesouro.py` | Tesouro Direto → core `tesouro_bond`, `tesouro_price_daily` (versioned) |
 | `core/equities.py` | COTAHIST → core `instrument`, `instrument_identifier`, `price_daily` (ADR-0015) |
 | `quality/` | empty package, Stage D |
 

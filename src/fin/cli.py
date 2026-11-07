@@ -22,6 +22,9 @@ from fin.store.runs import IngestRun, recover
 app = typer.Typer(help="LASTRO: dados e análise de investimentos pessoais.", no_args_is_help=True)
 
 
+MIN_FREE = 5 * 10**9  # bytes of free disk below which ingest refuses to start
+
+
 @app.command()
 def ingest(
     sources: Annotated[list[str], typer.Argument(help="fontes (source_id) ou 'daily' para o job diário")],
@@ -32,6 +35,13 @@ def ingest(
 ) -> None:
     """Busca, arquiva e carrega as fontes pedidas."""
     z = zones()
+    z.home.mkdir(parents=True, exist_ok=True)
+    free = shutil.disk_usage(z.home).free
+    if free < MIN_FREE:  # a full disk mid-run corrupts nothing (atomic writes) but loses the day: refuse up front
+        typer.echo(
+            f"ERRO: só {free / 1e9:.1f} GB livres no disco (mínimo {MIN_FREE / 1e9:.0f} GB); nada foi buscado", err=True
+        )
+        raise typer.Exit(2)
     ids = list(DAILY) if sources == ["daily"] else sources
     errors = 0
     with IngestRun(z, f"ingest {' '.join(sources)} --mode {mode}") as run:
@@ -57,6 +67,9 @@ def ingest(
             for sid in ids:
                 if (z.staging / sid).exists():
                     compact_staging(z.staging / sid)
+            from fin.catalog import build as build_catalog
+
+            build_catalog(z)
         for ds, c in sorted(run.counts.items()):
             typer.echo(f"  {ds}: entrada {c['in']}, saída {c['out']}, quarentena {c['quarantined']}")
         typer.echo(f"execução {run.run_id}: {errors} erro(s)")
@@ -84,6 +97,12 @@ def status() -> None:
     objs = list(RawStore(z.raw).iter_objects())
     size = sum(p.stat().st_size for _, p in objs)
     typer.echo(f"arquivo bruto: {len(objs)} objetos, {size / 1e6:,.1f} MB")
+    for name, zone in (("staging", z.staging), ("core", z.core), ("derived", z.derived)):
+        if zone.exists():
+            zb = sum(p.stat().st_size for p in zone.rglob("*") if p.is_file())
+            typer.echo(f"{name}: {zb / 1e6:,.1f} MB")
+    free = shutil.disk_usage(z.home).free
+    typer.echo(f"espaço livre no disco: {free / 1e9:,.1f} GB (mínimo para ingerir: {MIN_FREE / 1e9:.0f} GB)")
     referenced = set(m["raw_sha256"].to_list())
     orphans = [s for s, _ in objs if s not in referenced]
     if orphans:
@@ -126,6 +145,16 @@ def verify_raw() -> None:
     typer.echo(f"{n} objetos verificados, {bad} corrompido(s)")
     if bad:
         raise typer.Exit(1)
+
+
+@app.command("catalog")
+def catalog_cmd() -> None:
+    """Recria o catálogo DuckDB (visões sobre os Parquet; nada é copiado)."""
+    from fin.catalog import build
+
+    z = zones()
+    made = build(z)
+    typer.echo(f"{z.catalog}: {len(made)} visões ({', '.join(made)})")
 
 
 @app.command("compact-raw")

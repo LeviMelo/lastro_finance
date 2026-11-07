@@ -238,6 +238,11 @@ class TesouroPrecoTaxa(Connector):
     def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
         return tesouro.parse_payload(blob, row)
 
+    def derive(self, zones: Zones, run: Any) -> None:
+        from fin.core import tesouro as core_tesouro
+
+        core_tesouro.build(zones, run)
+
     URL = (
         "https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/"
         "796d2059-14e9-44e3-80c9-2d9e30b405c1/download/precotaxatesourodireto.csv"

@@ -13,6 +13,11 @@ Day one (2026-11-07).
   - core `price_daily` (spot and odd lot, 1986–2026, 7.34 M sessions) with instrument identity: 8,464
     instruments, ISIN and time-ranged tickers, 911 pre-1995 codes linked (ADR-0015);
   - core `series_observation`: 1,174 macro and market series, 585,075 values with units (ADR-0013);
+  - core `corporate_event` (dividends, JCP, FII income, bonuses, splits, rights) from B3, Yahoo and Fundos.NET,
+    graded by the price move, and derived adjustment factors (ADR-0016); core `tesouro_bond` and
+    `tesouro_price_daily` (150 bonds, 2004–);
+  - the query layer: `data/catalog.duckdb`, views only, incl. `fundamental_fact` and `price_adjusted` (ADR-0017);
+  - staging `expectation`: Focus market expectations 2000– (3.6 M statistics);
   - staging: Tesouro Direto 2004–, FII distributions, CVM statements 2010– (66.8 M lines), intraday 5-minute bars
     (archived from 2026-11-07).
 - **Storage is lean by rule** (ADR-0014): re-sent files as deltas, CVM zips as member deltas, staging keeps changed
@@ -56,8 +61,9 @@ Day one (2026-11-07).
 
 ## Next
 
-1. **Corporate events** (PLAN §4.3.3): B3 events + Yahoo candidates proven against CVM IPE; they link ISIN changes
-   and give adjusted series (derived, never stored as truth).
-2. **Holdings tables in core:** FII distributions with their delivery minute; `tesouro_price_daily`; universes.
-3. **Fundamentals** from `statement_line`: scale applied, accounts mapped per sector (banks differ from industrials).
-4. **Remaining context parsers:** Focus expectations, Copom, CFTC, CEPEA, ANP, ANBIMA IMA.
+1. **Prove events against CVM IPE** documents; ISIN changes and mergers as event legs (PLAN's event graph).
+2. **Universes** (point in time, delisted included) and issuers (`issuer` from CVM + B3, linked to instruments).
+3. **Fundamentals mapping** on `fundamental_fact`: accounts mapped per sector (banks differ), per-share figures once
+   the unit of the CVM share counts is verified.
+4. **Remaining context parsers:** CFTC positioning (wide reports: a declared contract per report type), Copom,
+   CEPEA, ANP, ANBIMA IMA. Focus expectations are parsed (3.6 M rows, 2000–).

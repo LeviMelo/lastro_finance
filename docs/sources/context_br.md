@@ -170,3 +170,11 @@ CEPEA/ESALQ (USP): data licence printed on every indicator page = CC BY-NC 4.0 (
 - Ephemeral, archive daily: IMA XML, B3 SharesInvesVolum (D-21), plus repo-known ANBIMA/BDI.
 - Corrections to repo notes: Focus has no Instituições entity set; SGS 432 carries future-dated rows; SGS 4393 is Fecomércio not FGV; SGS metadata page (www3.bcb.gov.br/sgspub) rejects curl and browser UA (502 "Requisição inválida"), so names for 433, 188-190, 7478, 226, 24369, 21859, 21862, 1344, 3546, 11752 are not verified (CKAN catalogue `ckan_sgs.json` lacks them).
 - Total download this session ~20 MB (largest: Ipeadata metadata 8 MB in 5 pages, CKAN SGS catalogue 5 MB in 5 pages, CEPEA 10 XLS 3.6 MB, Tesouro RTN 4.3 MB). Rate <= 1 req/s per host; no logins, no CAPTCHA, one HTTP 403 (CEPEA consult page) not retried.
+
+## Focus parsed (2026-11-07, `ingest/focus.py`)
+- All 8 Olinda tables into one staging table `expectation`: 3,605,401 rows 2000→2026 from 724 MB of JSON (27 MB
+  staged). Reference column by table: `DataReferencia` (annual `2026`, monthly `12/2026`, quarterly `1/2024`),
+  `Reuniao` (`R8/2027`), none for the 12/24-month inflation tables (stored as `12m`/`24m`).
+- The Top-5 tables use lower-case keys (`indicador`, `media`, `coeficienteVariacao`); the others capitalised ones.
+- 1,897 Top-5 rows carry no statistic at all (IGP-DI, IGP-M, IPCA, Selic, mostly 2010-2016): quarantined.
+- The survey of a Friday is served from the following Monday (2026-11-06 empty on 2026-11-07; 2026-10-30 served).

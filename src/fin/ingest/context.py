@@ -194,6 +194,13 @@ def context_connectors() -> list[type[Connector]]:
             continue  # these sources already have a connector; their catalogue entries are merged in there
         browser = any(e.browser for e in catalogue() if e.source == sid)
         attrs: dict[str, Any] = {"source_id": sid, "user_agent": BROWSER_UA if browser else None}
+        if sid == "bcb_focus":  # expectations are their own staging table, not series (ingest/focus.py)
+            from fin.ingest import focus
+
+            attrs |= {"version": "1", "contracts": focus.CONTRACTS, "parse": _parse_with(focus.parse_payload),
+                      "dedup_staging": True}  # fmt: skip
+            out.append(type(f"Context_{sid}", (ContextConnector,), attrs))
+            continue
         parser = series.CATALOGUE_PARSERS.get(sid)
         if parser is not None:  # parsed into series_observation (ADR-0013)
             attrs |= {

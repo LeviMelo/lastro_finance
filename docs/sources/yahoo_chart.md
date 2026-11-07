@@ -9,7 +9,10 @@
 ## 2. What it gives
 - Daily OHLC (split-adjusted) and `adjclose`, `events.splits` {date, numerator, denominator, splitRatio}, and
   `events.dividends` {date, amount} from ~2007, **split-adjusted, with no JCP/dividend distinction**.
-- `interval=1mo` moves event dates to the month start: never use it for events.
+- The archived `range=max` payloads came back with `dataGranularity` 1mo (monthly bars). Their **event dates are
+  the true ex-dates nonetheless**: ITUB4's 11 splits are identical in the 1mo payload and in a `period1=0&interval=1d`
+  request (2026-11-07), including mid-month dates (2013-05-21). Only the bars are monthly.
+- Split terms can be decimals (1.2:1, 15.064232:1): parsed as exact fractions of their shortest decimals.
 
 ## 3. Verification on B3's misses (OQ-18)
 | case | Yahoo |
