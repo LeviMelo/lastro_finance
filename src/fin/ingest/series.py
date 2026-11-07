@@ -22,6 +22,7 @@ import json
 import re
 from collections.abc import Iterable
 from datetime import date, datetime
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 import polars as pl
@@ -32,7 +33,7 @@ from fin.schema import Column, Contract, Rule
 from fin.store.runs import IngestRun
 from fin.store.tables import read_parquet_dir, write_parquet
 
-VALUE = pl.Decimal(38, 18)
+VALUE = pl.Decimal(38, 24)  # measured 2026-11-07: up to 19 decimals (IGP index 1944) and 12 integer digits
 KT = pl.Datetime("us", "UTC")
 # Frequencies: D daily (a date), M month, Q quarter, A year, M3 rolling three months labelled by its last month.
 FREQUENCIES = ("D", "M", "Q", "A", "M3")
@@ -222,7 +223,24 @@ _DEF_IN = {
 }
 
 
+def _plain(text: str | None) -> str | None:
+    """Exponent notation (Ipeadata: `3.08619E-05`) written out exactly; None when the text needs no change.
+    A number with more decimals than VALUE holds is refused: the cast would round it silently."""
+    if text is None:
+        return None
+    norm = text
+    if "e" in text.lower():
+        try:
+            norm = format(Decimal(text), "f")
+        except InvalidOperation:
+            return None  # not a number: the contract quarantines it
+    if len(norm.partition(".")[2]) > VALUE.scale:
+        raise LayoutError(f"value {text!r} has more than {VALUE.scale} decimals")
+    return norm if norm != text else None
+
+
 def _observations(rows: list[dict[str, Any]], row: dict[str, Any]) -> pl.DataFrame:
+    rows = [r | {"value_norm": r.get("value_norm") or _plain(r.get("value_text"))} for r in rows]
     df = _frame([{k: r.get(k) for k in _OBS_IN} for r in rows], row, _OBS_IN)
     reason = pl.coalesce(
         pl.col("missing_reason"), pl.col("value_text").replace_strict(MISSING, default=None, return_dtype=pl.String)
@@ -323,7 +341,7 @@ _IPEA_FREQ = {"Diária": "D", "Mensal": "M", "Trimestral": "Q", "Anual": "A"}
 
 def parse_ipeadata(blob: bytes, row: dict[str, Any]) -> pl.DataFrame:
     """OData `ValoresSerie`: {"value":[{"SERCODIGO","VALDATA":"1994-04-29T00:00:00-03:00","VALVALOR":1120.0}]}.
-    Numbers are read as the JSON text, so no float rounding enters (docs/sources/ipeadata.md)."""
+    Numbers are JSON doubles: each is read as the shortest decimal that round-trips to it (docs/sources/ipeadata.md)."""
     doc = json.loads(blob, parse_float=str, parse_int=str)
     rows: list[dict[str, Any]] = []
     for i, it in enumerate(doc["value"]):
@@ -337,6 +355,9 @@ def parse_ipeadata(blob: bytes, row: dict[str, Any]) -> pl.DataFrame:
                 "vt_until": None,
                 "period_text": it["VALDATA"],
                 "value_text": "" if v is None else str(v),
+                # a JSON double printed to 17 digits (4.1469769999999997E-13): its value is the shortest decimal
+                # that round-trips to the same double (4.146977E-13), as for spreadsheet cells
+                "value_norm": None if v is None else format(Decimal(repr(float(v))), "f"),
                 "raw_locator": f"$.value[{i}]",
             }
         )

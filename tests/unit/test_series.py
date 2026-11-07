@@ -207,3 +207,11 @@ def test_vna_ntnb_is_ipca_ratio_truncated() -> None:
     oct26 = obs.filter(pl.col("vt_date") == date(2026, 10, 15))["value"][0]
     expected = (Decimal(1000) * index["202609"] / index["200006"]).quantize(Decimal("0.000001"), rounding="ROUND_DOWN")
     assert oct26 == expected == Decimal("4766.335112")
+
+
+def test_exponent_notation_is_written_out_exactly() -> None:
+    obs = _ok(series.OBSERVATION, series.parse_ipeadata((FIX / "ipeadata/IGP12_IGPM12.json").read_bytes(), _row("x")))
+    row = obs.filter(pl.col("value_text") == "3.08619E-05").row(0, named=True)
+    assert row["value"] == Decimal("0.0000308619")
+    with pytest.raises(series.LayoutError):
+        series._plain("0." + "1" * 25)  # pyright: ignore[reportPrivateUsage]

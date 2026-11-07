@@ -16,7 +16,7 @@
 
 ## 3. Verification and quirks
 - **Metadata** (measured 2026-11-07): `https://www.ipeadata.gov.br/api/odata4/Metadados('<code>')` → `SERNOME`, `PERNOME` (Diária/Mensal), `UNINOME` (`-` for index series), `MULNOME`, `SERSTATUS` (`I` inactive: EMBI+), `SERATUALIZACAO`. Archived as `meta_<code>` monthly (ADR-0013).
-- `VALVALOR` is a JSON number; it is parsed from its text so no float rounding enters. Daily series carry `null` on non-trading days (kept as missing).
+- `VALVALOR` is a JSON number. Values are doubles printed to up to 17 digits (`4.1469769999999997E-13`); each is read as the shortest decimal that round-trips to the same double (`4.146977E-13`). Daily series carry `null` on non-trading days (kept as missing).
 - IGP-M Oct-2026 1243.905 equals ANBIMA's Quadro Indicadores. The NTN-C VNA, 1000 × 1243.905 / 183.745 = 6769.735230,
   equals Tesouro's published value (docs/sources/tesouro_vna.md).
 - Pre-1994 values are on the chained scale (1989-06: 3.086E-05). No vintages: knowledge time is ours to record.

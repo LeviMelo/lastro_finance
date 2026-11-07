@@ -23,3 +23,15 @@
 ## 3. Ephemerality and cost
 - Not ephemeral. The full history is 183 listing pages + 36,584 documents, ≈ 10 h at 1 request/s; a day adds a few
   dozen.
+
+## Parsed (2026-11-07, `ingest/fundosnet.py`; first 16,685 notices of the backfill)
+- Layout constant: every `DataBase`/`DataPagamento` ISO, every `ValorProvento` a plain decimal with **up to 18
+  decimals and 7 integer digits** (stored `Decimal(38,18)`; more decimals are refused, a cast would round).
+- 19,299 Proventos: 18,514 Rendimento, 1,215 Amortizacao (1,093 Parcial, 122 Total); 430 carry both. Income tax
+  flag: Sim 18,243, Não 271.
+- Quarantined by rule: 2 negative values (RENV11 −0.07, WSEC11 −0.075, 2024-10); 9 payments dated before the
+  data-com, one with data-com typed 2029-09-29 (YUFI11, payment 2023-10-16). 41 Proventos have no
+  `CodNegociacao` (unlisted quotas); kept with a null ticker.
+- One notice (id 991793) holds an `InformeMensal`: counted as not data.
+- Listing: 1.7 % of documents are re-filings (`versao` 2–5); `dataEntrega` is minute-precise Brasília time.
+- Personal contact fields (`ResponsavelInformacao`, `TelefoneContato`) are not parsed.

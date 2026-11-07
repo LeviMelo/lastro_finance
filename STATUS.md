@@ -10,7 +10,8 @@ Day one (2026-11-07).
 - **Collection terms** (ADR-0012): automating what the owner could fetch by hand for the owner's own portfolio is the personal
   use the sources' general terms allow. Collection stays polite and is never redistributed.
 - **Stage A passes its exit criteria.** **Stage B** has a note for every registered source (51). **Stage C** has
-  started: COTAHIST 1986–2026 and Tesouro Direto prices/rates 2004– are parsed to staging; SGS, Ipeadata,
+  started: COTAHIST 1986–2026, Tesouro Direto prices/rates 2004– and FII distributions (Fundos.NET) are parsed
+  to staging; SGS, Ipeadata,
   SIDRA and Tesouro VNA are parsed into core `series_observation` (1,020 series, ~205,000 values, every row with its
   unit; ADR-0013). VNA NTN-B reproduces from IBGE's IPCA on 315 of 316 months.
 - **Data gaps are mapped and ranked** ([gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md)). Everything

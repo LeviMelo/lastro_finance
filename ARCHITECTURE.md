@@ -27,6 +27,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `core/reference/calendar_day/calendar_day.parquet` | the business-day calendar | rebuildable |
 | `staging/b3_cotahist/quote/year=YYYY/<sha>.parquet` | COTAHIST records, 1986–, one file per raw zip and year | rebuildable |
 | `staging/<source>/{observation,definition}/…` | series values and metadata as each payload served them (SGS, Ipeadata, SIDRA, Tesouro VNA) | rebuildable |
+| `staging/b3_fundosnet/{distribution/id_block=N,listing/all}/<sha>.parquet` | FII/Fiagro distributions 2016-11– and listing rows; one small file per notice (~8 KB) | rebuildable |
 | `staging/tesouro_transparente/price_rate/all/<sha>.parquet` | Tesouro Direto rates and PUs 2004-12-31–, one full snapshot per daily file | rebuildable |
 | `core/series_observation/source=<id>.parquet` | every series value with period, unit and version (ADR-0013) | rebuildable |
 | `core/series_definition/source=<id>.parquet` | latest name, frequency and unit per series | rebuildable |
@@ -56,6 +57,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/context.py` | the context catalogue (`reference/context_series.toml`) → one generated archive connector per source, cadence per entry (ADR-0011) |
 | `ingest/alternates.py` | archive connectors for the routes that close data gaps: SND, Fundos.NET, BCB SGS, Ipeadata, Tesouro VNA, the `pyield_data` mirror, Yahoo (ADR-0010) |
 | `ingest/series.py` | series payloads (SGS JSON and SOAP metadata, Ipeadata OData, SIDRA, Tesouro VNA workbooks) → staging `observation`/`definition` → core `series_observation`/`series_definition`, versioned (ADR-0013) |
+| `ingest/fundosnet.py` | Fundos.NET notices → staging `distribution` (per Provento and kind, exact BRL per quota) and `listing` (delivery minute = knowledge time, version) |
 | `ingest/tesouro.py` | Tesouro Direto `PrecoTaxaTesouroDireto.csv` → staging `price_rate` (exact decimals; 0,00 PU = not offered) |
 | `ingest/b3_cotahist.py` | COTAHIST fixed-width → staging `quote` (exact decimals as quoted), line repair and quarantine (ADR-0008) |
 | `reference/` | L0 reference data |

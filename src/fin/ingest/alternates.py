@@ -15,7 +15,7 @@ from typing import Any, ClassVar
 import polars as pl
 
 from fin.config import Zones
-from fin.ingest import series
+from fin.ingest import fundosnet, series
 from fin.ingest.base import Connector, Mode, Parsed
 from fin.ingest.context import ContextConnector, catalogue
 from fin.ingest.fetch import FetchSpec
@@ -324,8 +324,9 @@ class FundosNetRendimentos(Connector):
     Daily runs page until a whole page is already held; backfill walks every page."""
 
     source_id: ClassVar[str] = "b3_fundosnet"
-    version: ClassVar[str] = "0-archive"
+    version: ClassVar[str] = "1"
     user_agent: ClassVar[str | None] = BROWSER_UA
+    contracts: ClassVar[dict[str, Any]] = fundosnet.CONTRACTS
     BASE = "https://fnet.bmfbovespa.com.br/fnet/publico"
     PAGE = 200  # 500 is refused with a 302 (measured 2026-11-07)
 
@@ -369,6 +370,9 @@ class FundosNetRendimentos(Connector):
         self._held_ids = {int(n.removeprefix("id=")) for n in held["notes"].to_list()} if held.height else set()
         self._backfill = mode is Mode.BACKFILL
         yield self._listing(0)
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return fundosnet.parse_payload(blob, row)
 
     def follow(self, spec: FetchSpec, blob: bytes) -> Iterable[FetchSpec]:
         if spec.dataset_id != "listagem":

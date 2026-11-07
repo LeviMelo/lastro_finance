@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DadosEconomicoFinanceiros>
+	<DadosGerais>
+		<NomeFundo>RBR TESOURARIA FII IPCA+ FII</NomeFundo>
+		<CNPJFundo>66174532000153</CNPJFundo>
+		<NomeAdministrador>INTRAG DTVM</NomeAdministrador>
+		<CNPJAdministrador>62418140000131</CNPJAdministrador>
+		<ResponsavelInformacao>RENATO CHAPCHAP</ResponsavelInformacao>
+		<TelefoneContato>11 30726087</TelefoneContato>
+		<DataInformacao>2026-11-06</DataInformacao>
+		<Ano>2026</Ano>
+	</DadosGerais>
+	<InformeRendimentos>
+		<Provento>
+			<CodISIN>BRTINFCTF003</CodISIN>
+			<CodNegociacao>TINF11</CodNegociacao>
+			<Rendimento>
+				<AtoSocietarioAprovacao/>
+				<DataBase>2026-11-06</DataBase>
+				<ValorProvento>0.4</ValorProvento>
+				<DataPagamento>2026-11-13</DataPagamento>
+				<PeriodoReferencia>OUTUBRO 2026</PeriodoReferencia>
+				<RendimentoIsentoIR>Sim</RendimentoIsentoIR>
+			</Rendimento>
+		</Provento>
+	</InformeRendimentos>
+</DadosEconomicoFinanceiros>

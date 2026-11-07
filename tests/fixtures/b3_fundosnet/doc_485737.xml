@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<DadosEconomicoFinanceiros>
+	<DadosGerais>
+		<NomeFundo>FII Caixa SEQ Logistica Renda</NomeFundo>
+		<CNPJFundo>12887506000143</CNPJFundo>
+		<NomeAdministrador>Caixa Econômica Federal</NomeAdministrador>
+		<CNPJAdministrador>00360305000104</CNPJAdministrador>
+		<ResponsavelInformacao>Eliana Lisboa</ResponsavelInformacao>
+		<TelefoneContato>11 2220.1866</TelefoneContato>
+		<DataInformacao>2023-06-30</DataInformacao>
+		<Ano>2023</Ano>
+	</DadosGerais>
+	<InformeRendimentos>
+		<Provento>
+			<CodISIN>BRCXTLCTF003</CodISIN>
+			<CodNegociacao>CXTL11</CodNegociacao>
+			<Rendimento>
+				<AtoSocietarioAprovacao/>
+				<DataBase>2023-06-30</DataBase>
+				<ValorProvento>1.8520708248596</ValorProvento>
+				<DataPagamento>2023-07-14</DataPagamento>
+				<PeriodoReferencia>06/2023</PeriodoReferencia>
+				<RendimentoIsentoIR>Sim</RendimentoIsentoIR>
+			</Rendimento>
+			<Amortizacao tipo="Parcial">
+				<AtoSocietarioAprovacao/>
+				<DataBase>2023-06-30</DataBase>
+				<ValorProvento>7.74067951564453</ValorProvento>
+				<DataPagamento>2023-07-14</DataPagamento>
+				<PeriodoReferencia>06/2023</PeriodoReferencia>
+			</Amortizacao>
+		</Provento>
+	</InformeRendimentos>
+</DadosEconomicoFinanceiros>

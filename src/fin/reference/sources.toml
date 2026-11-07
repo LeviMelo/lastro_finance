@@ -307,7 +307,7 @@ institution = "B3"
 access = "JSON listing + XML per document, no login"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/b3_fundosnet.md"
 
 [pyield_data]
