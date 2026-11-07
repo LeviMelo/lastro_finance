@@ -27,6 +27,7 @@ uv run fin ingest b3_pesquisapregao --mode backfill --families TS    # curves 20
 uv run fin ingest pyield_data bcb_sgs --mode backfill               # mirror (bonds 2020-, futures 2018-); SGS 1986-
 uv run fin ingest snd_debentures b3_fundosnet --mode backfill       # trades 1993-11-; FII notices 2016-11- (~10 h)
 uv run fin ingest yahoo_chart --mode snapshot [--tickers ITUB4,SLCE3]  # tier U; default: last year's traded tickers
+uv run fin ingest <context sources> --mode backfill  # the catalogue in src/fin/reference/context_series.toml
 uv run fin status                          # freshness per source, raw size, orphan objects, blockers, last runs
 uv run fin verify-raw                      # re-hash every raw object
 uv run fin rebuild --from-raw              # rebuild staging/core/derived/quarantine from raw + manifest

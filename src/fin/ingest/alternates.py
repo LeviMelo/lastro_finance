@@ -16,19 +16,11 @@ import polars as pl
 
 from fin.config import Zones
 from fin.ingest.base import Connector, Mode
+from fin.ingest.context import ContextConnector
 from fin.ingest.fetch import FetchSpec
 from fin.ingest.http import BROWSER_UA
+from fin.ingest.snapshots import held_rows as _held
 from fin.ingest.snapshots import today_brt
-from fin.store.manifest import Manifest
-
-
-def _held(zones: Zones, source_id: str, dataset_id: str) -> pl.DataFrame:
-    m = Manifest(zones.manifest).read()
-    if m.is_empty():
-        return m
-    return m.filter(
-        (pl.col("source_id") == source_id) & (pl.col("dataset_id") == dataset_id) & (pl.col("http_status") == 200)
-    )
 
 
 def _last_fetch(zones: Zones, source_id: str, dataset_id: str) -> date | None:
@@ -67,7 +59,7 @@ class PyieldData(Connector):
             yield FetchSpec(self.source_id, name, f"{self.BASE}/{name}.parquet", "parquet", reference_date=today_brt())
 
 
-class Ipeadata(Connector):
+class Ipeadata(ContextConnector):
     """IPEA's OData API: FGV's IGP-M (1989-06–) and IGP-DI (1944–) index numbers, absent from BCB SGS
     (docs/sources/ipeadata.md). One request returns a whole series; unchanged days dedupe in raw."""
 
@@ -77,6 +69,7 @@ class Ipeadata(Connector):
     SERIES: ClassVar[tuple[str, ...]] = ("IGP12_IGPM12", "IGP12_IGPDI12", "IGP12_IGPMG12")
 
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
+        yield from super().discover(mode, zones, **options)  # catalogue entries (reference/context_series.toml)
         for code in self.SERIES:
             yield FetchSpec(
                 self.source_id,
@@ -105,7 +98,7 @@ class TesouroVna(Connector):
             yield FetchSpec(self.source_id, dataset, url, "xlsx", reference_date=today_brt(), min_bytes=1000)
 
 
-class BcbSgs(Connector):
+class BcbSgs(ContextConnector):
     """BCB SGS daily series in ≤ 10-year windows (docs/sources/bcb_sgs.md). CDI (12) and Selic (11) publication
     days from 1986 are also the only business-day record found before ANBIMA's calendar starts in 2001
     (OQ-22). Backfill fetches whole history; otherwise the last 30 days, which catches BCB's one-day lag."""
@@ -119,6 +112,9 @@ class BcbSgs(Connector):
         4389: date(1986, 3, 6),  # CDI % a.a. base 252
         1178: date(1986, 6, 4),  # Selic % a.a. base 252
         432: date(1999, 3, 5),  # Copom target
+        226: date(1991, 2, 1),  # TR, % per period (row = start date, dataFim = +1 month); start not verified
+        195: date(2012, 5, 4),  # poupança from 2012-05-04, % a.m.
+        25: date(1991, 2, 1),  # poupança until 2012-05-03, % a.m.
     }
     WINDOW_YEARS = 10
 
@@ -139,6 +135,7 @@ class BcbSgs(Connector):
         return out
 
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
+        yield from super().discover(mode, zones, **options)  # monthly series of the context catalogue
         end = today_brt()
         for code, first in self.SERIES.items():
             start = first if mode is Mode.BACKFILL else end - timedelta(days=30)

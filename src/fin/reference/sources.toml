@@ -253,7 +253,7 @@ institution = "Banco Central do Brasil"
 access = "OData JSON, paged"
 tier = "P"
 ephemeral = false
-status = "recon"
+status = "archiving"
 recon = "docs/sources/bcb_focus.md"
 
 [ibge_sidra]
@@ -262,7 +262,7 @@ institution = "IBGE"
 access = "REST JSON (apisidra)"
 tier = "P"
 ephemeral = false
-status = "recon"
+status = "archiving"
 recon = "docs/sources/ibge_sidra.md"
 
 [b3_pesquisapregao]
@@ -327,3 +327,138 @@ tier = "U"
 ephemeral = false
 status = "archiving"
 recon = "docs/sources/yahoo_chart.md"
+
+[bcb_copom]
+name = "Histórico das taxas de juros (reuniões do Copom)"
+institution = "Banco Central do Brasil"
+access = "site JSON"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/context_br.md"
+
+[anbima_ima]
+name = "IMA: índices de mercado ANBIMA (carteiras de títulos públicos)"
+institution = "ANBIMA"
+access = "XML file, latest day only"
+tier = "P"
+ephemeral = true
+status = "archiving"
+recon = "docs/sources/context_br.md"
+
+[cepea]
+name = "Indicadores CEPEA/ESALQ (agropecuária)"
+institution = "CEPEA/ESALQ-USP"
+access = "XLS per indicator, full history"
+tier = "S"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/context_br.md"
+
+[anp]
+name = "Série histórica de preços de combustíveis"
+institution = "ANP"
+access = "XLSX"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/context_br.md"
+
+[us_treasury]
+name = "Daily Treasury par and real yield curves"
+institution = "US Treasury"
+access = "CSV per year"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/context_global.md"
+
+[nyfed]
+name = "Reference rates (EFFR, SOFR)"
+institution = "Federal Reserve Bank of New York"
+access = "CSV API, keyless"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/context_global.md"
+
+[ecb]
+name = "ECB Data Portal (€STR, yield curves, reference FX)"
+institution = "European Central Bank"
+access = "SDMX REST CSV, keyless"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/context_global.md"
+
+[bis]
+name = "BIS statistics (policy rates, effective exchange rates)"
+institution = "Bank for International Settlements"
+access = "SDMX v2 CSV, keyless"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/context_global.md"
+
+[cboe]
+name = "Volatility index histories (VIX, VIX3M, SKEW, VVIX)"
+institution = "Cboe"
+access = "CSV files"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/context_global.md"
+
+[eia]
+name = "Spot oil prices (Brent, WTI)"
+institution = "US Energy Information Administration"
+access = "XLS files"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/context_global.md"
+
+[worldbank_cmo]
+name = "Commodity Markets Outlook historical data (Pink Sheet)"
+institution = "World Bank"
+access = "XLSX linked from a page"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/context_global.md"
+
+[imf]
+name = "Primary Commodity Prices (PCPS)"
+institution = "International Monetary Fund"
+access = "SDMX 2.1, keyless"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/context_global.md"
+
+[oecd]
+name = "Composite leading indicators"
+institution = "OECD"
+access = "SDMX REST CSV, keyless"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/context_global.md"
+
+[cftc_cot]
+name = "Commitments of Traders"
+institution = "CFTC"
+access = "zip per year"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/context_global.md"
+
+[b3_index_levels]
+name = "Estatísticas históricas dos índices (fechamentos diários)"
+institution = "B3"
+access = "JSON backend, base64 payload per index-year"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/context_br.md"

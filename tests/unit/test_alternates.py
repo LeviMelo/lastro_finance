@@ -125,3 +125,36 @@ def test_cvm_docs_backfill_then_weekly_and_monthly(zones: Zones, monkeypatch: py
     # 2026: 5 days ago, not due; 2025: 8 days, weekly, due; 2024: 18 days, monthly, not due; 2023: 37 days, due;
     # 2022: never seen, due; 2021 and older: frozen, not re-requested by the daily job.
     assert due == ["2022", "2023", "2025"]
+
+
+def test_context_catalogue_plans(zones: Zones, monkeypatch: pytest.MonkeyPatch) -> None:
+    from fin.ingest import context
+    from fin.ingest.registry import CONNECTORS
+
+    monkeypatch.setattr(context, "today_brt", lambda: TODAY)
+    treasury = CONNECTORS["us_treasury"]()
+    back = list(treasury.discover(Mode.BACKFILL, zones))
+    assert len(back) == 2 * (2026 - 1990 + 1)  # nominal and real curves, one file per year
+    assert back[0].params and back[0].params["field_tdr_date_value"] == "1990"
+    daily = list(treasury.discover(Mode.INCREMENTAL, zones))
+    assert [s.params["field_tdr_date_value"] for s in daily if s.params] == [
+        "2026",
+        "2026",
+    ]  # past years: backfill only
+
+    nyfed = CONNECTORS["nyfed"]()
+    first = list(nyfed.discover(Mode.INCREMENTAL, zones))
+    assert first[0].params and first[0].params["startDate"] == "1990-01-01"  # nothing held: full history first
+    held = pl.DataFrame({"notes": ["unsecured/effr"], "fetched_at": [datetime(2026, 11, 5, tzinfo=UTC)]})
+    monkeypatch.setattr(context, "_held", lambda *_: held)
+    again = list(nyfed.discover(Mode.INCREMENTAL, zones))
+    assert again[0].params and again[0].params["startDate"] == "2026-10-08"  # then only the last 30 days
+
+    sgs = [s for s in CONNECTORS["bcb_sgs"]().discover(Mode.INCREMENTAL, zones) if s.dataset_id == "sgs_433"]
+    assert len(sgs) == 1  # the catalogue's monthly SGS series ride on the bcb_sgs connector
+
+    wb = CONNECTORS["worldbank_cmo"]()
+    page = b'<a href="https://thedocs.worldbank.org/en/doc/x/related/CMO-Historical-Data-Monthly.xlsx">x</a>'
+    (spec,) = list(wb.discover(Mode.SNAPSHOT, zones))
+    (link,) = list(wb.follow(spec, page))
+    assert link.url.endswith("CMO-Historical-Data-Monthly.xlsx") and link.ext == "xlsx"

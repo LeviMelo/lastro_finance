@@ -18,6 +18,7 @@ from fin.ingest.alternates import (
 from fin.ingest.anbima_calendar import AnbimaCalendar
 from fin.ingest.b3_cotahist import B3Cotahist
 from fin.ingest.base import Connector
+from fin.ingest.context import context_connectors
 from fin.ingest.snapshots import (
     AnbimaDebentures,
     AnbimaEttj,
@@ -26,6 +27,7 @@ from fin.ingest.snapshots import (
     AnbimaVna,
     B3Bdi,
     B3Files,
+    B3IndexLevels,
     B3IndexPortfolio,
     B3PesquisaPregao,
     CvmCiaCadastro,
@@ -46,6 +48,7 @@ CONNECTORS: dict[str, type[Connector]] = {
         AnbimaIndicadores,
         B3Bdi,
         B3Files,
+        B3IndexLevels,
         B3IndexPortfolio,
         B3PesquisaPregao,
         B3Cotahist,
@@ -64,6 +67,7 @@ CONNECTORS: dict[str, type[Connector]] = {
         SndDebentures,
         TesouroVna,
         YahooChart,
+        *context_connectors(),
     )
 }
 
@@ -78,6 +82,7 @@ DAILY: tuple[str, ...] = (
     "b3_bdi",
     "b3_instruments",
     "b3_index_portfolio",
+    "b3_index_levels",
     "b3_pesquisapregao",
     "cvm_cia_cadastro",
     "cvm_fi_cadastro",
@@ -95,6 +100,8 @@ DAILY: tuple[str, ...] = (
     "cvm_fca",
     "cvm_fre",
     "cvm_ipe",
+    # the context catalogue (reference/context_series.toml): each entry carries its own cadence
+    *(c.source_id for c in context_connectors()),
 )
 
 

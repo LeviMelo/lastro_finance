@@ -1,0 +1,228 @@
+# The context-data catalogue (ADR-0011): economic and market series that ground analysis, each a verified free
+# route (recon 2026-11-07: docs/sources/context_br.md, docs/sources/context_global.md). Reviewed like code.
+#
+# One [[file]] = one request shape, archived by `ingest/context.py`:
+#   source, dataset   registry source_id and dataset_id ("{key}" / "{year}" expand)
+#   url               "{key}" from `keys`, "{year}" from first_year..this year, "{since}" (incremental start)
+#   ext               raw extension; params / incremental (extra params outside backfill, may use "{since}")
+#   every_days        re-request cadence for the daily job (a year below the current one: backfill only)
+#   browser           true when the host resets non-browser clients
+#   about             what it is, unit, first date (en)
+
+# ---------------------------------------------------------------- Brazil: BCB SGS (monthly; whole history per call)
+[[file]]
+source = "bcb_sgs"
+dataset = "sgs_{key}"
+url = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{key}/dados"
+params = { formato = "json" }
+ext = "json"
+every_days = 7
+about = "monthly SGS series (codes in keys): Selic month, IPCA and cores, IGP, IBC-Br, fiscal, external, credit, money"
+keys = [
+  "4390", "4189",                                                   # Selic accumulated in the month, annualised
+  "433", "7478", "188", "189", "190",                               # IPCA, IPCA-15, INPC, IGP-M, IGP-DI % m/m
+  "4466", "11426", "11427", "16121", "16122", "21379",              # IPCA cores, diffusion
+  "11428", "4449", "4447", "4448", "10844", "10841", "10842", "10843",  # free/monitored/tradables/services/goods
+  "24363", "24364", "29601", "29603", "29605",                      # IBC-Br NSA/SA, agro/industry/services
+  "24369",                                                          # PNAD unemployment (rolling quarter)
+  "5793", "4649", "5727", "4583", "4513", "4478", "4536", "13762",  # fiscal: primary, nominal, DLSP, DBGG
+  "22701", "24419", "23079", "22707", "22864", "22885", "3546", "11752",  # external
+  "20539", "20542", "20622", "21082", "21083", "21084", "20714", "27631", "27634", "29037", "29034",  # credit
+  "1788", "27791", "27810", "27813", "27815",                       # money
+]
+
+# daily SGS series beyond CDI/Selic (bcb_sgs connector handles 10-year windows for these): see alternates.BcbSgs
+
+# ---------------------------------------------------------------- Brazil: IBGE SIDRA (whole history per call)
+[[file]]
+source = "ibge_sidra"
+dataset = "sidra_{key}"
+url = "https://apisidra.ibge.gov.br/values/{key}"
+ext = "json"
+every_days = 7
+about = "IBGE tables: IPCA/IPCA-15/INPC (index and %), IPCA groups, GDP, PIM, PMC, PMS, PNAD"
+keys = [
+  "t/1737/n1/all/v/2266,63,2265/p/all",            # IPCA index (Dec-1993=100), % m/m, % 12m; 1979-12-
+  "t/3065/n1/all/v/1117,355,1120/p/all",           # IPCA-15; 2000-05-
+  "t/1736/n1/all/v/2289,44,2292/p/all",            # INPC; 1979-03-
+  "t/7060/n1/all/v/63,66/p/all/c315/all",          # IPCA groups/items, % and weights; 2020-01-
+  "t/1620/n1/all/v/583/p/all/c11255/90707",        # GDP volume index NSA; 1996Q1-
+  "t/1621/n1/all/v/584/p/all/c11255/90707",        # GDP volume index SA
+  "t/5932/n1/all/v/6564,6561/p/all/c11255/90707",  # GDP q/q SA, y/y
+  "t/8888/n1/all/v/12606,12607/p/all/c544/129314", # industrial production; 2002-01-
+  "t/8880/n1/all/v/7169,7170/p/all/c11046/56734",  # retail volume; 2000-01-
+  "t/5906/n1/all/v/7167,7168/p/all/c11046/56726",  # services volume; 2011-01-
+  "t/6381/n1/all/v/4099/p/all",                    # unemployment, rolling quarter; 2012-03-
+]
+
+# ---------------------------------------------------------------- Brazil: Ipeadata (whole series per call)
+[[file]]
+source = "ipeadata"
+dataset = "{key}"
+url = "https://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='{key}')"
+ext = "json"
+every_days = 7
+about = "IPA-DI, INCC, IPC-Fipe, CAGED, confidence, capacity use, Ibovespa cross-check, EMBI+ (dead 2024-07)"
+keys = [
+  "IGP12_IPADI12", "IGP12_INCC12", "FIPE12_FIPE0001",
+  "CAGED12_SALDON12", "CAGED12_ADMISN12", "CAGED12_DESLIGN12",
+  "FGV12_ICSTSA12", "CE12_CUTIND12", "CNI12_ICEIGER12", "CNC12_ICEC12", "FCESP12_IIC12",
+  "GM366_IBVSP366", "JPM366_EMBI366",
+]
+
+# ---------------------------------------------------------------- Brazil: BCB Copom history, BCB Focus
+[[file]]
+source = "bcb_copom"
+dataset = "historico_taxas_juros"
+url = "https://www.bcb.gov.br/api/servico/sitebcb/historicotaxasjuros"
+ext = "json"
+every_days = 1
+browser = true
+about = "every Copom meeting since 1996-06-26: date, bias, Selic target, effective Selic in force"
+
+[[file]]
+source = "bcb_focus"
+dataset = "{key}"
+url = "https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/{key}"
+params = { "$format" = "json", "$filter" = "Data ge '{year}-01-01' and Data le '{year}-12-31'" }
+first_year = 2000
+ext = "json"
+every_days = 7
+about = "Focus survey by survey date (knowledge time is natural): annual, monthly, quarterly, Selic per meeting, 12/24m inflation, Top 5"
+keys = [
+  "ExpectativasMercadoAnuais", "ExpectativaMercadoMensais", "ExpectativasMercadoTrimestrais",
+  "ExpectativasMercadoSelic", "ExpectativasMercadoInflacao12Meses", "ExpectativasMercadoInflacao24Meses",
+  "ExpectativasMercadoTop5Anuais", "ExpectativasMercadoTop5Selic",
+]
+
+# ---------------------------------------------------------------- Brazil: markets
+[[file]]
+source = "anbima_ima"
+dataset = "ima_completo"
+url = "https://www.anbima.com.br/informacoes/ima/arqs/ima_completo.xml"
+ext = "xml"
+every_days = 1
+browser = true
+about = "IMA family (IMA-B, IMA-S, IRF-M…): level, returns, duration, yield; EPHEMERAL, latest day only"
+
+[[file]]
+source = "cepea"
+dataset = "cepea_{key}"
+url = "https://www.cepea.org.br/br/indicador/series/{key}"
+ext = "xls"
+every_days = 1
+browser = true
+about = "CEPEA/ESALQ indicators, full history per file (CC BY-NC 4.0): soy, corn, cattle, coffee, sugar, ethanol"
+keys = [
+  "soja.aspx?id=12", "milho.aspx?id=77", "boi-gordo.aspx?id=2", "cafe.aspx?id=23", "cafe.aspx?id=24",
+  "acucar.aspx?id=53", "etanol.aspx?id=103", "etanol.aspx?id=104",
+]
+
+[[file]]
+source = "anp"
+dataset = "precos_mensal_brasil"
+url = "https://www.gov.br/anp/pt-br/assuntos/precos-e-defesa-da-concorrencia/precos/precos-revenda-e-de-distribuicao-combustiveis/shlp/mensal/mensal-brasil-desde-jan2013.xlsx"
+ext = "xlsx"
+every_days = 7
+about = "ANP retail fuel prices, Brazil, monthly since 2013-01 (R$/l)"
+
+# ---------------------------------------------------------------- Global: rates
+[[file]]
+source = "us_treasury"
+dataset = "{key}"
+url = "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/{year}/all"
+params = { type = "{key}", field_tdr_date_value = "{year}", page = "", _format = "csv" }
+first_year = 1990
+ext = "csv"
+every_days = 1
+about = "US Treasury par yield curve (1990-) and real (TIPS) curve (2003-), % p.a., one file per year"
+keys = ["daily_treasury_yield_curve", "daily_treasury_real_yield_curve"]
+
+[[file]]
+source = "nyfed"
+dataset = "{key}"
+url = "https://markets.newyorkfed.org/api/rates/{key}/search.csv"
+params = { startDate = "1990-01-01", type = "rate" }
+incremental = { startDate = "{since}" }
+ext = "csv"
+every_days = 1
+about = "Fed funds effective (2000-07-) and SOFR (2018-04-), % with percentiles and volume"
+keys = ["unsecured/effr", "secured/sofr"]
+
+[[file]]
+source = "ecb"
+dataset = "{key}"
+url = "https://data-api.ecb.europa.eu/service/data/{key}"
+params = { format = "csvdata" }
+incremental = { format = "csvdata", startPeriod = "{since}" }
+ext = "csv"
+every_days = 1
+about = "ECB: €STR (2019-), euro AAA 10y spot (2004-), reference FX USD/BRL/CNY per EUR (1999-), MRO rate"
+keys = [
+  "EST/B.EU000A2X2A25.WT", "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y", "YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y",
+  "EXR/D.USD.EUR.SP00.A", "EXR/D.BRL.EUR.SP00.A", "EXR/D.CNY.EUR.SP00.A", "FM/B.U2.EUR.4F.KR.MRR_FR.LEV",
+]
+
+[[file]]
+source = "bis"
+dataset = "{key}"
+url = "https://stats.bis.org/api/v2/data/dataflow/BIS/{key}"
+params = { format = "csv" }
+ext = "csv"
+every_days = 7
+about = "BIS: monthly policy rates of 10 central banks (1954-), Brazil broad effective exchange rates"
+keys = ["WS_CBPOL/1.0/M.BR+US+XM+GB+JP+CN+MX+CL+ZA+IN", "WS_EER/1.0/M.N+R.B.BR"]
+
+# ---------------------------------------------------------------- Global: risk, commodities, positioning
+[[file]]
+source = "cboe"
+dataset = "{key}"
+url = "https://cdn.cboe.com/api/global/us_indices/daily_prices/{key}_History.csv"
+ext = "csv"
+every_days = 1
+about = "Cboe volatility indices, OHLC: VIX 1990-, VIX3M 2009-, VIX9D 2011-, SKEW 1990-, VVIX 2006-"
+keys = ["VIX", "VIX3M", "VIX9D", "SKEW", "VVIX"]
+
+[[file]]
+source = "eia"
+dataset = "{key}"
+url = "https://www.eia.gov/dnav/pet/hist_xls/{key}.xls"
+ext = "xls"
+every_days = 1
+about = "EIA spot oil, USD/bbl: Brent (RBRTEd, 1987-), WTI (RWTCd, 1986-)"
+keys = ["RBRTEd", "RWTCd"]
+
+[[file]]
+source = "worldbank_cmo"
+dataset = "commodity_markets_page"
+url = "https://www.worldbank.org/en/research/commodity-markets"
+ext = "html"
+every_days = 7
+about = "World Bank Pink Sheet: the page is archived and its monthly-history xlsx link followed (1960-, ~70 commodities)"
+
+[[file]]
+source = "imf"
+dataset = "pcps"
+url = "https://api.imf.org/external/sdmx/2.1/data/PCPS/G001.POILBRE+POILWTI+PIORECR+PCOPP+PGOLD+PSOYB+PMAIZMT+PCOFFOTM+PSUGAISA+PBEEF.USD.M"
+ext = "xml"
+every_days = 7
+about = "IMF primary commodity prices, monthly USD, 1992-: Brent, WTI, iron ore, copper, gold, soy, maize, coffee, sugar, beef"
+
+[[file]]
+source = "oecd"
+dataset = "cli"
+url = "https://sdmx.oecd.org/public/rest/data/OECD.SDD.STES,DSD_STES@DF_CLI,4.1/BRA+USA+CHN+G20.M.LI...AA...H"
+params = { format = "csv" }
+ext = "csv"
+every_days = 7
+about = "OECD composite leading indicators (amplitude adjusted), Brazil, US, China, G20, 1990s-"
+
+[[file]]
+source = "cftc_cot"
+dataset = "{key}"
+url = "https://www.cftc.gov/files/dea/history/{key}{year}.zip"
+first_year = 2010
+ext = "zip"
+every_days = 7
+about = "CFTC Commitments of Traders, weekly: legacy futures (deacot), disaggregated (commodities), financial futures"
+keys = ["deacot", "fut_disagg_txt_", "fut_fin_txt_"]

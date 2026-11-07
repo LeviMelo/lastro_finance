@@ -49,6 +49,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/registry.py` | source → connector, the daily job's list, ephemeral sources not archived |
 | `ingest/anbima_calendar.py` | ANBIMA holidays → staging `holiday` → core `calendar_day` |
 | `ingest/snapshots.py` | archive-only connectors for the ephemeral sources (ADR-0007) and for files replaced in place (Tesouro, NEFIN) |
+| `ingest/context.py` | the context catalogue (`reference/context_series.toml`) → one generated archive connector per source, cadence per entry (ADR-0011) |
 | `ingest/alternates.py` | archive connectors for the routes that close data gaps: SND, Fundos.NET, BCB SGS, Ipeadata, Tesouro VNA, the `pyield_data` mirror, Yahoo (ADR-0010) |
 | `ingest/b3_cotahist.py` | COTAHIST fixed-width → staging `quote` (exact decimals as quoted), line repair and quarantine (ADR-0008) |
 | `reference/` | L0 reference data |

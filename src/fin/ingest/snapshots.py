@@ -423,6 +423,44 @@ class B3IndexPortfolio(Connector):
                 )
 
 
+class B3IndexLevels(Connector):
+    """Daily closing levels of B3's indices, one calendar year per request (indexStatisticsProxy GetPortfolioDay,
+    a month x day grid with pt-BR numbers; docs/sources/context_br.md §8a). Backfill takes every year from the
+    first one served; the daily job re-requests the current year."""
+
+    source_id: ClassVar[str] = "b3_index_levels"
+    version: ClassVar[str] = "0-archive"
+    user_agent: ClassVar[str | None] = BROWSER_UA
+    BASE = "https://sistemaswebb3-listados.b3.com.br/indexStatisticsProxy/IndexCall/GetPortfolioDay"
+    FIRST_YEAR: ClassVar[dict[str, int]] = {  # first year with data (measured 2026-11-07)
+        "IBOV": 1968, "IBXX": 1994, "IBXL": 1997, "SMLL": 2005, "MLCX": 2005, "IDIV": 2005, "IFIX": 2010,
+        "IFNC": 2004, "ICON": 2006, "IEEX": 1994, "IMOB": 2007, "IMAT": 2005, "INDX": 1999, "UTIL": 2005,
+        "ISEE": 2005, "ICO2": 2010, "IGCX": 2001, "ITAG": 2002, "IGNM": 2006, "IGCT": 2005, "IVBX2": 1999,
+        "BDRX": 2010, "IBRA": 2005,
+    }  # fmt: skip
+
+    def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
+        today = today_brt()
+        rows = held_rows(zones, self.source_id, "index_levels")
+        held = set(rows["notes"].to_list()) if rows.height else set()
+        for idx, first in self.FIRST_YEAR.items():
+            years = range(first, today.year + 1) if mode is Mode.BACKFILL else [today.year]
+            for year in years:
+                if f"index={idx}|{year}" in held and year < today.year:
+                    continue
+                payload = {"index": idx, "language": "pt-br", "year": str(year)}
+                yield FetchSpec(
+                    self.source_id,
+                    "index_levels",
+                    f"{self.BASE}/{B3IndexPortfolio._b64(payload)}",  # pyright: ignore[reportPrivateUsage]
+                    "json",
+                    reference_date=date(year, 12, 31) if year < today.year else today,
+                    conditional=False,
+                    min_bytes=3,
+                    locator=f"index={idx}|{year}",
+                )
+
+
 class B3Bdi(Connector):
     """B3's Boletim Diário (BDI) tables: POST /bdi/table/<Table>/<d>/<d>/<page>/<take>, body {}.
 
@@ -446,6 +484,7 @@ class B3Bdi(Connector):
         "BTBLoanBalance",
         "BTBTrade",
         "DebenturesBusiness",
+        "SharesInvesVolum",  # investor-type flows, month-to-date (docs/sources/context_br.md §8b)
     )
 
     def _spec(self, table: str, d: date, page: int) -> FetchSpec:
@@ -477,3 +516,12 @@ class B3Bdi(Connector):
             return ()
         pages = int(json.loads(blob).get("table", {}).get("pageCount") or 1)
         return [self._spec(spec.dataset_id, spec.reference_date, p) for p in range(2, pages + 1)]
+
+
+def held_rows(zones: Zones, source_id: str, dataset_id: str) -> pl.DataFrame:
+    m = Manifest(zones.manifest).read()
+    if m.is_empty():
+        return m
+    return m.filter(
+        (pl.col("source_id") == source_id) & (pl.col("dataset_id") == dataset_id) & (pl.col("http_status") == 200)
+    )

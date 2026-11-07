@@ -48,9 +48,29 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `b3_fundosnet` | B3 | P | FII/Fiagro distribution notices 2016-11– | archiving | [note](docs/sources/b3_fundosnet.md) |
 | `ipeadata` | IPEA (FGV) | S | IGP-M 1989–, IGP-DI 1944– | archiving | [note](docs/sources/ipeadata.md) |
 | `pyield_data` | third-party mirror | S | ANBIMA bond rates 2020–, B3 futures 2018– | archiving (on demand) | [note](docs/sources/pyield_data.md) |
+| `b3_index_levels` | B3 | P | daily closes of 23 indices, IBOV 1968– | archiving | [note](docs/sources/context_br.md) |
+| `bcb_copom` | BCB | P | every Copom meeting 1996– | archiving | [note](docs/sources/context_br.md) |
+| `anbima_ima` | ANBIMA | P | **ephemeral: latest day only** | archiving | [note](docs/sources/context_br.md) |
+| `cepea` | CEPEA/ESALQ | S | agricultural indicators 1996– | archiving | [note](docs/sources/context_br.md) |
+| `anp` | ANP | P | fuel prices monthly 2013– | archiving | [note](docs/sources/context_br.md) |
+| `us_treasury` | US Treasury | P | par curve 1990–, real 2003– | archiving | [note](docs/sources/context_global.md) |
+| `nyfed` | NY Fed | P | EFFR 2000–, SOFR 2018– | archiving | [note](docs/sources/context_global.md) |
+| `ecb` | ECB | P | €STR 2019–, euro curve 2004–, FX 1999– | archiving | [note](docs/sources/context_global.md) |
+| `bis` | BIS | P | policy rates 1954–, effective FX | archiving | [note](docs/sources/context_global.md) |
+| `cboe` | Cboe | P | VIX and SKEW 1990– | archiving | [note](docs/sources/context_global.md) |
+| `eia` | EIA | P | Brent 1987–, WTI 1986– | archiving | [note](docs/sources/context_global.md) |
+| `worldbank_cmo` | World Bank | P | ~70 commodities monthly 1960– | archiving | [note](docs/sources/context_global.md) |
+| `imf` | IMF | P | commodity prices monthly 1992– | archiving | [note](docs/sources/context_global.md) |
+| `oecd` | OECD | P | leading indicators 1990s– | archiving | [note](docs/sources/context_global.md) |
+| `cftc_cot` | CFTC | P | positioning weekly, files 2010– | archiving | [note](docs/sources/context_global.md) |
 | `yahoo_chart` | Yahoo | **U** | splits ~2005–, dividends ~2007– | archiving (on demand) | [note](docs/sources/yahoo_chart.md) |
 
 ## Cross-source facts (2026-11-07)
+
+- **Context data** (ADR-0011): the series catalogue is `src/fin/reference/context_series.toml`, one verified route per
+  entry; Brazilian facts in [context_br](docs/sources/context_br.md), global in
+  [context_global](docs/sources/context_global.md). No free route: PMI, FGV confidence suite, CDS, EMBI+ after
+  2024-07, IMA history, long B3 investor-flow history.
 
 - **Gaps and the routes that close them:** [gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md), ranked by
   ADR-0010. ANBIMA bond rates 2020– come from a verified mirror; IGP index numbers from Ipeadata; the VNA from
