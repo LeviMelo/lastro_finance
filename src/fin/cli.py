@@ -28,6 +28,7 @@ def ingest(
     mode: Annotated[Mode, typer.Option(help="backfill | incremental | snapshot")] = Mode.INCREMENTAL,
     years: Annotated[str | None, typer.Option(help="backfill: anos, ex. 2020-2025 ou 2024")] = None,
     families: Annotated[str | None, typer.Option(help="b3_pesquisapregao: famílias, ex. TS ou PR,TS")] = None,
+    tickers: Annotated[str | None, typer.Option(help="yahoo_chart: tickers, ex. ITUB4,SLCE3")] = None,
 ) -> None:
     """Busca, arquiva e carrega as fontes pedidas."""
     z = zones()
@@ -44,6 +45,7 @@ def ingest(
                     mode,
                     years=_years(years),
                     families=families.split(",") if families else None,
+                    tickers=tickers.split(",") if tickers else None,
                 )
             except Exception as e:  # one source failing never stops the others; the run records it
                 errors += 1

@@ -24,6 +24,9 @@ uv run fin ingest anbima_calendar          # one source by source_id (see src/fi
 uv run fin ingest b3_cotahist --mode backfill --years 1986-2025      # yearly COTAHIST files
 uv run fin ingest b3_instruments --mode backfill                     # every B3 file served since 2025-06-10
 uv run fin ingest b3_pesquisapregao --mode backfill --families TS    # curves 2001-; PR (2018-, 10-15 GB) is OQ-20
+uv run fin ingest pyield_data bcb_sgs --mode backfill               # mirror (bonds 2020-, futures 2018-); SGS 1986-
+uv run fin ingest snd_debentures b3_fundosnet --mode backfill       # trades 1993-11-; FII notices 2016-11- (~10 h)
+uv run fin ingest yahoo_chart --mode snapshot [--tickers ITUB4,SLCE3]  # tier U; default: last year's traded tickers
 uv run fin status                          # freshness per source, raw size, orphan objects, blockers, last runs
 uv run fin verify-raw                      # re-hash every raw object
 uv run fin rebuild --from-raw              # rebuild staging/core/derived/quarantine from raw + manifest

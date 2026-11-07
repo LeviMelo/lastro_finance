@@ -2,6 +2,15 @@
 
 from __future__ import annotations
 
+from fin.ingest.alternates import (
+    BcbSgs,
+    FundosNetRendimentos,
+    Ipeadata,
+    PyieldData,
+    SndDebentures,
+    TesouroVna,
+    YahooChart,
+)
 from fin.ingest.anbima_calendar import AnbimaCalendar
 from fin.ingest.b3_cotahist import B3Cotahist
 from fin.ingest.base import Connector
@@ -40,6 +49,13 @@ CONNECTORS: dict[str, type[Connector]] = {
         CvmFiCadastro,
         TesouroPrecoTaxa,
         NefinFactors,
+        BcbSgs,
+        FundosNetRendimentos,
+        Ipeadata,
+        PyieldData,
+        SndDebentures,
+        TesouroVna,
+        YahooChart,
     )
 }
 
@@ -60,6 +76,12 @@ DAILY: tuple[str, ...] = (
     "b3_cotahist",  # not ephemeral (daily files back to 2014): keeps prices current
     "tesouro_transparente",  # replaced in full daily: each replacement is a version (304 when unchanged)
     "nefin",
+    # gap-closing routes (docs/evaluation/2026-11-07-data-gap-matrix.md); pyield_data and yahoo_chart run on demand
+    "snd_debentures",  # terms snapshot daily, agenda weekly: neither keeps history
+    "b3_fundosnet",
+    "bcb_sgs",
+    "ipeadata",
+    "tesouro_vna",
 )
 
 

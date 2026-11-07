@@ -55,7 +55,7 @@ institution = "Banco Central do Brasil"
 access = "REST JSON, ≤ 10-year windows for daily series"
 tier = "P"
 ephemeral = false
-status = "recon"
+status = "archiving"
 recon = "docs/sources/bcb_sgs.md"
 
 [cvm_cia_cadastro]
@@ -214,10 +214,10 @@ recon = "docs/sources/nefin.md"
 [snd_debentures]
 name = "Sistema Nacional de Debêntures"
 institution = "ANBIMA/B3 (SND)"
-access = "not verified"
+access = "server-rendered HTML and TSV exports (.asp), no login"
 tier = "P"
-ephemeral = false
-status = "recon"
+ephemeral = true
+status = "archiving"
 recon = "docs/sources/snd_debentures.md"
 
 [b3_instruments]
@@ -282,3 +282,48 @@ tier = "P"
 ephemeral = true
 status = "archiving"
 recon = "docs/sources/b3_index_portfolio.md"
+
+[tesouro_vna]
+name = "VNA de NTN-B e NTN-C (séries mensais)"
+institution = "Tesouro Nacional"
+access = "HTTP xlsx at permanent links, overwritten at each update"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/tesouro_vna.md"
+
+[ipeadata]
+name = "Ipeadata (IGP-M e IGP-DI, números-índice da FGV)"
+institution = "IPEA (originator FGV)"
+access = "OData v4 JSON, whole series per request"
+tier = "S"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/ipeadata.md"
+
+[b3_fundosnet]
+name = "Fundos.NET: avisos estruturados de rendimentos e amortizações"
+institution = "B3"
+access = "JSON listing + XML per document, no login"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/b3_fundosnet.md"
+
+[pyield_data]
+name = "pyield-data (espelho de ANBIMA títulos públicos e B3 futuros)"
+institution = "third party (github.com/crdcj/pyield-data)"
+access = "Parquet files on GitHub releases, updated daily"
+tier = "S"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/pyield_data.md"
+
+[yahoo_chart]
+name = "Yahoo Finance chart endpoint (preços, proventos, desdobramentos)"
+institution = "Yahoo (unofficial)"
+access = "undocumented JSON endpoint, no key"
+tier = "U"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/yahoo_chart.md"

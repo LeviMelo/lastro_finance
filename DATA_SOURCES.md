@@ -38,14 +38,23 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `cvm_fii` | CVM | P | 2016– | recon | [note](docs/sources/cvm_fii.md) |
 | `cvm_fie` | CVM | P | 2017– | recon | [note](docs/sources/cvm_fie.md) |
 | `tesouro_transparente` | Tesouro Nacional | P | 2004-12-31– (file replaced daily) | archiving since 2026-11-07 | [note](docs/sources/tesouro_transparente.md) |
-| `bcb_sgs` | BCB | P | full; ≤ 10-year windows for daily series | recon | [note](docs/sources/bcb_sgs.md) |
+| `bcb_sgs` | BCB | P | full; ≤ 10-year windows for daily series | archiving (11, 12, 432, 1178, 4389) | [note](docs/sources/bcb_sgs.md) |
 | `bcb_ptax` | BCB | P | 1984– in one call | recon | [note](docs/sources/bcb_ptax.md) |
 | `bcb_focus` | BCB | P | 2000– | recon | [note](docs/sources/bcb_focus.md) |
 | `ibge_sidra` | IBGE | P | IPCA number index (Dec-1993 = 100), monthly | recon | [note](docs/sources/ibge_sidra.md) |
 | `nefin` | NEFIN-FEA/USP | S | 2001– (last date 2026-09-08) | archiving since 2026-11-07 | [note](docs/sources/nefin.md) |
-| `snd_debentures` | SND | P | not verified | recon | [note](docs/sources/snd_debentures.md) |
+| `snd_debentures` | SND | P | terms 1981– (snapshot), agenda future-only, trades 1993-11– | archiving | [note](docs/sources/snd_debentures.md) |
+| `tesouro_vna` | Tesouro Nacional | P | VNA NTN-B / NTN-C monthly 2000– | archiving | [note](docs/sources/tesouro_vna.md) |
+| `b3_fundosnet` | B3 | P | FII/Fiagro distribution notices 2016-11– | archiving | [note](docs/sources/b3_fundosnet.md) |
+| `ipeadata` | IPEA (FGV) | S | IGP-M 1989–, IGP-DI 1944– | archiving | [note](docs/sources/ipeadata.md) |
+| `pyield_data` | third-party mirror | S | ANBIMA bond rates 2020–, B3 futures 2018– | archiving (on demand) | [note](docs/sources/pyield_data.md) |
+| `yahoo_chart` | Yahoo | **U** | splits ~2005–, dividends ~2007– | archiving (on demand) | [note](docs/sources/yahoo_chart.md) |
 
 ## Cross-source facts (2026-11-07)
+
+- **Gaps and the routes that close them:** [gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md), ranked by
+  ADR-0010. ANBIMA bond rates 2020– come from a verified mirror; IGP index numbers from Ipeadata; the VNA from
+  Tesouro; FII distributions from Fundos.NET; B3's missed bonificações from Yahoo (U), proven through CVM IPE.
 
 - **Where PLAN.md §4.4 is wrong or incomplete.**
   - B3's settlement and TxRef pages are gone; BDI keeps 21 business days (ADR-0007). The long-history routes are

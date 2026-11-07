@@ -50,3 +50,9 @@ No CDI accumulated-factor series was found (not searched beyond the above).
 - 25 vs 195 divergence period; TR `dataFim` semantics on month ends.
 - B3/CETIP published "Índice DI" as a second accumulated-factor check (not fetched).
 - Rate limit behaviour (none hit at ~1 req/s).
+
+## 8. Business days before 2001 (measured 2026-11-07)
+- SGS 12 starts 1986-03-06, SGS 11 1986-06-04. For 2001–2005 their dates equal ANBIMA's business days exactly (1,259
+  days, 0 differences). 1996–2000: 5 fewer rows than weekdays minus national holidays (Holy Thursdays, closed before
+  2000). 1986–1995: the national-holiday rule is only approximate. The publication days are the business-day record
+  for 1986–2000 (OQ-22); archived by `fin ingest bcb_sgs --mode backfill`.
