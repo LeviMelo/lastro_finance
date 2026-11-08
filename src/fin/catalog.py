@@ -157,7 +157,8 @@ def views(z: Zones) -> dict[str, str]:
 # Point-in-time valuation (ADR-0021). Everything is as known on `d`: the latest share count and statements CVM had
 # received by then, the last standard-lot close in the 30 days up to `d`. Market cap = outstanding common (paid in -
 # treasury) x the close of the most traded ON line + outstanding preferred x the close of the most traded PN line, in
-# BRL of the day; null when a class with shares outstanding has no traded line. Earnings are trailing twelve months of
+# BRL of the day, the shares grown by that line's bonuses and splits between the count and `d`; null when a class
+# with shares outstanding has no traded line. Earnings are trailing twelve months of
 # `net_income_controlling` (consolidated): the annual figure, or the latest year-to-date + the previous annual - the
 # year-to-date a year before. Book value is the latest consolidated equity attributable to the controlling
 # shareholders (as filed by banks; equity - non-controlling interest otherwise).
@@ -188,6 +189,17 @@ WITH sc AS (
     GROUP BY l.issuer_cnpj, l.cls, p.instrument_id
 ), px AS (
     FROM px0 QUALIFY row_number() OVER (PARTITION BY issuer_cnpj, cls ORDER BY vol DESC) = 1
+), grow AS (  -- bonuses and splits of each priced line after the share count: shares x 1 / split_factor
+    SELECT px.issuer_cnpj, px.cls, exp(-sum(ln(f.split_factor))) AS g
+    FROM px JOIN sc USING (issuer_cnpj)
+    JOIN adjustment_factor f ON f.instrument_id = px.instrument_id
+         AND f.ex_date > sc.shares_reference_date AND f.ex_date <= CAST(d AS DATE)
+    GROUP BY ALL
+), sc2 AS (
+    SELECT sc.* REPLACE (sc.common_out * coalesce(go.g, 1) AS common_out,
+                         sc.preferred_out * coalesce(gp.g, 1) AS preferred_out)
+    FROM sc LEFT JOIN (FROM grow WHERE cls = 'ON') go USING (issuer_cnpj)
+            LEFT JOIN (FROM grow WHERE cls = 'PN') gp USING (issuer_cnpj)
 ), cap AS (
     SELECT sc.*, o.ticker AS on_ticker, o.close_brl AS on_close, p.ticker AS pn_ticker, p.close_brl AS pn_close,
            least(o.price_date, p.price_date) AS price_date,
@@ -195,7 +207,7 @@ WITH sc AS (
                 THEN NULL
                 ELSE coalesce(sc.common_out * o.close_brl, 0) + coalesce(sc.preferred_out * p.close_brl, 0)
            END AS market_cap_brl
-    FROM sc LEFT JOIN (FROM px WHERE cls = 'ON') o USING (issuer_cnpj)
+    FROM sc2 sc LEFT JOIN (FROM px WHERE cls = 'ON') o USING (issuer_cnpj)
             LEFT JOIN (FROM px WHERE cls = 'PN') p USING (issuer_cnpj)
     WHERE o.close_brl IS NOT NULL OR p.close_brl IS NOT NULL
 ), m AS (
@@ -268,7 +280,7 @@ def build(z: Zones) -> list[str]:
                 """
             )
             made.append("universe()")
-        if {"share_count", "issuer", "issuer_instrument", "fundamental_metric"} <= set(made):
+        if {"share_count", "issuer", "issuer_instrument", "fundamental_metric", "adjustment_factor"} <= set(made):
             con.execute(VALUATION)
             made.append("valuation()")
     finally:

@@ -67,7 +67,6 @@ Day one (2026-11-07).
 3. **Fundamentals:** 16 standard metrics exist (`fundamental_metric`). `share_count` has a per-filing unit
    (ADR-0020) and `valuation(d)` gives market cap, P/L and P/VP (ADR-0021). Next:
    - share counts before 2020 from FRE;
-   - apply bonuses after the share-count filing;
    - insurers' templates.
 4. **Context:** every archived context source is parsed (Focus, Copom, CEPEA, ANP, ANBIMA IMA, CFTC included).
    The IMA history before 2026-10-29 remains a gap.

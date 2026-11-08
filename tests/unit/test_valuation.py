@@ -73,6 +73,11 @@ def test_valuation_point_in_time(zones: Zones) -> None:
         "preferred_treasury": [0, 0],
     }  # fmt: skip  -- the 2025-09-30 filing is received after `d`: not used
     write_parquet(pl.DataFrame(sc), c / "share_count" / "share_count.parquet")
+    fac = {  # a 11:10 bonus after the 2025-06-30 count grows it; one before the count is already in it
+        "instrument_id": ["I1", "I1"], "ex_date": [date(2025, 1, 10), date(2025, 7, 15)],
+        "split_factor": [0.5, 10 / 11], "cash_factor": [1.0, 1.0],
+    }  # fmt: skip
+    write_parquet(pl.DataFrame(fac), zones.derived / "adjustment_factor" / "adjustment_factor.parquet")
     lines = [
         _line("dfp", "2024-12-31", "DRE", NI, "2024-01-01", "2024-12-31", "500"),
         _line("itr", "2024-06-30", "DRE", NI, "2024-01-01", "2024-06-30", "200"),
@@ -96,5 +101,6 @@ def test_valuation_point_in_time(zones: Zones) -> None:
     cap, ttm, book, pe, pb = con.execute(
         "select market_cap_brl, earnings_ttm, book_value, price_earnings, price_book from valuation('2025-09-05')"
     ).fetchall()[0]
-    assert (cap, ttm, book) == (10000, 600, 4000)  # 1,000 outstanding x 10; 300 + 500 - 200; 5,000 - 1,000
-    assert abs(pe - 10000 / 600) < 1e-9 and pb == 2.5
+    # (1,100 - 100) x 11/10 x 10; 300 + 500 - 200; 5,000 - 1,000
+    assert abs(cap - 11000) < 1e-6 and (ttm, book) == (600, 4000)
+    assert abs(pe - 11000 / 600) < 1e-9 and abs(pb - 2.75) < 1e-12
