@@ -19,6 +19,7 @@ from fin.ingest.alternates import (
 from fin.ingest.anbima_calendar import AnbimaCalendar
 from fin.ingest.b3_cotahist import B3Cotahist
 from fin.ingest.b3_events import B3CompanyEvents
+from fin.ingest.b3_fixed_income import B3FixedIncome
 from fin.ingest.base import Connector
 from fin.ingest.context import context_connectors
 from fin.ingest.cvm_funds import CvmFiCda, CvmFii, CvmFiInfDiario
@@ -41,6 +42,7 @@ from fin.ingest.snapshots import (
     NefinFactors,
     TesouroPrecoTaxa,
 )
+from fin.ingest.snd_pu import SndPuHistorico
 from fin.reference.sources import registry
 
 CONNECTORS: dict[str, type[Connector]] = {
@@ -81,6 +83,8 @@ CONNECTORS: dict[str, type[Connector]] = {
         YahooChart,
         YahooIntraday,
         B3CompanyEvents,
+        B3FixedIncome,
+        SndPuHistorico,
         *context_connectors(),
     )
 }
@@ -94,6 +98,7 @@ DAILY: tuple[str, ...] = (
     "anbima_debentures",
     "anbima_projecoes",
     "b3_bdi",
+    "b3_fixed_income",  # B3 OTC fixed-income trades (drp.b3.com.br): back to 2023-03 only while served
     "b3_instruments",
     "b3_index_portfolio",
     "b3_index_levels",

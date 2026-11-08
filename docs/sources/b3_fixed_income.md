@@ -38,5 +38,13 @@ Page 1 of 2024-06-03: 887 `Pre-registro - Voice` + 113 `Registro`; `Situation` C
 ## 6. Ephemerality
 `Trade`/`SaleOff`/`Stock`: no `limitDate` and a fixed start (2023-03) on the days probed: not known to roll; the incremental job keeps them current. **`DebenturesBusiness` rolls (M-18): backfill once, then daily (b3_bdi).**
 
-## 7. Archived (2026-11-08)
-`ingest/b3_fixed_income.py` (connector `b3_fixed_income`, parser, contracts `fi_trade`, `fi_settlement`, `fi_stock`); the backfill result is in `docs/evaluation/` / the run log. Remaining: the 79 HistoricoRF files (owner decision above); ConsolidatedRecords (volume).
+## 7. Archived (2026-11-08, `ingest/b3_fixed_income.py`, source `b3_fixed_income`)
+Backfill 2023-03-13 .. 2026-11-06, 0 fetch errors, 0 quarantined, every day's pages complete (checked against `pageCount`; every business day of the ANBIMA calendar present, 918 for Trade):
+| table | rows | days | raw (zstd on disk) |
+|---|---|---|---|
+| `Trade` → `fi_trade` | 18,455,766 (6,546,694 DEB over 3,117 tickers, 5.69 M of them with a rate) | 917 (one calendar business day has an empty table) | 21,461 objects, 876 MB for the three tables (5.5 GB of JSON text) |
+| `SaleOff` → `fi_settlement` | 35,905 | 924 (from 2023-03-01) | 9.5 MB text |
+| `Stock` → `fi_stock` | 16,963 | 914 | 7.0 MB text |
+Staging 542 MB after `compact_staging`. `Situation` as published has more spellings than the fixtures show: Confirmado 17.28 M, Ajustado B3 550 k, Cancelado B3 543 k, Cancelado 64 k, null 9 k, `Cancelado b3` 4.4 k, `Ajustado b3` 3.3 k, `Cancelado Parcial B3` 1 k (kept as written; normalise downstream). Daily: `fin ingest b3_fixed_income` (incremental, last 10 business days, last 2 re-fetched).
+`DebenturesBusiness` (b3_bdi, arquivos host): 377 days 2025-05-08 .. 2026-11-06, 16,138 rows, one column layout over 381 pages (`B3Bdi.DEEP_MONTHS`, backfill mode).
+Remaining: the 79 HistoricoRF files (owner decision above); `ConsolidatedRecords` (volume).

@@ -33,5 +33,5 @@ Footer after two blank lines: "Valores expressos em reais." and a disclaimer ("o
 ## 6. Ephemerality
 Not ephemeral (full history served per request) but at continuity risk (ANBIMA Data migration). Complements `anbima_debentures` (indicative rates, 6-day window) and B3 `Trade` (traded PU, since 2023-03): with the par-value path from here, a traded PU becomes a % of PU curve.
 
-## 7. Archived
-`ingest/snd_pu.py` (connector `snd_pu_historico`, contract `debenture_pu`); counts in the run log and STATUS.
+## 7. Archived (2026-11-08, `ingest/snd_pu.py`, source `snd_pu_historico`)
+Backfill of all 10,004 distinct tickers of the register (10,069 rows), 0 fetch errors, 0 quarantined: 10,258 raw objects (some tickers fetched twice by two overlapping runs; identical rows), 614 MB of text = 247 MB zstd on disk. Staging `debenture_pu`: **7,503,966 rows, 8,955 tickers with at least one PU (1,049 tickers answer the header only), 1994-08-01 .. 2026-11-06**, 99 MB. `Critério`: Padrão - SND 6.85 M, **Não Padrão - SND 0.80 M** (not explained by SND in the file). 17,598 rows have no PU (par value and interest only): kept with a null `pu_brl`. Layout identical in every file (header check raises otherwise). Refresh: `fin ingest snd_pu_historico` (incremental, last 60 days of registered debentures, ~4,900 requests of ~1 s: run weekly or monthly, not in the daily job).

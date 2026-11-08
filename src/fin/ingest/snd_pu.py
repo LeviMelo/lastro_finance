@@ -58,11 +58,13 @@ DEBENTURE_PU = Contract(
         Column("par_value_brl", MONEY, "Valor Nominal (current, after amortisations)", "valor nominal", "BRL"),
         Column("accrued_interest_brl", MONEY, "Juros accrued since the last payment", "juros", "BRL"),
         Column("premium_brl", MONEY, "Prêmio (premium paid on the date, not part of the PU)", "prêmio", "BRL"),
-        Column("pu_brl", MONEY, "Preço Unitário", "preço unitário", "BRL per debenture", False),
+        Column(
+            "pu_brl", MONEY, "Preço Unitário; null when SND published none (17,599 rows, 0.2%)", "preço unitário", "BRL"
+        ),
         Column("calc_criterion", pl.String, "Critério de Cálculo (Padrão - SND, ...)", "critério de cálculo"),
         Column("situation", pl.String, "Situação at that date (Reg., Exc....)", "situação"),
     ),
-    rules=(Rule("pu_positive", pl.col("pu_brl") > 0),),
+    rules=(Rule("pu_positive", pl.col("pu_brl").is_null() | (pl.col("pu_brl") > 0)),),
     key=("ticker", "ref_date", "raw_sha256"),
 )
 

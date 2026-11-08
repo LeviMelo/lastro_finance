@@ -66,3 +66,10 @@ def test_request_is_day_first() -> None:
     spec = snd_pu.SndPuHistorico()._spec("SABP12", date(1980, 1, 1), date(2026, 11, 8))  # pyright: ignore[reportPrivateUsage]
     assert spec.params == {"op_exc": "False", "ativo": "SABP12", "dt_ini": "01/01/1980", "dt_fim": "08/11/2026"}
     assert spec.locator == "ticker=SABP12"
+
+
+def test_row_without_pu_is_kept_with_a_null() -> None:
+    blob = (FIX / "ZZDT21.txt").read_bytes().replace(b"	1.000,216972	", b"	-	", 1)
+    (p,) = list(snd_pu.parse_pu(blob, _row()))
+    good, bad = snd_pu.DEBENTURE_PU.split(p.frame)
+    assert bad.height == 0 and good["pu_brl"].null_count() == 1
