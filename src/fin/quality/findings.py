@@ -16,6 +16,8 @@ Checks:
   non-positive price (`error`: it breaks every return through it). The average (PREMED) is not checked: it lies
   outside high/low on 6,520 sessions (1989-91 and, from 2021, mostly BDRs), so it includes trades the high/low do
   not (docs/sources/b3_cotahist.md);
+- `fiagro_duplicate_filing`: a FIAGRO monthly filing listed twice; the later delivery wins;
+- `mirror_vs_anbima`: the pyield mirror's bond PUs and rates against our own ANBIMA files on the dates both hold;
 - `cotahist_vs_yahoo`: Yahoo's monthly close (split-adjusted) / our split-adjusted close, per line: a shift of more
   than 10 % between the medians of the 6 months before and after is a split one side applies and the other does
   not. Single months are noise: Yahoo's monthly close is often not the month's last close (CEAB3 2024-07).
@@ -464,6 +466,72 @@ def level_shifts(j: pl.DataFrame) -> pl.DataFrame:
     )
 
 
+def mirror_vs_anbima(zones: Zones) -> pl.DataFrame:
+    """The pyield mirror (tier S, ADR-0010) against our own ANBIMA files on every date both hold: a bond missing on
+    one side, or a PU off by more than 1e-6 BRL or an indicative rate off by more than 1e-4 pp, is a finding."""
+    m = read_parquet_dir(zones.staging / "pyield_data" / "bond_rate")
+    a = read_parquet_dir(zones.staging / "anbima_titulos_publicos" / "bond_rate")
+    if m is None or a is None:
+        return _frame([])
+    key = ["reference_date", "bond_type", "maturity"]
+    m = m.select(*key, pl.col("pu_brl").cast(pl.Float64).alias("pu_m"),
+                 pl.col("indicative_rate_pct").cast(pl.Float64).alias("r_m")).unique(key)  # fmt: skip
+    a = a.select(
+        pl.col("ref_date").alias("reference_date"), "bond_type", pl.col("maturity_date").alias("maturity"),
+        pl.col("price_brl").cast(pl.Float64).alias("pu_a"), pl.col("indicative_rate_pct").cast(pl.Float64).alias("r_a"),
+    ).unique(key)  # fmt: skip
+    both = set(m["reference_date"].unique().to_list()) & set(a["reference_date"].unique().to_list())
+    j = m.filter(pl.col("reference_date").is_in(both)).join(
+        a.filter(pl.col("reference_date").is_in(both)), on=key, how="full", coalesce=True
+    )
+    bad = j.filter(
+        pl.col("pu_m").is_null() | pl.col("pu_a").is_null()
+        | ((pl.col("pu_m") - pl.col("pu_a")).abs() > 1e-6) | ((pl.col("r_m") - pl.col("r_a")).abs() > 1e-4)
+    )  # fmt: skip
+    return bad.select(
+        pl.lit("mirror_vs_anbima").alias("check_id"),
+        pl.lit("warn").alias("severity"),
+        pl.lit("series").alias("entity_kind"),
+        pl.format("{}:{}", "bond_type", "maturity").alias("entity_id"),
+        pl.col("reference_date").alias("vt"),
+        pl.format("mirror PU {} rate {}", "pu_m", "r_m").alias("observed"),
+        pl.format("ANBIMA PU {} rate {}", "pu_a", "r_a").alias("expected"),
+        pl.lit("the pyield mirror and ANBIMA's own file disagree on this bond").alias("detail"),
+        pl.lit("staging pyield_data/bond_rate; staging anbima_titulos_publicos/bond_rate").alias("evidence"),
+    )
+
+
+def fiagro_duplicate_filing(zones: Zones) -> pl.DataFrame:
+    """CVM's FIAGRO monthly file can list one (fund, month, version) twice (22 keys in 2025-26, 15 with different
+    figures). Rule: the later delivery (`delivered_on`) is the filing, and on the same day the later line of the
+    file; each duplicate is a finding, acknowledged with the line that wins."""
+    g = read_parquet_dir(zones.staging / "cvm_fii" / "fiagro_general")
+    if g is None:
+        return _frame([])
+    k = ["cnpj", "reference_date", "version"]
+    line = pl.col("raw_locator").str.extract(r"line=(\d+)").cast(pl.Int64)
+    d = g.filter(pl.len().over(k) > 1).with_columns(line.alias("_line"))
+    d = d.sort([*k, "delivered_on", "_line"]).with_columns(
+        pl.col("raw_locator").last().over(k).alias("_winner"), pl.len().over(k).alias("_n")
+    )
+    w = d.unique(k, keep="last")
+    return w.select(
+        pl.lit("fiagro_duplicate_filing").alias("check_id"),
+        pl.lit("warn").alias("severity"),
+        pl.lit("issuer").alias("entity_kind"),
+        pl.format("{}:v{}", "cnpj", "version").alias("entity_id"),
+        pl.col("reference_date").alias("vt"),
+        pl.format("{} rows", "_n").alias("observed"),
+        pl.lit("one row per fund, month and version").alias("expected"),
+        pl.lit("CVM's FIAGRO monthly file lists this filing more than once").alias("detail"),
+        pl.col("_winner").alias("evidence"),
+        pl.lit("acknowledged").alias("status"),
+        pl.format("rule: the later delivery, then the later file line, is the filing: {}", "_winner").alias(
+            "resolution_note"
+        ),
+    )
+
+
 CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "vna_ntnb_vs_ipca": vna_ntnb_vs_ipca,
     "share_count_unit_mismatch": share_count_unit_mismatch,
@@ -471,6 +539,8 @@ CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "stock_event_unproven": stock_event_unproven,
     "ohlc_inconsistent": ohlc_inconsistent,
     "cotahist_vs_yahoo": cotahist_vs_yahoo,
+    "mirror_vs_anbima": mirror_vs_anbima,
+    "fiagro_duplicate_filing": fiagro_duplicate_filing,
 }
 
 

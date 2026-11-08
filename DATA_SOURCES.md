@@ -21,21 +21,21 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `anbima_projecoes` | ANBIMA | P | **ephemeral: latest values only** | archiving since 2026-11-07 | [note](docs/sources/anbima_projecoes.md) |
 | `b3_bdi` | B3 | P | **ephemeral: 21 business days** | archiving since 2026-10-07 | [note](docs/sources/b3_settlement_prices.md) |
 | `b3_instruments` | B3 | P | **since 2025-06-10, start may roll (OQ-19)** | archiving; served history backfilled | [note](docs/sources/b3_instruments.md) |
-| `b3_pesquisapregao` | B3 | P | PR 2018-01-02–, TS 2000-01-14– | archiving daily since 2026-11-07 | [note](docs/sources/b3_settlement_prices.md) |
+| `b3_pesquisapregao` | B3 | P | PR 2018-01-02–, TS 2000-01-14– | archiving daily since 2026-11-07; TS and PR parsed (PR backfill pending) | [note](docs/sources/b3_settlement_prices.md) |
 | `b3_reference_rates` | B3 | P | via TS files 2000–; web CSV since 2026-10-05 | archiving (as `b3_pesquisapregao` TS) | [note](docs/sources/b3_reference_rates.md) |
 | `b3_index_portfolio` | B3 | P | **ephemeral: current composition only** | archiving since 2026-11-07 | [note](docs/sources/b3_index_portfolio.md) |
 | `b3_cotahist` | B3 | P | yearly 1986–, daily 2014– | parsed (1986–2026) | [note](docs/sources/b3_cotahist.md) |
 | `b3_company_events` | B3 | **U** | cash since 1995, incomplete for stock events | parsed (weekly per issuer) | [note](docs/sources/b3_company_events.md) |
 | `cvm_cia_cadastro` | CVM | P | **ephemeral: today's snapshot** | archiving since 2026-11-07 | [note](docs/sources/cvm_cia_cadastro.md) |
 | `cvm_fi_cadastro` | CVM | P | **ephemeral: today's snapshot** | archiving since 2026-11-07 | [note](docs/sources/cvm_fi_cadastro.md) |
-| `cvm_fca` | CVM | P | 2010– (tickers from ~2018) | recon | [note](docs/sources/cvm_fca.md) |
+| `cvm_fca` | CVM | P | 2010– (tickers from 2018) | parsed | [note](docs/sources/cvm_fca.md) |
 | `cvm_fre` | CVM | P | 2010– | parsed | [note](docs/sources/cvm_fre.md) |
 | `cvm_dfp_itr` | CVM | P | DFP 2010–, ITR 2011– | recon | [note](docs/sources/cvm_dfp_itr.md) |
 | `cvm_ipe` | CVM | P | 2003– | parsed | [note](docs/sources/cvm_ipe.md) |
 | `cvm_vlmo` | CVM | P | 2018– | recon | [note](docs/sources/cvm_vlmo.md) |
 | `cvm_fi_inf_diario` | CVM | P | 2000– (real size from 2004) | recon | [note](docs/sources/cvm_fi_inf_diario.md) |
 | `cvm_fi_cda` | CVM | P | 2005– | recon | [note](docs/sources/cvm_fi_cda.md) |
-| `cvm_fii` | CVM | P | 2016– | recon | [note](docs/sources/cvm_fii.md) |
+| `cvm_fii` | CVM | P | FII 2016–, FIAGRO 2025-05– | parsed | [note](docs/sources/cvm_fii.md) |
 | `cvm_fie` | CVM | P | 2017– | recon | [note](docs/sources/cvm_fie.md) |
 | `tesouro_transparente` | Tesouro Nacional | P | 2004-12-31– (file replaced daily) | archiving since 2026-11-07 | [note](docs/sources/tesouro_transparente.md) |
 | `bcb_sgs` | BCB | P | full; ≤ 10-year windows for daily series | archiving (11, 12, 432, 1178, 4389) | [note](docs/sources/bcb_sgs.md) |

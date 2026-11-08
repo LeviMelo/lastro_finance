@@ -73,7 +73,7 @@ institution = "CVM"
 access = "HTTP yearly zips"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/cvm_fca.md"
 
 [cvm_fre]
@@ -140,9 +140,9 @@ status = "parsed"
 recon = "docs/sources/cvm_fi_cda.md"
 
 [cvm_fii]
-name = "Informes de FII (mensal, trimestral, anual)"
+name = "Informes de FII (mensal, trimestral, anual) e de FIAGRO (mensal)"
 institution = "CVM"
-access = "HTTP yearly zips"
+access = "HTTP yearly zips (FII), monthly zips (FIAGRO)"
 tier = "P"
 ephemeral = false
 status = "parsed"
@@ -271,7 +271,7 @@ institution = "B3"
 access = "HTTP GET download?filelist=<NAME>,; PR 2018-, TS 2000-"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/b3_settlement_prices.md"
 
 [b3_index_portfolio]
@@ -316,7 +316,7 @@ institution = "third party (github.com/crdcj/pyield-data)"
 access = "Parquet files on GitHub releases, updated daily"
 tier = "S"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/pyield_data.md"
 
 [yahoo_chart]

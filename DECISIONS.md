@@ -32,3 +32,4 @@ the alternatives where they were weighed, and **what evidence would overturn it*
 | [ADR-0021](docs/decisions/ADR-0021-valuation-is-a-point-in-time-catalog-macro.md) | 2026-11-07 | Valuation (market cap, P/L, P/VP) is a point-in-time catalog macro over share counts, prices and statements | active |  |
 | [ADR-0022](docs/decisions/ADR-0022-data-quality-findings-are-rebuilt-and-their-review-is-code.md) | 2026-11-07 | Data-quality findings are rebuilt from the zones by named checks; their review status is code (resolutions.toml) | active |  |
 | [ADR-0023](docs/decisions/ADR-0023-request-limits-are-per-source-and-adaptive.md) | 2026-11-07 | Request limits are per source and adaptive; slow sources are fetched concurrently (replaces the blanket 1 request/s) | active |  |
+| [ADR-0024](docs/decisions/ADR-0024-the-calendar-before-2001-is-bcb-publication-days.md) | 2026-11-08 | The calendar before 2001 is BCB's CDI publication days, marked `bcb_sgs_12` | active |  |

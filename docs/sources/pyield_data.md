@@ -25,3 +25,9 @@ archived release files are the evidence; 0.1–10 MB).
 ## 4. Use
 - Bond rates 2020-01-02 → 2026-10-28 enter as tier-S facts. From 2026-10-29 our ANBIMA archive is primary and the
   mirror is a continuous cross-check. Futures: same horizon as B3's PR files (the PR backfill is OQ-20).
+
+## 5. Parsed (2026-11-08, `ingest/pyield.py`)
+- Datasets: `bond_rate` (78,825), `future_daily` (518,505) and `vna_ntnb` (5,071); 0 quarantined. Floats are
+  rounded to the primary's precision, then typed as Decimal (see the module).
+- Quality check `mirror_vs_anbima` compares the mirror with our ANBIMA files on every date both hold: 0
+  disagreements on 2026-10-29..11-06 (300 bond-days).

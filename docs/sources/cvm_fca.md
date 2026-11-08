@@ -1,6 +1,6 @@
 # cvm_fca - CVM: Formulario Cadastral (FCA)
 
-**Tier:** P. **Recon date:** 2026-11-07. **Fixture:** `tests/fixtures/cvm_fca/` (2026 index, geral and valor_mobiliario; 2010 index and valor_mobiliario). Fixture lines are byte-exact (cp1252): the header plus the rows of Itau 60.872.504/0001-23, Petrobras 33.000.167/0001-01, Natura &Co 32.785.497/0001-97 (registration cancelled 2025-07-01, by incorporation) and BRF 01.838.723/0001-27 (BRFS3 trading ended 2025-09-22).
+**Tier:** P. **Recon date:** 2026-11-07. **Parser:** `src/fin/ingest/cvm_fca.py` (`CvmFca`). **Fixture:** `tests/fixtures/cvm_fca/` (2026 index, geral and valor_mobiliario; 2010 index and valor_mobiliario). Fixture lines are byte-exact (cp1252): the header plus the rows of Itau 60.872.504/0001-23, Petrobras 33.000.167/0001-01, Natura &Co 32.785.497/0001-97 (registration cancelled 2025-07-01, by incorporation) and BRF 01.838.723/0001-27 (BRFS3 trading ended 2025-09-22).
 
 Every statement was measured on 2026-11-07 against a real response unless marked *(not verified)*. Recon was cut short by a usage-limit stop; gaps are listed under Open questions.
 
@@ -43,6 +43,11 @@ Every statement was measured on 2026-11-07 against a real response unless marked
 Yearly files persist. Versions superseded within a year are lost from the sub-tables, so polling weekly and keeping each zip version preserves them.
 
 ## 7. Open questions
-- The first year with tickers.
+- ~~The first year with tickers~~: 2018 (measured in staging, section 8).
 - Whether old zips change content when rewritten (2010-2019 were rewritten on 2024-03-04).
 - PLAN 4.4 says FCA maps CNPJ to tickers over time. That holds only from about 2018, with one snapshot per year.
+
+## 8. Parsed (2026-11-07)
+- `cvm_fca.py` stages the index (`document`, 25,829 rows 2010-2026), `geral` (`company`, 11,631) and `valor_mobiliario` (`security`, 13,068), partition `year=YYYY`. `Pagina_Web` is not read; `endereco`, `departamento_acionistas`, `dri`, `escriturador`, `auditor`, `canal_divulgacao` and `pais_estrangeiro_negociacao` are not parsed (contact data, named people). Header identical in all 17 years; reparse 0 quarantined.
+- **Trading codes exist from 2018**: securities rows with a `Codigo_Negociacao` per year: 2018 477, 2019 534, 2020 552, 2021 588, 2022 586, 2023 572, 2024 570, 2025 554, 2026 537 (4,970 of 13,068 rows; none 2010-2017). Codes can be wildcards or free text (kept as written).
+- Spot (2026, `fca_cia_aberta_valor_mobiliario_2026.csv` line 580): Petrobras 33.000.167/0001-01, Ações Preferenciais, PETR4, Bolsa, Nível 2, trading start 2018-05-14, no end; the staged row equals the line.

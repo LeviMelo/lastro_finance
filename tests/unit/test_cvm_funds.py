@@ -17,7 +17,7 @@ from fin.ingest import cvm_funds as cf
 from fin.ingest.base import Mode
 
 FIX = Path(__file__).parents[1] / "fixtures"
-CONTRACTS = {**cf.FII_CONTRACTS, **cf.DAILY_CONTRACTS, **cf.CDA_CONTRACTS}
+CONTRACTS = {**cf.FII_CONTRACTS, **cf.FIAGRO_CONTRACTS, **cf.DAILY_CONTRACTS, **cf.CDA_CONTRACTS}
 HGLG, KNRI, NEG = "11.728.688/0001-47", "12.005.956/0001-65", "00.613.094/0001-74"
 SEP = date(2026, 9, 1)
 
@@ -124,6 +124,62 @@ def test_fii_header_change_and_bad_value_raise() -> None:
         parse(cf.parse_fii, "cvm_fii", member, data.replace(b"Patrimonio_Liquido", b"Patrimonio_L", 1))
     with pytest.raises(cf.LayoutError, match="do not cast"):
         parse(cf.parse_fii, "cvm_fii", member, edit_first_line(data, 4, b"12x"))  # Total_Numero_Cotistas
+
+
+EXITUS, JMF = "12358507000109", "10947525000192"
+
+
+def test_fiagro_monthly_member_splits_into_three_clean_datasets() -> None:
+    out = parse(cf.parse_fiagro, "cvm_fii", "inf_mensal_fiagro_202609.csv")
+    assert set(out) == {"fiagro_general", "fiagro_summary", "fiagro_balance"}
+    for ds, frame in out.items():
+        clean(ds, frame)
+        assert frame.height == 3
+    g = out["fiagro_general"].filter(pl.col("cnpj") == EXITUS).row(0, named=True)
+    assert (
+        g["isin"] == "BREXTUCTF000"
+        and g["market"] == "BALCAO NAO ORGANIZADO"
+        and g["delivered_on"] == date(2026, 10, 14)
+    )
+    s = out["fiagro_summary"].filter(pl.col("cnpj") == EXITUS).row(0, named=True)
+    assert s["reference_date"] == SEP and s["version"] == 1 and s["holders_total"] == 108
+    assert s["net_assets_brl"] == Decimal("714363796.97") and s["quotas_issued"] == 412686
+    assert s["nav_per_quota_brl"] == Decimal("1731.01") and s["return_nav_month_pct"] == Decimal("-0.99")  # a percent
+    assert abs(s["net_assets_brl"] / s["quotas_issued"] / s["nav_per_quota_brl"] - 1) < Decimal("1e-6")
+    b = out["fiagro_balance"].filter(pl.col("cnpj") == EXITUS).row(0, named=True)
+    assert b["total_liabilities_brl"] == Decimal("1313889.93")
+    for contact in ("email", "phone", "site", "web"):  # contact columns are never read
+        assert not [c for f in out.values() for c in f.columns if contact in c]
+
+
+def test_fiagro_subclass_and_zip_routing() -> None:
+    sub = parse(cf.parse_fiagro, "cvm_fii", "inf_mensal_fiagro_subclasse_202609.csv")["fiagro_subclass"]
+    clean("fiagro_subclass", sub)
+    r = sub.filter(pl.col("cnpj") == JMF).row(0, named=True)
+    assert r["quotas"] == 2527142 and r["nav_per_quota_brl"] == Decimal("2113.88")
+    assert r["subclass_name"] == "Subclasse 1 (ou classe única)"
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        for n in ("inf_mensal_fiagro_202505.csv", "inf_mensal_fiagro_subclasse_202505.csv"):
+            z.writestr(n, (FIX / "cvm_fii" / n).read_bytes())
+        z.writestr("other.csv", b"x\n")
+    got = {(p.dataset_id, p.partition) for p in cf.CvmFii().parse(buf.getvalue(), {**row("z"), "notes": None})}
+    assert got == {
+        (d, "month=202505") for d in ("fiagro_general", "fiagro_summary", "fiagro_balance", "fiagro_subclass")
+    }
+
+
+def test_fiagro_header_change_and_bad_value_raise() -> None:
+    data = (FIX / "cvm_fii" / "inf_mensal_fiagro_202609.csv").read_bytes()
+    with pytest.raises(cf.LayoutError):
+        list(
+            cf.parse_fiagro(
+                data.replace(b"Patrimonio_Liquido", b"Patrimonio_Liquid0", 1), row("inf_mensal_fiagro_202609.csv")
+            )
+        )
+    bad = edit_first_line(data, cf.FIAGRO_HEADER.index("Patrimonio_Liquido"), b"1.234")  # 3 decimals, scale is 2
+    with pytest.raises(cf.LayoutError):
+        list(cf.parse_fiagro(bad, row("inf_mensal_fiagro_202609.csv")))
 
 
 def test_daily_three_header_eras() -> None:
@@ -242,8 +298,11 @@ def test_discovery_plans(zones: Zones, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(cf, "held_rows", lambda _z, source, _d: held.get(source, pl.DataFrame(schema=schema)))
 
     fii = list(cf.CvmFii().discover(Mode.BACKFILL, zones))
-    assert len(fii) == 3 * (2026 - 2016 + 1) and fii[0].url.endswith(
+    assert len(fii) == 3 * (2026 - 2016 + 1) + 19 and fii[0].url.endswith(  # + FIAGRO 2025-05..2026-11
         "/FII/DOC/INF_MENSAL/DADOS/inf_mensal_fii_2016.zip"
+    )
+    assert fii[-1].locator == "fiagro-202505" and fii[-1].url.endswith(
+        "/FIAGRO/DOC/INF_MENSAL/DADOS/inf_mensal_fiagro_202505.zip"
     )
     assert all(s.unpack_members and s.absent_status == {404} for s in fii)
 

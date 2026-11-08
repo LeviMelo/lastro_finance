@@ -7,6 +7,10 @@ of `du` in BUS/252 accrual (start counted, end not), and the one under which BCB
 (docs/sources/bcb_sgs.md).
 
 `calendar_version` is the SHA-256 of the holidays file the calendar was built from.
+
+Before ANBIMA's file starts (2001), the business days are BCB's publication days of SGS 12 (CDI, from 1986-03-06;
+OQ-22, ADR-0024): for 2001-2005 those equal ANBIMA's business days exactly (1,259 days, 0 differences). Those rows
+have `basis` = `bcb_sgs_12` and no holiday names; the du ordinal runs on across the seam.
 """
 
 from __future__ import annotations
@@ -21,8 +25,8 @@ from fin.schema import Column, Contract
 
 CALENDAR_DAY = Contract(
     table="core.reference.calendar_day",
-    version=1,
-    description="Every calendar date the ANBIMA holiday file covers, with business-day flags and the du ordinal.",
+    version=2,
+    description="Every calendar date from 1986-03-06, with business-day flags and the du ordinal (ANBIMA from 2001).",
     columns=(
         Column("date", pl.Date, "calendar date", "data", "date", nullable=False),
         Column("weekday", pl.Int8, "ISO weekday, 1 = Monday", "dia da semana ISO", "1-7", nullable=False),
@@ -46,6 +50,13 @@ CALENDAR_DAY = Contract(
             "business days strictly before this date since the first date",
             "ordinal de dias úteis",
             "business days",
+            nullable=False,
+        ),
+        Column(
+            "basis",
+            pl.String,
+            "anbima (holiday file) or bcb_sgs_12 (CDI publication days, before ANBIMA's file)",
+            "base",
             nullable=False,
         ),
         Column(
@@ -82,10 +93,33 @@ def build_calendar_days(holidays: pl.DataFrame, version: str) -> pl.DataFrame:
                 - pl.col("is_anbima_business_day").cast(pl.Int32)
             ).alias("du_index"),
             pl.lit(None, dtype=pl.Boolean).alias("is_b3_trading_day"),
+            pl.lit("anbima").alias("basis"),
             pl.lit(version).alias("calendar_version"),
         )
     )
     return CALENDAR_DAY.conform(df)
+
+
+def extend_back(days: pl.DataFrame, publication: list[date]) -> pl.DataFrame:
+    """Prepend the dates from the first publication day to the day before ANBIMA's first date; a business day is a
+    publication day. `du_index` is recomputed over the whole range."""
+    first = days["date"].min()
+    pub = sorted(d for d in publication if d < first)  # type: ignore[operator]
+    if not pub:
+        return days
+    pre = pl.DataFrame({"date": pl.date_range(pub[0], first - timedelta(days=1), "1d", eager=True)})  # type: ignore[operator]
+    pre = pre.with_columns(
+        pl.col("date").dt.weekday().cast(pl.Int8).alias("weekday"),
+        pl.col("date").is_in(pub).alias("is_anbima_business_day"),
+        pl.lit(None, dtype=pl.Boolean).alias("is_b3_trading_day"),
+        pl.lit(None, dtype=pl.String).alias("holiday_name"),
+        pl.lit(0, dtype=pl.Int32).alias("du_index"),
+        pl.lit("bcb_sgs_12").alias("basis"),
+        pl.lit(days["calendar_version"][0]).alias("calendar_version"),
+    )
+    out = pl.concat([CALENDAR_DAY.conform(pre), CALENDAR_DAY.conform(days)]).sort("date")
+    b = pl.col("is_anbima_business_day").cast(pl.Int32)
+    return CALENDAR_DAY.conform(out.with_columns((b.cum_sum() - b).alias("du_index")))
 
 
 @dataclass(frozen=True)

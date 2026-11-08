@@ -25,7 +25,7 @@ import polars as pl
 
 from fin.config import Zones
 from fin.core import issuers
-from fin.ingest import anbima_parsers, b3_taxaswap, nefin, tesouro
+from fin.ingest import anbima_parsers, b3_pr, b3_taxaswap, nefin, tesouro
 from fin.ingest.base import Connector, Mode, Parsed
 from fin.ingest.fetch import FetchSpec
 from fin.ingest.http import BROWSER_UA
@@ -380,13 +380,14 @@ class B3PesquisaPregao(Connector):
     A day without a file answers HTTP 200 with a 22-byte empty zip (absent). Backfill takes `--years`."""
 
     source_id: ClassVar[str] = "b3_pesquisapregao"
-    version: ClassVar[str] = "1"  # TS parsed (b3_reference_rates); PR (BVBG.086) archived, not parsed yet
+    version: ClassVar[str] = "2"  # TS (b3_taxaswap) and PR (BVBG.086, b3_pr) parsed
     user_agent: ClassVar[str | None] = BROWSER_UA
     URL = "https://www.b3.com.br/pesquisapregao/download"
-    contracts: ClassVar[dict[str, Contract]] = b3_taxaswap.CONTRACTS
+    contracts: ClassVar[dict[str, Contract]] = b3_taxaswap.CONTRACTS | b3_pr.CONTRACTS
 
     def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
-        return b3_taxaswap.parse_payload(blob, row)
+        yield from b3_taxaswap.parse_payload(blob, row)
+        yield from b3_pr.parse_payload(blob, row)
 
     FAMILIES: ClassVar[dict[str, tuple[str, str, date]]] = {
         # dataset: (file pattern, raw ext, first served)

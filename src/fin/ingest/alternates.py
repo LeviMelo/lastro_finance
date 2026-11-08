@@ -15,7 +15,7 @@ from typing import Any, ClassVar
 import polars as pl
 
 from fin.config import Zones
-from fin.ingest import b3_events, cvm_fre, cvm_ipe, cvm_statements, fundosnet, series
+from fin.ingest import b3_events, cvm_fca, cvm_fre, cvm_ipe, cvm_statements, fundosnet, pyield, series
 from fin.ingest.base import Connector, Mode, Parsed
 from fin.ingest.context import ContextConnector, catalogue
 from fin.ingest.fetch import FetchSpec
@@ -75,7 +75,13 @@ class PyieldData(Connector):
     Fetched on demand (backfill), not daily: our own ANBIMA and B3 archives are the primary from 2026-10-29."""
 
     source_id: ClassVar[str] = "pyield_data"
-    version: ClassVar[str] = "0-archive"
+    version: ClassVar[str] = "1"
+    contracts: ClassVar[dict[str, Any]] = pyield.CONTRACTS
+    dedup_staging: ClassVar[bool] = True  # each release re-ships the whole history
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return pyield.parse_payload(blob, row)
+
     BASE = "https://github.com/crdcj/pyield-data/releases/latest/download"
     FILES: ClassVar[tuple[str, ...]] = ("anbima_tpf", "b3_futures", "vna_ntnb")
 
@@ -171,6 +177,13 @@ class BcbSgs(SeriesConnector):
     source_id: ClassVar[str] = "bcb_sgs"
     version: ClassVar[str] = "1"
     BASE = "https://api.bcb.gov.br/dados/serie"
+
+    def derive(self, zones: Zones, run: Any) -> None:
+        series.build_core(zones, self.source_id, run)
+        from fin.ingest.anbima_calendar import build_calendar
+
+        build_calendar(zones, run)  # the calendar before 2001 is SGS 12's publication days (OQ-22)
+
     # names, frequency and unit per code: the legacy SOAP service (CKAN lacks 11 of our codes; measured 2026-11-07)
     META_URL = "https://www3.bcb.gov.br/wssgs/services/FachadaWSSGS"
     SERIES: ClassVar[dict[int, date]] = {  # code -> first date served (measured)
@@ -519,8 +532,16 @@ class CvmDfpItr(_CvmCompanyDocs):
 
 
 class CvmFca(_CvmCompanyDocs):
+    """Parsed to staging `document`, `company`, `security` (`ingest/cvm_fca.py`): the CNPJ -> ticker evidence."""
+
     source_id: ClassVar[str] = "cvm_fca"
+    version: ClassVar[str] = "1"
     KINDS: ClassVar[dict[str, int]] = {"FCA": 2010}
+    contracts: ClassVar[dict[str, Any]] = cvm_fca.CONTRACTS
+    dedup_staging: ClassVar[bool] = True
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return cvm_fca.parse_payload(blob, row)
 
 
 class CvmFre(_CvmCompanyDocs):

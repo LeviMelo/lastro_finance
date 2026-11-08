@@ -20,7 +20,7 @@ import xlrd
 from fin.config import Zones
 from fin.ingest.base import Connector, Mode, Parsed
 from fin.ingest.fetch import FetchSpec
-from fin.reference.calendar import build_calendar_days
+from fin.reference.calendar import build_calendar_days, extend_back
 from fin.schema import Column, Contract, Rule
 from fin.store.manifest import Manifest
 from fin.store.runs import IngestRun
@@ -117,9 +117,34 @@ class AnbimaCalendar(Connector):
         if staged is None:
             raise RuntimeError("anbima_calendar: no staged holidays to build the calendar from")
         holidays = staged.filter(pl.col("raw_sha256") == latest).select("date", "name")
-        days = build_calendar_days(holidays, latest)
-        write_parquet(days, zones.core / "reference" / "calendar_day" / "calendar_day.parquet")
-        run.count("calendar_day", in_=holidays.height, out=days.height)
+        build_calendar(zones, run, build_calendar_days(holidays, latest))
+
+
+def build_calendar(zones: Zones, run: IngestRun | None, days: pl.DataFrame | None = None) -> None:
+    """Write core `calendar_day`: ANBIMA's days, extended back with SGS 12 publication days (OQ-22). Called by the
+    ANBIMA calendar and by BCB SGS (whichever loads last completes it)."""
+    path = zones.core / "reference" / "calendar_day" / "calendar_day.parquet"
+    if days is None:
+        if not path.exists():
+            return
+        days = pl.read_parquet(path).filter(pl.col("basis") == "anbima") if "basis" in pl.read_parquet_schema(
+            path) else pl.read_parquet(path).with_columns(pl.lit("anbima").alias("basis"))  # fmt: skip
+    obs = zones.core / "series_observation" / "source=bcb_sgs.parquet"
+    pub: list[date] = []
+    if obs.exists():
+        pub = (
+            pl.scan_parquet(obs)
+            .filter(pl.col("series_id") == "bcb_sgs:12")
+            .select(pl.col("vt_reference").str.to_date(strict=False).alias("d"))
+            .drop_nulls()
+            .unique()
+            .collect()["d"]
+            .to_list()
+        )
+    full = extend_back(days, pub)
+    write_parquet(full, path)
+    if run is not None:
+        run.count("calendar_day", in_=days.height, out=full.height)
 
 
 def load_calendar(zones: Zones) -> pl.DataFrame:

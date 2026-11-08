@@ -24,7 +24,7 @@ Day one (2026-11-07).
     148 on 2015-06-30; share counts from DFP/ITR 2020– and FRE 2010–; ADR-0021);
   - staging: Tesouro Direto 2004–, FII distributions, CVM statements 2010– (66.8 M lines), intraday 5-minute bars
     (archived from 2026-11-07).
-- **Data quality** (ADR-0022): `fin quality` runs 6 named checks into `dq_finding`: 348 findings, all decided by
+- **Data quality** (ADR-0022): `fin quality` runs 8 named checks into `dq_finding`: 370 findings, all decided by
   rule or review. Spin-offs are adjusted (22; ADR-0016).
 - **Storage is lean by rule** (ADR-0014): re-sent files as deltas, CVM zips as member deltas, staging keeps changed
   rows, small files compacted. C: has 49 GB free: the binding limit.
@@ -40,8 +40,9 @@ Day one (2026-11-07).
   - Yahoo events for 848 tickers (U), and the CVM filings index 2003–, which proves them.
 - **Company data:**
   - CVM statements (DFP 2010–, ITR 2011–), FRE (share counts, treasury) and IPE, kept as versions from now on;
-  - FII monthly/quarterly/annual reports 2016– (NAV per quota, assets, vacancy); fund daily NAV 2000– and fund
-    holdings (CDA) 2023– (backfills running 2026-11-08);
+  - FII monthly/quarterly/annual reports 2016– and FIAGRO monthly 2025-05– (NAV per quota, assets, vacancy); fund
+    daily NAV 2000– (82 M rows); fund holdings (CDA) 2005– (101 M positions);
+  - CVM FCA 2010– (securities with trading codes from 2018); B3 Price Report (BVBG.086) from 2026-10-19;
   - B3 instrument files 2025-06–.
 - **Context data (priority 2)** ([backfill](docs/evaluation/2026-11-07-context-catalogue-backfill.md)), from the
   catalogue `src/fin/reference/context_series.toml`:
@@ -63,6 +64,4 @@ Day one (2026-11-07).
 
 ## Next (engineering)
 
-1. CDA yearly archives 2005-2022 (members up to 640 MB): parse in batches.
-2. FIAGRO reports (another layout); the titulos `.xls` twin and B3 `PR` zips; CVM FCA.
-3. The mirror-vs-ANBIMA overlap check; calendar 1986-2000 (OQ-22).
+1. B3 fixed-income history (OQ-21); filling `is_b3_trading_day` from observed sessions (OQ-1).

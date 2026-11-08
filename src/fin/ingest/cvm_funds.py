@@ -1,4 +1,4 @@
-"""CVM fund open data: FII reports (`cvm_fii`), daily fund NAV (`cvm_fi_inf_diario`) and portfolios (`cvm_fi_cda`).
+"""CVM fund open data: FII and FIAGRO reports (`cvm_fii`), fund NAV (`cvm_fi_inf_diario`), portfolios (`cvm_fi_cda`).
 
 One table-driven parser serves the three sources (docs/sources/cvm_fii.md, cvm_fi_inf_diario.md, cvm_fi_cda.md).
 All members are cp1252 (ASCII-only ones trivially), `;` separated, CRLF, ISO dates, `.` decimals, some values in
@@ -8,7 +8,10 @@ its declared type (or has more decimals than the declared scale) also raises: no
 
 Not parsed, on purpose: contact data (addresses, phones, e-mails, directors, their CPF); the CPF and name of a natural
 person issuer in CDA; members that are not fund-level positions (`cda_fiim`, `cda_fie`, `*CONFID*`, FII annual and
-the other quarterly members). Fund names are kept once per table that identifies the fund, not on every position.
+the other quarterly members; the e-mail, phone and site of a FIAGRO administrator). Fund names are kept once per
+table that identifies the fund, not on every position. FIAGRO (monthly only, from 2025-05) has its own layout:
+CNPJ without mask, percents instead of fractions, one 133-column member split into three tables
+(`fiagro_general`, `fiagro_summary`, `fiagro_balance`) plus the subclass member (`fiagro_subclass`).
 """
 
 from __future__ import annotations
@@ -511,6 +514,288 @@ def parse_fii(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
         yield Parsed(ds, f"year={m.group(2)}", parse_csv(data, name, table, row))
 
 
+# ------------------------------------------------------------------------------------------------------ FIAGRO
+# One monthly member (133 columns, `inf_mensal_fiagro_YYYYMM.csv`) is split into three tables by theme; the
+# `..._subclasse_...` member carries the quotas and NAV of each subclass. Unlike FII, the numbers are typed in the
+# source (numeric(25,2) money, 4-decimal ratios) and the ratios are PERCENTS (1.05 = 1.05%), not fractions.
+_PCT = "% as written (1.05 = 1.05%), not a fraction as in the FII files"
+_FIAGRO_HEAD = [
+    "CNPJ_Classe",
+    "Nome_Classe",
+    "Data_Referencia",
+    "Data_Entrega",
+    "Versao",
+    "Classe_Unica",
+    "CNPJ_Administrador",
+    "Nome_Administrador",
+    "Data_Registro",
+    "Publico_Alvo",
+    "Codigo_ISIN",
+    "Cotistas_Vinculo_Familiar",
+    "Regra_Anexo",
+    "Classificacao_Autorregulada",
+    "Prazo_Duracao",
+    "Encerramento_Exercicio_Social",
+    "Mercado_Negociacao",
+    "Entidade_Administradora",
+    "Email_Administrador",
+    "Servico_Atendimento_Cotista",
+    "Site",
+    "Nome_Gestor",
+    "CNPJ_Gestor",
+    "Numero_Cotistas",
+    "Numero_Cotistas_Pessoa_Natural",
+    "Numero_Cotistas_Pessoa_Juridica_Nao_Financeira",
+    "Numero_Cotistas_Pessoa_Juridica_Financeira",
+    "Numero_Cotistas_Investidor_Nao_Residente",
+    "Numero_Cotistas_Entidade_Previdencia_Complementar_Exceto_RPPS",
+    "Numero_Cotistas_Entidade_RPPS",
+    "Numero_Cotistas_Sociedade_Seguradora_Resseguradora",
+    "Numero_Cotistas_Fundos_Investimento",
+    "Numero_Cotistas_Distribuidos_Conta_Ordem",
+    "Numero_Cotistas_Outros_Tipos",
+    "Valor_Ativo",
+    "Patrimonio_Liquido",
+    "Cotas_Emitidas",
+    "Valor_Patrimonial_Cotas",
+    "Percentual_Despesas_Taxa_Administracao",
+    "Percentual_Despesas_Taxa_Gestao",
+    "Percentual_Despesas_Taxa_Distribuicao",
+    "Rentabilidade_Efetiva_Mes",
+    "Rentabilidade_Patrimonial_Mes",
+    "Dividend_Yield_Mes",
+    "Percentual_Amortizacao_Cotas_Mes",
+]
+# the balance sheet and the maturity ladder: (source column, name); all numeric(25,2) BRL
+_FIAGRO_BALANCE = [
+    ("Total_Necessidades_Liquidez", "liquidity_needs_total_brl"),
+    ("Fundos_Renda_Fixa", "fixed_income_funds_brl"),
+    ("Titulos_Renda_Fixa", "fixed_income_securities_brl"),
+    ("Total_Investido", "total_invested_brl"),
+    ("Imoveis_Rurais", "rural_properties_brl"),
+    ("Participacoes_Societarias", "equity_stakes_brl"),
+    ("Ativos_Financeiros_Lato_Sensu", "financial_assets_broad_brl"),
+    ("Ativos_Financeiros", "financial_assets_brl"),
+    ("Ativos_Financeiros_Emissao_IF", "financial_institution_issued_brl"),
+    ("LCA", "lca_brl"),
+    ("LCI", "lci_brl"),
+    ("Outros_Ativos_Emissao_IF", "other_financial_institution_issued_brl"),
+    ("Outros_Ativos_Financeiros", "other_financial_assets_brl"),
+    ("Valores_Mobiliarios", "securities_brl"),
+    ("Titulos_Participacoes_Societarias", "equity_securities_brl"),
+    ("Acoes_Certificados_Deposito", "shares_and_depositary_receipts_brl"),
+    ("Outros_Titulos_Participacao", "other_equity_securities_brl"),
+    ("Titulos_Divida_Corporativa", "corporate_debt_brl"),
+    ("Debentures", "debentures_brl"),
+    ("Debentures_Conversiveis", "convertible_debentures_brl"),
+    ("Debentures_Nao_Conversiveis", "nonconvertible_debentures_brl"),
+    ("Notas_Comerciais", "commercial_notes_brl"),
+    ("Notas_Comerciais_Curto_Prazo", "commercial_notes_short_term_brl"),
+    ("Notas_Comerciais_Longo_Prazo", "commercial_notes_long_term_brl"),
+    ("Outros_Titulos_Divida_Corporativa", "other_corporate_debt_brl"),
+    ("Valor_Titulos_Credito", "credit_securities_brl"),
+    ("CPR", "cpr_brl"),
+    ("CPR_Financeira", "cpr_financial_settlement_brl"),
+    ("CPR_Fisica", "cpr_physical_settlement_brl"),
+    ("CDCA", "cdca_brl"),
+    ("CDA_WA", "cda_wa_brl"),
+    ("Outros_Titulos_Credito_Agronegocio", "other_agribusiness_credit_securities_brl"),
+    ("Titulos_Credito_Liquidacao_Financeira", "credit_securities_financial_settlement_brl"),
+    ("Devedor_Pessoa_Juridica_Liquidacao_Financeira", "debtor_company_financial_settlement_brl"),
+    ("Devedor_Pessoa_Natural_Liquidacao_Financeira", "debtor_individual_financial_settlement_brl"),
+    ("Titulos_Credito_Liquidacao_Fisica", "credit_securities_physical_settlement_brl"),
+    ("Devedor_Pessoa_Juridica_Liquidacao_Fisica", "debtor_company_physical_settlement_brl"),
+    ("Devedor_Pessoa_Natural_Liquidacao_Fisica", "debtor_individual_physical_settlement_brl"),
+    ("Demais_Direitos_Creditorios", "receivable_rights_brl"),
+    ("Direitos_Creditorios_Agronegocio", "agribusiness_receivable_rights_brl"),
+    ("Direitos_Creditorios_Imoveis_Rurais", "rural_property_receivable_rights_brl"),
+    ("Titulos_Securitizacao", "securitisation_securities_brl"),
+    ("CRA", "cra_brl"),
+    ("CRI", "cri_brl"),
+    ("Outros_Titulos_Securitizacao", "other_securitisation_securities_brl"),
+    ("Cotas_Fundos_Investimento", "fund_quotas_brl"),
+    ("FIF", "fif_brl"),
+    ("FIDC", "fidc_brl"),
+    ("FII", "fii_brl"),
+    ("FIP", "fip_brl"),
+    ("FIIM", "fiim_brl"),
+    ("FIAGRO", "fiagro_brl"),
+    ("Creditos_Carbono_Agronegocio", "agribusiness_carbon_credits_brl"),
+    ("Creditos_Descarbonizacao", "decarbonisation_credits_brl"),
+    ("Valores_Receber", "receivables_brl"),
+    ("Total_Ativos_Prazo_Vencimento", "maturity_ladder_total_brl"),
+    ("A_Vencer", "not_yet_due_brl"),
+    ("A_Vencer_Ate30Dias", "not_yet_due_0_30d_brl"),
+    ("A_Vencer_31a60Dias", "not_yet_due_31_60d_brl"),
+    ("A_Vencer_61a90Dias", "not_yet_due_61_90d_brl"),
+    ("A_Vencer_91a120Dias", "not_yet_due_91_120d_brl"),
+    ("A_Vencer_121a180Dias", "not_yet_due_121_180d_brl"),
+    ("A_Vencer_181a360Dias", "not_yet_due_181_360d_brl"),
+    ("A_Vencer_361a720Dias", "not_yet_due_361_720d_brl"),
+    ("A_Vencer_721a1080Dias", "not_yet_due_721_1080d_brl"),
+    ("A_Vencer_Acima1080_Dias", "not_yet_due_over_1080d_brl"),
+    ("Vencidos", "overdue_brl"),
+    ("Vencidos_Ate30Dias", "overdue_0_30d_brl"),
+    ("Vencidos_31a60Dias", "overdue_31_60d_brl"),
+    ("Vencidos_61a90Dias", "overdue_61_90d_brl"),
+    ("Vencidos_91a120Dias", "overdue_91_120d_brl"),
+    ("Vencidos_121a180Dias", "overdue_121_180d_brl"),
+    ("Vencidos_181a360Dias", "overdue_181_360d_brl"),
+    ("Vencidos_361a720Dias", "overdue_361_720d_brl"),
+    ("Vencidos_721a1080Dias", "overdue_721_1080d_brl"),
+    ("Vencidos_Acima1080Dias", "overdue_over_1080d_brl"),
+    ("Rendimentos_Distribuir", "distributions_payable_brl"),
+    ("Taxa_Administracao_Pagar", "management_fee_payable_brl"),
+    ("Taxa_Gestao_Pagar", "portfolio_fee_payable_brl"),
+    ("Taxa_Performance_Pagar", "performance_fee_payable_brl"),
+    ("Taxa_Distribuicao_Pagar", "distribution_fee_payable_brl"),
+    ("Obrigacoes_Aquisicao_Ativos", "asset_purchase_obligations_brl"),
+    ("Adiantamento_Venda_Ativos", "asset_sale_advances_brl"),
+    ("Adiantamento_Valores_Receber", "receivable_advances_brl"),
+    ("Instrumentos_Financeiros_Derivativos", "derivatives_brl"),
+    ("Provisoes_Contigencias", "contingency_provisions_brl"),
+    ("Outros_Valores_Pagar", "other_payables_brl"),
+    ("Total_Passivo", "total_liabilities_brl"),
+]
+FIAGRO_HEADER = _FIAGRO_HEAD + [h for h, _ in _FIAGRO_BALANCE]  # the 133 columns of the member, in file order
+_FIAGRO_HOLDERS = [
+    ("Numero_Cotistas", "holders_total", "all holders"),
+    ("Numero_Cotistas_Pessoa_Natural", "holders_individuals", "individuals"),
+    ("Numero_Cotistas_Pessoa_Juridica_Nao_Financeira", "holders_nonfinancial_companies", "non-financial companies"),
+    ("Numero_Cotistas_Pessoa_Juridica_Financeira", "holders_financial_companies", "financial companies"),
+    ("Numero_Cotistas_Investidor_Nao_Residente", "holders_non_residents", "non-resident investors"),
+    (
+        "Numero_Cotistas_Entidade_Previdencia_Complementar_Exceto_RPPS",
+        "holders_complementary_pension",
+        "complementary pension entities (not RPPS)",
+    ),
+    ("Numero_Cotistas_Entidade_RPPS", "holders_public_pension", "public servants' schemes (RPPS)"),
+    ("Numero_Cotistas_Sociedade_Seguradora_Resseguradora", "holders_insurers", "insurers and reinsurers"),
+    ("Numero_Cotistas_Fundos_Investimento", "holders_funds", "investment funds"),
+    ("Numero_Cotistas_Distribuidos_Conta_Ordem", "holders_on_behalf", "holders distributed on behalf of others"),
+    ("Numero_Cotistas_Outros_Tipos", "holders_other", "other types"),
+]
+_FIAGRO_CNPJ = "fund class CNPJ, digits only (no mask, unlike the FII files)"
+
+
+def _fkey() -> tuple[Field, ...]:
+    return (
+        _f("CNPJ_Classe", "cnpj", "str", _FIAGRO_CNPJ, "", True),
+        _f("Data_Referencia", "reference_date", "date", "reference date (1st of the month)", "", True),
+        _f("Versao", "version", "i16", "version of the document; a higher one restates the lower", "", True),
+    )
+
+
+FIAGRO_GENERAL = Table(
+    FIAGRO_HEADER,
+    frozenset(),
+    (
+        *_fkey(),
+        _f("Nome_Classe", "class_name", "str", "registered name of the class"),
+        _f("Data_Entrega", "delivered_on", "date", "date CVM received the document (knowledge time)"),
+        _f("Classe_Unica", "single_class", "str", "single class flag (S/N)"),
+        _f("CNPJ_Administrador", "administrator_cnpj", "str", "administrator CNPJ, digits only"),
+        _f("Nome_Administrador", "administrator_name", "str", "administrator (a company)"),
+        _f("Data_Registro", "registered_on", "date", "registration date"),
+        _f("Publico_Alvo", "target_audience", "str", "target audience"),
+        _f("Codigo_ISIN", "isin", "str", "ISIN of the quota"),
+        _f("Cotistas_Vinculo_Familiar", "family_holders", "str", "holders with family ties flag"),
+        _f("Regra_Anexo", "annex_rule", "str", "CVM 175 annex rule"),
+        _f("Classificacao_Autorregulada", "self_regulatory_class", "str", "self-regulatory classification"),
+        _f("Prazo_Duracao", "term", "str", "term, e.g. '1000 ANO/ANOS' (as written)"),
+        _f("Encerramento_Exercicio_Social", "fiscal_year_end", "str", "fiscal year end, dd/mm"),
+        _f("Mercado_Negociacao", "market", "str", "trading market (BOLSA, BALCAO, BALCAO NAO ORGANIZADO)"),
+        _f("Entidade_Administradora", "market_operator", "str", "market operator, e.g. BVMF"),
+        _f("Nome_Gestor", "manager_name", "str", "portfolio manager (a company)"),
+        _f("CNPJ_Gestor", "manager_cnpj", "str", "portfolio manager CNPJ, digits only"),
+    ),
+    "FIAGRO monthly identity: class, ISIN, administrator, manager, market, delivery date.",
+)
+FIAGRO_SUMMARY = Table(
+    FIAGRO_HEADER,
+    frozenset(),
+    (
+        *_fkey(),
+        *(_f(h, n, "int", f"number of holders: {d}", "holders") for h, n, d in _FIAGRO_HOLDERS),
+        _f("Valor_Ativo", "total_assets_brl", "brl", "total assets"),
+        _f("Patrimonio_Liquido", "net_assets_brl", "brl", "net asset value (patrimonio liquido); can be negative"),
+        _f("Cotas_Emitidas", "quotas_issued", "int", "quotas issued", "quotas"),
+        _f("Valor_Patrimonial_Cotas", "nav_per_quota_brl", "brl", "net asset value per quota", "BRL per quota"),
+        _f(
+            "Percentual_Despesas_Taxa_Administracao",
+            "management_fee_expense_pct",
+            "pct",
+            "management fee expense / net assets of the month",
+            _PCT,
+        ),
+        _f(
+            "Percentual_Despesas_Taxa_Gestao",
+            "portfolio_fee_expense_pct",
+            "pct",
+            "portfolio management fee expense / net assets of the month",
+            _PCT,
+        ),
+        _f(
+            "Percentual_Despesas_Taxa_Distribuicao",
+            "distribution_fee_expense_pct",
+            "pct",
+            "distribution fee expense / net assets of the month",
+            _PCT,
+        ),
+        _f("Rentabilidade_Efetiva_Mes", "return_effective_month_pct", "pct", "effective return of the month", _PCT),
+        _f("Rentabilidade_Patrimonial_Mes", "return_nav_month_pct", "pct", "NAV return of the month", _PCT),
+        _f("Dividend_Yield_Mes", "dividend_yield_month_pct", "pct", "dividend yield of the month", _PCT),
+        _f(
+            "Percentual_Amortizacao_Cotas_Mes",
+            "quota_amortization_month_pct",
+            "pct",
+            "quota amortisation of the month",
+            _PCT,
+        ),
+    ),
+    "FIAGRO monthly summary: NAV, quotas, holders by type, fee expenses, return and yield of the month (percents).",
+)
+FIAGRO_BALANCE = Table(
+    FIAGRO_HEADER,
+    frozenset(),
+    (*_fkey(), *(_f(h, n, "brl", n.removesuffix("_brl").replace("_", " ")) for h, n in _FIAGRO_BALANCE)),
+    "FIAGRO monthly balance sheet (assets by type, maturity ladder, payables), BRL.",
+)
+FIAGRO_SUBCLASS = Table(
+    ["CNPJ_Classe", "Nome_Classe", "Data_Referencia", "Nome_Subclasse", "Numero_Cotas", "Valor_Patrimonial_Cota"],
+    frozenset(),
+    (
+        _f("CNPJ_Classe", "cnpj", "str", _FIAGRO_CNPJ, "", True),
+        _f("Data_Referencia", "reference_date", "date", "reference date (1st of the month)", "", True),
+        _f("Nome_Subclasse", "subclass_name", "str", "subclass name, e.g. 'Subclasse 1 (ou classe unica)'", "", True),
+        _f("Nome_Classe", "class_name", "str", "registered name of the class"),
+        _f("Numero_Cotas", "quotas", "int", "quotas of the subclass", "quotas"),
+        _f("Valor_Patrimonial_Cota", "nav_per_quota_brl", "brl", "NAV per quota of the subclass", "BRL per quota"),
+    ),
+    "FIAGRO monthly quotas and NAV per quota of each subclass.",
+)
+FIAGRO_TABLES = {
+    "fiagro_general": FIAGRO_GENERAL,
+    "fiagro_summary": FIAGRO_SUMMARY,
+    "fiagro_balance": FIAGRO_BALANCE,
+    "fiagro_subclass": FIAGRO_SUBCLASS,
+}
+FIAGRO_CONTRACTS = {ds: _contract("cvm_fii", ds, t) for ds, t in FIAGRO_TABLES.items()}
+
+
+def parse_fiagro(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+    for name, data in _members(blob, row):
+        m = re.fullmatch(r"inf_mensal_fiagro_(subclasse_)?(\d{6})\.csv", name)
+        if not m:
+            continue
+        part = _period(m.group(2))
+        if m.group(1):
+            yield Parsed("fiagro_subclass", part, parse_csv(data, name, FIAGRO_SUBCLASS, row))
+            continue
+        for ds in ("fiagro_general", "fiagro_summary", "fiagro_balance"):
+            yield Parsed(ds, part, parse_csv(data, name, FIAGRO_TABLES[ds], row))
+
+
 # ---------------------------------------------------------------------------------------------- daily fund NAV
 DAILY = Table(
     [
@@ -832,10 +1117,11 @@ class _CvmFundZips(Connector):
 
 
 class CvmFii(_CvmFundZips):
-    """FII monthly, quarterly and annual reports (yearly zips), `parse_fii`. FIAGRO has other layouts: not parsed."""
+    """FII monthly, quarterly and annual reports (yearly zips, `parse_fii`) and FIAGRO monthly reports (monthly zips
+    from 2025-05, `parse_fiagro`: another layout, other datasets). No FIAGRO quarterly or annual exists."""
 
     source_id: ClassVar[str] = "cvm_fii"
-    contracts: ClassVar[dict[str, Contract]] = FII_CONTRACTS
+    contracts: ClassVar[dict[str, Contract]] = FII_CONTRACTS | FIAGRO_CONTRACTS
     FETCH_DATASET: ClassVar[str] = "inf_fii"
 
     def catalogue(self, today: date, hist: bool) -> Iterator[tuple[str, str, date, int]]:
@@ -847,9 +1133,15 @@ class CvmFii(_CvmFundZips):
             for y in range(2016, today.year + 1):
                 url = f"{BASE}/FII/DOC/{kind}/DADOS/{stem}_{y}.zip"
                 yield f"{kind.lower()}-{y}", url, date(y, 12, 31), 2 if y >= today.year - 1 else 24  # weekly / monthly
+        for y, m in _months_back(today):  # FIAGRO: one zip per month, first 2025-05
+            if (y, m) < (2025, 5):
+                break
+            url = f"{BASE}/FIAGRO/DOC/INF_MENSAL/DADOS/inf_mensal_fiagro_{y}{m:02d}.zip"
+            yield f"fiagro-{y}{m:02d}", url, date(y, m, 1), (today.year - y) * 12 + today.month - m
 
     def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
-        return parse_fii(blob, row)
+        yield from parse_fii(blob, row)
+        yield from parse_fiagro(blob, row)
 
 
 class CvmFiInfDiario(_CvmFundZips):

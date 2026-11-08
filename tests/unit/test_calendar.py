@@ -83,3 +83,16 @@ def test_du_is_additive_and_antisymmetric(a: date, b: date, c: date) -> None:
 
 
 _CAL = Calendar.from_frame(build_calendar_days(parse_holidays(XLS).select("date", "name"), "fixture"))
+
+
+def test_extend_back_with_publication_days_keeps_du_continuous() -> None:
+    from datetime import date as d
+
+    from fin.reference.calendar import build_calendar_days, extend_back
+
+    days = build_calendar_days(pl.DataFrame({"date": [d(2001, 1, 1)], "name": ["Confraternização Universal"]}), "v")
+    full = extend_back(days, [d(2000, 12, 27), d(2000, 12, 28), d(2000, 12, 29)])
+    pre = full.filter(pl.col("basis") == "bcb_sgs_12")
+    assert pre["date"].min() == d(2000, 12, 27) and pre["is_anbima_business_day"].sum() == 3
+    # 2001-01-02 (the first ANBIMA business day) has the three publication days before it
+    assert full.filter(pl.col("date") == d(2001, 1, 2))["du_index"][0] == 3
