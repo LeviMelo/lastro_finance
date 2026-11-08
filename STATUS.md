@@ -31,7 +31,7 @@ Day two (2026-11-08). The data layer (stages A–H) is built and measured; the d
 
 - **Exchange-traded:**
   - COTAHIST prices 1986– (8,469 instruments, identity through ISIN and ticker changes);
-  - corporate events 52,972 (every stock event decided; regroupings on lines Yahoo lacks proven by CVM filings or
+  - corporate events 52,933 (every stock event decided; near-duplicates resolved against the price move; regroupings on lines Yahoo lacks proven by CVM filings or
     exact ratios; ADR-0016), adjusted prices on read;
   - B3 Price Report 2018– (backfill running, kept as tar+zstd at ~3 MB a day, ADR-0031): settlements, open interest,
     options and the fixed-income ETFs COTAHIST omits;
@@ -85,5 +85,6 @@ Day two (2026-11-08). The data layer (stages A–H) is built and measured; the d
 1. RAD and PR backfills to completion (PR resumed after a nested-zip layout on 2023-07-19); then `fin reparse cvm_rad_versions`, the H check and the PR-based fixed-income
    ETF links on full history.
 2. Index composition history from the ETF portfolios (gap matrix row 10).
-3. The 57 panel month-returns still flagged `ret_suspect` (TELB4 2011 ratio, KROT3 2012 unit conversion…).
+3. Panel month-returns still flagged `ret_suspect` (46 beyond +300 %/-90 %): mostly real distress; a few ratios every
+   source has wrong (BSLI3 2021, TELB4 2011, TIBR5/6 2015).
 4. OQ-17 (B3 trade file vs COTAHIST), OQ-19 re-probe on a weekday.

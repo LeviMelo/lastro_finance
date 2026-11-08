@@ -110,3 +110,18 @@ multiplied ITUB4's prices before 2011-11 by 100.
   Any large move lies within 2 % of some integer, so the ratio set is what keeps CABLE ONE "1:194" out.
 - **Result.** 52,972 events, none quarantined. Golden events 9/9 and the §13.1 portfolio are unchanged. Panel
   month returns beyond +300 % or -90 % fell from 112 to 57; the rest are flagged (`ret_suspect`, ADR-0032).
+
+**Addendum (2026-11-08, later): near-duplicate events.**
+- **Detector fix.** The panel's remaining extremes included regroupings counted twice. The implied path had added
+  an event days after one B3 reports (CBEE3: 1:40000 on 2016-01-15, then 1:39991 on 01-29). Its candidates now
+  give way to any known stock event of the line within 45 days.
+- **`resolve_clusters`.** Applied stock events of one line within 10 days are now checked as one price move.
+  When their combined factor misses the move by more than 1.5x, the fewest events that fit it within 0.3 (log)
+  stay applied and the others become `conflicting`. Example: TUPY4 2010 had a 1:1000 regrouping and a 1:1000
+  quote-basis change for the same act.
+- **Result.**
+  - Events: 52,933, with 71 stock events conflicting.
+  - Panel month returns beyond +300 % or -90 %: 46 of 82,227 (from 112 at the start of the day).
+  - Golden events 9/9 and the §13.1 portfolio are unchanged.
+  - What remains is mostly real distress (AMER3 2023, PDGR3, AZUL, GOLL) or ratios every source has wrong
+    (BSLI3 2021: B3 10:1, Yahoo 9:1, price ~4:1; TELB4 2011). These stay flagged (`ret_suspect`), not guessed.

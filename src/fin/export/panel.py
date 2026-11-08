@@ -23,8 +23,8 @@ import polars as pl
 from fin.config import Zones
 
 START = date(2010, 1, 1)
-SUSPECT = 4.0  # a month's total return beyond 4x (or 1/4) is flagged: 57 of 82,227 months (2026-11-08), mostly
-# share-basis changes no source reports (TELB4 2011, KROT3 2012 unit conversion)
+SUSPECT = 4.0  # a month's total return beyond 4x (or 1/4) is flagged: 67 of 82,227 months (2026-11-08), mostly real
+# distress (AMER3 2023, PDGR3) and ratios every source has wrong (BSLI3 2021, TELB4 2011)
 
 EQUITY_COLUMNS: dict[str, tuple[str, str]] = {
     "month": ("first day of the month", "date"),

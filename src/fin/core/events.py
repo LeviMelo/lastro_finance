@@ -675,9 +675,8 @@ IMPLIED_EXACT_UP, IMPLIED_EXACT_DOWN = 0.02, 0.005
 CONVENTIONAL = frozenset({2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 40, 50, 100, 200, 250, 500, 1000, 2000, 5000, 10000,
                           100000, 1000000})  # fmt: skip
 IMPLIED_MAX_GAP_DAYS = 30  # consecutive sessions further apart are not compared (a suspension may hide a real move)
-IMPLIED_FROM = date(
-    1994, 7, 1
-)  # the Real: before it, currency resets and hyperinflation quotes make one-day moves noise
+IMPLIED_FROM = date(1994, 7, 1)  # the Real: before it, currency resets and hyperinflation quotes make moves noise
+IMPLIED_NEAR_DAYS = 45  # a candidate this close to a known stock event of the line is that event, not another
 
 
 def implied_ipe_events(zones: Zones, prices: pl.LazyFrame, fac: pl.DataFrame, taken: pl.DataFrame) -> pl.DataFrame:
@@ -706,9 +705,16 @@ def implied_ipe_events(zones: Zones, prices: pl.LazyFrame, fac: pl.DataFrame, ta
         .join(fac.select("instrument_id", pl.col("ex_date").alias("trade_date"), "split_factor"),
               on=["instrument_id", "trade_date"], how="left")
         .filter(pl.col("split_factor").fill_null(1.0) == 1.0)
-        .join(taken.select("instrument_id", pl.col("ex_date").alias("trade_date")), on=["instrument_id", "trade_date"],
-              how="anti")
     )  # fmt: skip
+    if taken.height:  # within IMPLIED_NEAR_DAYS of a known stock event: that event (B3's date may lag the move)
+        near = (
+            day.select("instrument_id", "trade_date")
+            .join(taken.select("instrument_id", pl.col("ex_date").alias("_k")), on="instrument_id")
+            .filter((pl.col("trade_date") - pl.col("_k")).dt.total_days().abs() <= IMPLIED_NEAR_DAYS)
+            .select("instrument_id", "trade_date")
+            .unique()
+        )
+        day = day.join(near, on=["instrument_id", "trade_date"], how="anti")
     rows = []
     for r in day.iter_rows(named=True):
         s = math.exp(-r["lr"])  # new shares per old that the move implies
@@ -730,6 +736,75 @@ def implied_ipe_events(zones: Zones, prices: pl.LazyFrame, fac: pl.DataFrame, ta
     ev = ipe_evidence(zones, pl.DataFrame(rows))
     ev = ev.filter(pl.col("sources").str.contains("cvm_ipe") | pl.col("_exact")).drop("_exact")
     return ev.with_columns(pl.lit("confirmed").alias("status"), pl.col("ex_date").alias("ex_date_reported"))
+
+
+CLUSTER_DAYS = 10  # applied stock events of a line this close together are checked as one move
+CLUSTER_OFF = math.log(1.5)  # the full set must miss the move by more than 1.5x...
+CLUSTER_FIT = 0.3  # ...and a subset must fit it within this (log) for the others to be rejected
+
+
+def resolve_clusters(events: pl.DataFrame, prices: pl.LazyFrame) -> pl.DataFrame:
+    """Several applied stock events of one line within `CLUSTER_DAYS` are graded one by one, so near-duplicates from
+    different sources each agree with the same price move and all apply (BSLI3 2021-01-05: SPLIT 10:1 and 9:1;
+    MNDL3 2011: 6:1 and 38:9; TUPY4 2010: a 1:1000 regrouping and a 1:1000 quote-basis change). Here the cluster
+    is checked as one: when the product of its price factors misses the move from the last close before it to the
+    first close after it by more than `CLUSTER_OFF`, the subset that fits the move within `CLUSTER_FIT` (fewest
+    events, then closest) stays and the others become `conflicting` (not applied)."""
+    from itertools import combinations
+
+    stock = ["SPLIT", "REVERSE_SPLIT", "BONUS", "QUOTE_BASIS"]
+    cand = events.with_row_index("_r").filter(
+        pl.col("event_type").is_in(stock) & pl.col("status").is_in(list(APPLIED)) & pl.col("ratio_num").is_not_null()
+    )
+    if not cand.height:
+        return events
+    gap = (pl.col("ex_date") - pl.col("ex_date").shift(1)).dt.total_days().over("instrument_id")
+    cand = cand.sort("instrument_id", "ex_date").with_columns(
+        (gap > CLUSTER_DAYS).fill_null(True).cast(pl.Int32).cum_sum().over("instrument_id").alias("_cl")
+    )
+    multi = cand.filter(pl.len().over("instrument_id", "_cl") > 1)
+    if not multi.height:
+        return events
+    brl = pl.col("brl_num").cast(pl.Float64) / pl.col("brl_den").cast(pl.Float64)
+    px = (
+        prices.filter(
+            (pl.col("market_segment") == "lote_padrao")
+            & pl.col("instrument_id").is_in(multi["instrument_id"].unique().implode())
+        )
+        .select("instrument_id", "trade_date", (pl.col("close").cast(pl.Float64) * brl).alias("c"))
+        .collect()
+    )
+
+    def expect(sub: tuple[tuple[int, int, int], ...] | list[tuple[int, int, int]]) -> float:
+        return sum(math.log(den / num) for _, num, den in sub)
+
+    drop: list[int] = []
+    for (iid, _), g in multi.group_by("instrument_id", "_cl"):
+        first, last = g["ex_date"].min(), g["ex_date"].max()
+        p = px.filter(pl.col("instrument_id") == iid)
+        before = p.filter(pl.col("trade_date") < first).sort("trade_date").tail(1)["c"]
+        after = p.filter(pl.col("trade_date") >= last).sort("trade_date").head(1)["c"]
+        if not before.len() or not after.len() or before[0] <= 0 or after[0] <= 0:
+            continue
+        move = math.log(after[0] / before[0])
+        rows = [(int(r), int(n), int(d)) for r, n, d in g.select("_r", "ratio_num", "ratio_den").iter_rows()]
+        if abs(move - expect(rows)) <= CLUSTER_OFF:
+            continue
+        best: tuple[float, tuple[tuple[int, int, int], ...]] | None = None
+        for k in range(1, len(rows)):
+            for sub in combinations(rows, k):
+                miss = abs(move - expect(sub))
+                if miss <= CLUSTER_FIT and (best is None or miss < best[0]):
+                    best = (miss, sub)
+            if best is not None:
+                break
+        if best is not None:
+            keep = {r for r, _, _ in best[1]}
+            drop += [r for r, _, _ in rows if r not in keep]
+    if not drop:
+        return events
+    status = pl.when(pl.col("_r").is_in(drop)).then(pl.lit("conflicting")).otherwise(pl.col("status"))
+    return events.with_row_index("_r").with_columns(status.alias("status")).drop("_r")
 
 
 def rights_events(zones: Zones, dates: pl.Series) -> pl.DataFrame:
@@ -1158,11 +1233,11 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
     )
     implied = implied_events(zones, prices, fac0)
     # pass 2b: the same misses on lines Yahoo does not cover, proven by a CVM filing or by an exact ratio
-    taken = (
-        implied.select("instrument_id", "ex_date")
-        if implied.height
-        else pl.DataFrame(schema={"instrument_id": pl.String, "ex_date": pl.Date})
-    )
+    # any stock event already known (applied or not) blocks a candidate near it: B3's date and the day prices move
+    # can differ by days (CBEE3 1:40000 reported 2016-01-15, first trade after it 01-29)
+    known = allev.filter(pl.col("event_type").is_in(["SPLIT", "REVERSE_SPLIT", "BONUS", "QUOTE_BASIS"]))
+    known = known.select("instrument_id", "ex_date")
+    taken = pl.concat([known, implied.select("instrument_id", "ex_date")]) if implied.height else known
     more = implied_ipe_events(zones, prices, fac0, taken)
     if more.height:
         implied = pl.concat([implied, more], how="diagonal_relaxed") if implied.height else more
@@ -1174,6 +1249,7 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
     if extra.height:
         allev = assemble([*parts, *([fill(implied)] if implied.height else []), fill(extra)])
         good, bad = EVENT.split(allev)
+    good = resolve_clusters(good, prices)
     write_parquet(good, zones.core / "corporate_event" / "corporate_event.parquet")
     q = zones.quarantine / "core" / "corporate_event.parquet"
     if bad.height:
