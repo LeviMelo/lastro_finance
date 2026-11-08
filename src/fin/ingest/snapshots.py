@@ -58,6 +58,16 @@ def _archived_dates(zones: Zones, source_id: str, dataset_id: str) -> set[date]:
     return set(m["source_reference_date"].to_list())
 
 
+def calendar_for(zones: Zones) -> Calendar:
+    """The ANBIMA calendar built from the data home (for connectors outside this module)."""
+    return _calendar(zones)
+
+
+def archived_dates(zones: Zones, source_id: str, dataset_id: str) -> set[date]:
+    """Reference dates already held for a dataset (HTTP 200 rows of the manifest)."""
+    return _archived_dates(zones, source_id, dataset_id)
+
+
 class CvmCiaCadastro(Connector):
     """CVM's register of listed companies, a daily snapshot. Parsed to staging `company` and core `issuer`,
     `issuer_instrument` (`core/issuers.py`)."""

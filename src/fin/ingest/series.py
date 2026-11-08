@@ -1214,8 +1214,14 @@ IMA_TOTALS = {
     "T_PMR": ("pmr", "business days (ANBIMA; not verified)"),
     "T_Yield": ("yield", "% a.a."),
     "T_Peso_Geral": ("weight_general", "% of IMA-Geral"),
-    "T_Pi_Qi": ("market_value", "BRL"),
+    "T_Pi_Qi": ("market_value", "BRL thousand (R$ mil)"),  # ANBIMA's txt header says R$ mil; IMA-B = 1.8e9 = R$ 1.8 tn
 }
+
+
+def _ima_slug(name: str) -> str:
+    """'IMA-B 5+' -> ima_b_5_mais (a plain slug would merge IMA-B 5 and IMA-B 5+, IRF-M 1 and IRF-M 1+)."""
+    return re.sub(r"[^a-z0-9]+", "_", name.lower().replace("+", " mais ")).strip("_")
+
 
 IMA_COMPONENT = Contract(
     table="staging.anbima_ima.component",
@@ -1259,7 +1265,7 @@ def parse_ima(blob: bytes, row: dict[str, Any]) -> tuple[pl.DataFrame, pl.DataFr
         total = tot.find("TOTAL")
         for k, (field, unit) in IMA_TOTALS.items():
             v = None if total is None else total.get(k)
-            sid = f"anbima_ima:{_slug_code(name)}/{field}"
+            sid = f"anbima_ima:{_ima_slug(name)}/{field}"
             text = "" if v is None else v
             obs.append(
                 {
@@ -1307,7 +1313,85 @@ def parse_ima(blob: bytes, row: dict[str, Any]) -> tuple[pl.DataFrame, pl.DataFr
     return _observations(obs, row), _frame(list(defs.values()), row, _DEF_IN), comp
 
 
+# ANBIMA's historical "Quadro Resumo" (ima-sh-down.asp, any business day since 2001-12-04): the same figures per index,
+# plus trading statistics. Columns after the index name and date, in file order (docs/sources/anbima_ima.md).
+IMA_SH_HEADER = (
+    "Índice@Data de Referência@Número Índice@Variação Diária(%)@Variação no Mês(%)@Variação no Ano(%)@"
+    "Variação 12 Meses(%)@Variação 24 Meses(%)@Peso(%)@Duration(d.u.)@Carteira a Mercado (R$ mil)@"
+    "Número de<BR>Operações *@Quant. Negociada (1.000 títulos) *@Valor Negociado (R$ mil) *@PMR@Convexidade@Yield@"
+    "Redemption Yield"
+)
+IMA_SH_FIELDS: tuple[tuple[str, str], ...] = (
+    ("index", "index points"),
+    ("change_day", "% over the day"),
+    ("change_month", "% month to date"),
+    ("change_year", "% year to date"),
+    ("change_12m", "% over 12 months"),
+    ("change_24m", "% over 24 months"),
+    ("weight_general", "% of IMA-Geral"),
+    ("duration", "business days (d.u.)"),
+    ("market_value", "BRL thousand (R$ mil)"),
+    ("trades", "number of trades"),
+    ("quantity_traded", "thousand bonds"),
+    ("value_traded", "BRL thousand (R$ mil)"),
+    ("pmr", "business days (ANBIMA; not verified)"),
+    ("convexity", "ANBIMA convexity (not verified)"),
+    ("yield", "% a.a."),
+    ("redemption_yield", "% a.a."),
+)
+
+
+def parse_ima_sh(blob: bytes, row: dict[str, Any]) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """One day of the historical Quadro Resumo (txt, Latin-1, `@`-separated; record type 1 = data). The reference date
+    in the file must be the date asked for: the server once answered a whole session with its first date."""
+    text = blob.decode("latin-1").replace("\r", "")
+    lines = [ln.split("@") for ln in text.split("\n") if ln.startswith("1@")]
+    header = [ln for ln in lines if ln[1] == "Índice"]
+    if not header:
+        raise NotData("IMA Quadro Resumo: no header line (ANBIMA 'no data' stub?)")
+    if "@".join(header[0][1:]) != IMA_SH_HEADER:
+        raise LayoutError(f"IMA Quadro Resumo: header changed: {'@'.join(header[0][1:])!r}")
+    data = [ln for ln in lines if ln[1] not in ("Índice",) and not ln[1].startswith("TOTAIS")]
+    if not data:
+        raise NotData("IMA Quadro Resumo: header without rows")
+    asked = row.get("source_reference_date")
+    obs: list[dict[str, Any]] = []
+    defs: dict[str, dict[str, Any]] = {}
+    for n, ln in enumerate(data, start=1):
+        if len(ln) != 3 + len(IMA_SH_FIELDS):
+            raise LayoutError(f"IMA Quadro Resumo row {n}: {len(ln) - 1} fields, expected {2 + len(IMA_SH_FIELDS)}")
+        name, day = ln[1].strip(), _dmy(ln[2])
+        if asked is not None and day != asked:
+            raise LayoutError(f"IMA Quadro Resumo: file dated {day}, asked for {asked}")
+        for (field, unit), text in zip(IMA_SH_FIELDS, ln[3:], strict=True):
+            sid = f"anbima_ima:{_ima_slug(name)}/{field}"
+            loc = f"line {n + 3}/{field}"
+            obs.append(
+                {
+                    "series_id": sid,
+                    "vt_date": day,
+                    "vt_until": None,
+                    "period_text": ln[2],
+                    "value_text": text,
+                    "value_norm": _br(text),
+                    "missing_reason": "ANBIMA '--': not computed" if text.strip() in ("--", "") else None,
+                    "raw_locator": loc,
+                }
+            )
+            defs.setdefault(
+                sid,
+                {"series_id": sid, "source_code": f"{name}|{field}", "name": f"ANBIMA {name}: {field}",
+                 "frequency": "D", "frequency_text": "daily", "unit": unit, "raw_locator": loc},
+            )  # fmt: skip
+    return _observations(obs, row), _frame(list(defs.values()), row, _DEF_IN)
+
+
 def _ima(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+    if row["dataset_id"] == "ima_sh_txt":  # the historical Quadro Resumo: figures only, no portfolio
+        obs, defs = parse_ima_sh(blob, row)
+        yield Parsed("observation", "ima_sh_txt", obs)
+        yield Parsed("definition", "ima_sh_txt", defs)
+        return
     obs, defs, comp = parse_ima(blob, row)
     yield Parsed("observation", "ima_completo", obs)
     yield Parsed("definition", "ima_completo", defs)

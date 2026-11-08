@@ -12,6 +12,7 @@ Views:
   (`received_on`, knowledge date) and `issuer_cnpj` as 14 digits;
 - `price_adjusted`: standard-lot closes with split and cash adjustment to today's basis (derived on read);
 - `fii_distribution`: FII/Fiagro distributions with their delivery minute;
+- debentures (ADR-0028): `debenture`, `debenture_terms`, `debenture_pu` (SND accrued PU), `debenture_secondary_price`;
 - `intraday_bar`: Yahoo 5-minute bars (tier U);
 - macro `universe(date, asset_class)`: instruments trading in the 30 days up to a date, delisted later or not;
 - macro `valuation(date)`: per issuer, market cap and P/L, P/VP as known on that date (ADR-0021).
@@ -156,6 +157,26 @@ def views(z: Zones) -> dict[str, str]:
                 SELECT doc_id, min(delivered_at) AS delivered_at
                 FROM {_rp(s / "b3_fundosnet" / "listing" / "**" / "*.parquet")} GROUP BY doc_id
             ) l USING (doc_id)
+        """,
+        # debentures (ADR-0028): terms, SND's accrued daily PU (ticker key; one row per ticker and date) and the
+        # secondary-market trade summary; `debenture_id` joins them to core `debenture`
+        "debenture": _scan(c / "debenture" / "*.parquet"),
+        "debenture_terms": _scan(s / "snd_debentures" / "caracteristicas" / "**" / "*.parquet"),
+        "debenture_pu": f"""
+            SELECT b.debenture_id, p.*
+            FROM {_rp(s / "snd_pu_historico" / "debenture_pu" / "**" / "*.parquet")} p
+            LEFT JOIN {_rp(c / "debenture" / "*.parquet")} b USING (ticker)
+        """,
+        "debenture_secondary_price": f"""
+            -- overlapping request windows re-send identical rows: one per distinct value, a restatement stays
+            SELECT b.debenture_id, p.*
+            FROM (
+                FROM {_rp(s / "snd_debentures" / "secondary_price" / "**" / "*.parquet")}
+                QUALIFY row_number() OVER (
+                    PARTITION BY ticker, trade_date, isin, quantity, n_trades, pu_min_brl, pu_avg_brl, pu_max_brl,
+                        pct_of_curve_pu ORDER BY raw_sha256) = 1
+            ) p
+            LEFT JOIN {_rp(c / "debenture" / "*.parquet")} b USING (ticker)
         """,
         "intraday_bar": f"""
             SELECT DISTINCT ON (symbol, bar_start) *

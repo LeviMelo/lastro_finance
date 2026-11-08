@@ -45,7 +45,7 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `bcb_focus` | BCB | P | 2000– | recon | [note](docs/sources/bcb_focus.md) |
 | `ibge_sidra` | IBGE | P | IPCA number index (Dec-1993 = 100), monthly | recon | [note](docs/sources/ibge_sidra.md) |
 | `nefin` | NEFIN-FEA/USP | S | 2001– (last date 2026-09-08) | archiving since 2026-11-07 | [note](docs/sources/nefin.md) |
-| `snd_debentures` | SND | P | terms 1981– (snapshot), agenda future-only, trades 1993-11– | archiving | [note](docs/sources/snd_debentures.md) |
+| `snd_debentures` | SND | P | terms 1981– (snapshot), agenda future-only, trades 1993-11– | parsed → core `debenture` | [note](docs/sources/snd_debentures.md) |
 | `b3_fixed_income` | B3 | P | Trade 2023-03-13–, SaleOff/Stock 2023-03-01– (`drp.b3.com.br`); HistoricoRF files (79, to 2025-12-11) not fetched | archiving; backfilled | [note](docs/sources/b3_fixed_income.md) |
 | `snd_pu_historico` | SND | P | PU of every debenture since issue (dead ones included) | archiving; backfilled | [note](docs/sources/snd_pu_historico.md) |
 | `tesouro_vna` | Tesouro Nacional | P | VNA NTN-B / NTN-C monthly 2000– | archiving | [note](docs/sources/tesouro_vna.md) |

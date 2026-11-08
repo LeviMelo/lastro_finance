@@ -1,0 +1,9 @@
+0@ANBIMA - Associação Brasileira das Entidades dos Mercados Financeiros e de Capitais 
+1@TOTAIS - QUADRO RESUMO
+1@Índice@Data de Referência@Número Índice@Variação Diária(%)@Variação no Mês(%)@Variação no Ano(%)@Variação 12 Meses(%)@Variação 24 Meses(%)@Peso(%)@Duration(d.u.)@Carteira a Mercado (R$ mil)@Número de<BR>Operações *@Quant. Negociada (1.000 títulos) *@Valor Negociado (R$ mil) *@PMR@Convexidade@Yield@Redemption Yield
+1@IRF-M@04/12/2001@1.181,582813@0,0920@--@--@--@--@15,27@--@50.985.500@--@--@--@--@--@--@--
+1@IMA-C 5@04/12/2001@467,405521@0,0637@--@--@--@--@3,08@--@10.275.218@--@--@--@--@--@--@--
+1@IMA-C 5+@04/12/2001@398,774304@0,0512@--@--@--@--@4,21@--@14.056.775@--@--@--@--@--@--@--
+1@IMA-C@04/12/2001@428,514380@0,0565@--@--@--@--@7,29@--@24.331.992@--@--@--@--@--@--@--
+1@IMA-S@04/12/2001@550,859030@0,0679@--@--@--@--@77,44@--@258.485.994@--@--@--@--@--@--@--
+1@IMA-GERAL@04/12/2001@532,621995@0,0708@--@--@--@--@100,00@--@333.803.486@--@--@--@--@--@--@--

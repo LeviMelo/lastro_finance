@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from functools import cache
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 from urllib.parse import quote, urlencode
 
 from fin.config import Zones
@@ -25,8 +25,8 @@ from fin.ingest import series
 from fin.ingest.base import Connector, Mode
 from fin.ingest.fetch import FetchSpec
 from fin.ingest.http import BROWSER_UA
+from fin.ingest.snapshots import archived_dates, calendar_for, today_brt
 from fin.ingest.snapshots import held_rows as _held
-from fin.ingest.snapshots import today_brt
 
 CATALOGUE = Path(__file__).parents[1] / "reference" / "context_series.toml"
 INCREMENTAL_DAYS = 30
@@ -175,6 +175,49 @@ class ContextConnector(Connector):
         ]
 
 
+class ImaConnector(ContextConnector):
+    """`anbima_ima`: the XML of today (portfolio included, ephemeral) plus the historical Quadro Resumo, which ANBIMA
+    serves for any business day since 2001-12-04 (docs/sources/anbima_ima.md). Backfill asks for every day not held;
+    a normal run re-asks the last 10 business days. The server answers a whole session with its first date, so the
+    client drops cookies after each request (`stateless`)."""
+
+    FORM = "https://www.anbima.com.br/informacoes/ima/"
+    FIRST_DAY = date(2001, 12, 4)
+    LOOKBACK_BUSINESS_DAYS = 10
+    stateless: ClassVar[bool] = True
+    min_interval: ClassVar[float] = 0.5
+
+    def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
+        yield from super().discover(mode, zones, **options)
+        cal = calendar_for(zones)
+        end = cal.preceding(today_brt())
+        if mode is Mode.BACKFILL:
+            have = archived_dates(zones, self.source_id, "ima_sh_txt")
+            days = [d for d in cal.business_days(self.FIRST_DAY, end) if d not in have]
+        else:
+            days = cal.business_days(cal.add_business_days(end, -self.LOOKBACK_BUSINESS_DAYS), end)
+        for d in reversed(days):
+            yield FetchSpec(
+                self.source_id,
+                "ima_sh_txt",
+                f"{self.FORM}ima-sh-down.asp",
+                "txt",
+                method="POST",
+                data={
+                    "escolha": "2",
+                    "Idioma": "PT",
+                    "saida": "txt",
+                    "Dt_Ref": f"{d:%d/%m/%Y}",
+                    "Dt_Ref_Ver": f"{d:%Y%m%d}",
+                },
+                headers={"Referer": f"{self.FORM}ima-sh.asp"},
+                reference_date=d,
+                conditional=False,
+                min_bytes=400,  # the 134-byte "no data" stub
+                absent_status=frozenset({404}),
+            )
+
+
 def _parse_with(parser: Any) -> Any:
     def parse(self: Connector, blob: bytes, row: dict[str, Any]) -> Iterable[Any]:
         return parser(blob, row)
@@ -232,5 +275,6 @@ def context_connectors() -> list[type[Connector]]:
                 "derive": _derive,
                 "dedup_staging": True,
             }
-        out.append(type(f"Context_{sid}", (ContextConnector,), attrs))
+        base: type[ContextConnector] = ImaConnector if sid == "anbima_ima" else ContextConnector
+        out.append(cast("type[Connector]", type(f"Context_{sid}", (base,), attrs)))
     return out

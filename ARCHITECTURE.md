@@ -35,6 +35,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `core/fund_lineage/fund_lineage.parquet` | CVM 175 class → legacy predecessor CNPJ, with the rule | rebuildable (ADR-0025) |
 | `core/instrument_link/instrument_link.parquet` | edges between instruments | rebuildable (ADR-0019) |
 | `core/issuer/issuer.parquet`, `core/issuer_instrument/issuer_instrument.parquet` | companies by CNPJ and their instruments | rebuildable (ADR-0018) |
+| `core/debenture/debenture.parquet` | one row per SND debenture code (10,004): terms, ISIN when valid, issuer CNPJ and `issuer_id`; not part of `instrument` (ADR-0028) | rebuildable |
 | `core/tesouro_bond/tesouro_bond.parquet`, `core/tesouro_price_daily/tesouro_price_daily.parquet` | Tesouro Direto bonds 2004– and daily rates/PUs | rebuildable |
 | `core/price_daily/year=YYYY.parquet` | spot and odd-lot sessions per unit, 1986– | rebuildable (ADR-0015) |
 | `staging/yahoo_intraday/bar/symbol=<s>/` | 5-minute bars (tier U), archived daily from 2026-11-07 | rebuildable |
@@ -42,6 +43,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `staging/<source>/{observation,definition}/…` | series values and metadata as each payload served them (SGS, Ipeadata, SIDRA, Tesouro VNA) | rebuildable |
 | `staging/cvm_dfp_itr/<dataset>/form=<f>/year=<y>[/statement=<st>_<con>]/<sha>.parquet` | company statements DFP 2010–, ITR 2011– | rebuildable |
 | `staging/b3_fundosnet/{distribution/id_block=N,listing/all}/<sha>.parquet` | FII/Fiagro distributions 2016-11– and listing rows; one small file per notice (~8 KB) | rebuildable |
+| `staging/snd_debentures/caracteristicas/all/<sha>.parquet`, `staging/snd_debentures/secondary_price/year=YYYY/<sha>.parquet` | SND terms (85 columns, changed rows only) and daily secondary-market trade summaries 1993-11– | rebuildable |
 | `staging/tesouro_transparente/price_rate/all/<sha>.parquet` | Tesouro Direto rates and PUs 2004-12-31–, one full snapshot per daily file | rebuildable |
 | `core/series_observation/source=<id>.parquet` | every series value with period, unit and version (ADR-0013) | rebuildable |
 | `core/series_definition/source=<id>.parquet` | latest name, frequency and unit per series | rebuildable |
@@ -79,6 +81,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/cvm_statements.py` | CVM DFP/ITR zips → staging `statement_line` (every account line, value as written with its scale), `document` (every version and its delivery date), `share_capital` |
 | `ingest/cvm_rad.py` | CVM RAD: superseded DFP/ITR versions (statements XML without its PDFs, or the four statement members of the legacy nested zip as an `szip`) → staging `statement_line` (the open-data contract) and `share_capital` |
 | `ingest/b3_fixed_income.py` | B3 BDI fixed-income OTC tables with history from `drp.b3.com.br` (Trade per trade since 2023-03-13, SaleOff, Stock) → staging `fi_trade`, `fi_settlement`, `fi_stock` |
+| `ingest/snd.py` | SND terms (`caracteristicas`) and secondary-market statistics (`precos`) → staging `caracteristicas`, `secondary_price` |
 | `ingest/snd_pu.py` | SND PU Histórico (daily PU of every debenture since issue, one file per ticker) → staging `debenture_pu` |
 | `ingest/cftc.py` | CFTC Commitments of Traders (3 reports) → staging `position`, long |
 | `ingest/cvm_fca.py` | FCA index, `geral` (company identity, no contact data) and `valor_mobiliario` (securities with trading code, market, segment, dates) → staging `document`, `company`, `security` |
@@ -109,6 +112,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `core/links.py` | `instrument_link`: ticker and name continuity across ISIN changes, B3 cross-asset events (ADR-0019) |
 | `core/issuers.py` | CVM register → staging `company` (no contact data) → core `issuer`, `issuer_instrument` (ADR-0018) |
 | `core/funds.py` | `fund_lineage`: the legacy CNPJ a CVM 175 class continues (ADR-0025); `bridge_check` tests it on the daily quota |
+| `core/debentures.py` | SND terms → core `debenture` (id from the SND code, ISIN validated, issuer link); coverage of PU and trades (ADR-0028) |
 | `core/tesouro.py` | Tesouro Direto → core `tesouro_bond`, `tesouro_price_daily` (versioned) |
 | `core/equities.py` | COTAHIST → core `instrument`, `instrument_identifier`, `price_daily` (ADR-0015) |
 | `quality/` | data-quality checks and findings (ADR-0022) |

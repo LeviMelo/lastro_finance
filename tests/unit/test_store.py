@@ -248,3 +248,21 @@ def test_unpacked_zip_stores_members_as_deltas(zones: Zones) -> None:
     assert second.members[1][1] is False  # the unchanged member is the same object
     with zipfile.ZipFile(io.BytesIO(versions[1])) as z:
         assert RawStore(zones.raw).read(big.raw_sha256) == z.read("itr_2026.csv")
+
+
+def test_stateless_client_drops_session_cookies() -> None:
+    """ANBIMA's ima-sh answers every request of a session with the first date: a stateless client sends no cookie."""
+    seen: list[str | None] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.headers.get("cookie"))
+        return httpx.Response(200, headers={"Set-Cookie": "ASPSESSIONID=abc; path=/"}, content=b"x")
+
+    for stateless, expected in ((False, [None, "ASPSESSIONID=abc"]), (True, [None, None])):
+        seen.clear()
+        c = PoliteClient(
+            transport=httpx.MockTransport(handler), min_interval=0, sleep=lambda _s: None, stateless=stateless
+        )
+        c.request("GET", "https://example.test/a")
+        c.request("GET", "https://example.test/b")
+        assert seen == expected

@@ -5,6 +5,9 @@ Spacing is adaptive (ADR-0023): a host starts at the connector's `min_interval` 
 5xx doubles its interval (up to 10 s), and each clean answer shrinks it back by 10 % toward the floor. The client is
 thread-safe, so a connector with `concurrency` > 1 keeps that many requests in flight while starts stay spaced.
 
+A source whose server keeps state per session (`stateless=True`) gets every request on a fresh session: cookies
+are dropped after each answer.
+
 Some government hosts reset non-browser clients; a source opts into `BROWSER_UA` in the registry, and its recon
 note records why.
 """
@@ -46,6 +49,7 @@ class PoliteClient:
         backoff_base: float = 2.0,
         backoff_cap: float = 120.0,
         timeout: float = 120.0,
+        stateless: bool = False,
         transport: httpx.BaseTransport | None = None,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
@@ -58,6 +62,7 @@ class PoliteClient:
         self.backoff_cap = backoff_cap
         self._sleep = sleep
         self._clock = clock
+        self.stateless = stateless
         self._last: dict[str, float] = {}
         self._client = httpx.Client(
             headers={"User-Agent": user_agent},
@@ -93,6 +98,8 @@ class PoliteClient:
                 if attempt < self.max_retries:
                     self._backoff(attempt, None)
                 continue
+            if self.stateless:  # no session survives a request (ANBIMA's ima-sh answers the first date of a session)
+                self._client.cookies.clear()
             if resp.status_code in RETRY_STATUS:
                 self._slower(host)
                 if attempt < self.max_retries:

@@ -253,7 +253,7 @@ institution = "ANBIMA/B3 (SND)"
 access = "server-rendered HTML and TSV exports (.asp), no login"
 tier = "P"
 ephemeral = true
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/snd_debentures.md"
 
 [b3_instruments]

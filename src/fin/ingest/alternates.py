@@ -15,7 +15,7 @@ from typing import Any, ClassVar
 import polars as pl
 
 from fin.config import Zones
-from fin.ingest import b3_events, cvm_fca, cvm_fre, cvm_ipe, cvm_statements, fundosnet, pyield, series
+from fin.ingest import b3_events, cvm_fca, cvm_fre, cvm_ipe, cvm_statements, fundosnet, pyield, series, snd
 from fin.ingest.base import Connector, Mode, Parsed
 from fin.ingest.context import ContextConnector, catalogue
 from fin.ingest.fetch import FetchSpec
@@ -263,10 +263,24 @@ class SndDebentures(Connector):
     SND's page says its data is migrating to ANBIMA Data (login): every snapshot kept now is a hedge."""
 
     source_id: ClassVar[str] = "snd_debentures"
-    version: ClassVar[str] = "0-archive"
+    version: ClassVar[str] = "1"
+    contracts: ClassVar[dict[str, Any]] = snd.CONTRACTS
+    dedup_staging: ClassVar[bool] = True  # terms are re-sent whole daily; price ranges overlap
     BASE = "https://www.debentures.com.br/exploreosnd/consultaadados"
     FIRST_PRICES = date(1993, 11, 1)
     AGENDA_EVERY_DAYS = 7
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        if row["dataset_id"] == "caracteristicas":
+            return snd.parse_terms(blob, row)
+        if row["dataset_id"] == "precos":
+            return snd.parse_prices(blob, row)
+        return ()  # `agenda` is archived, not parsed yet
+
+    def derive(self, zones: Zones, run: Any) -> None:
+        from fin.core import debentures
+
+        debentures.build(zones, run)
 
     def _precos(self, a: date, b: date) -> FetchSpec:
         return FetchSpec(

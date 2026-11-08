@@ -339,3 +339,83 @@ def test_ima_totals_and_portfolio() -> None:
     comp = _ok(series.IMA_COMPONENT, comp)
     w = comp.group_by("index_family").agg(pl.col("weight").sum())
     assert w.filter((pl.col("weight").cast(pl.Float64) - 100).abs() > 0.05).is_empty()
+
+
+def _sh(name: str, day: date | None) -> tuple[pl.DataFrame, pl.DataFrame]:
+    row = _row("ima_sh_txt") | {"source_reference_date": day}
+    return series.parse_ima_sh((FIX / "anbima_ima" / name).read_bytes(), row)
+
+
+def test_ima_sh_layouts_across_time() -> None:
+    # 2001-12-04 (first day served): 6 indices, most figures '--'; 2020: + IRF-M 1/1+, trading stats; 2026: no IMA-C
+    for name, day, n_idx in (
+        ("ima_sh_20011204.txt", date(2001, 12, 4), 6),
+        ("ima_sh_20200102.txt", date(2020, 1, 2), 10),
+        ("ima_sh_20261106.txt", date(2026, 11, 6), 9),
+    ):
+        obs, defs = _sh(name, day)
+        good = _ok(series.OBSERVATION, obs)
+        _ok(series.DEFINITION, defs)
+        assert good["vt_date"].unique().to_list() == [day]
+        assert defs.height == n_idx * len(series.IMA_SH_FIELDS) == good.height
+    first = _ok(series.OBSERVATION, _sh("ima_sh_20011204.txt", date(2001, 12, 4))[0])
+    irfm = first.filter(pl.col("series_id") == "anbima_ima:irf_m/index").row(0, named=True)
+    assert irfm["value"] == Decimal("1181.582813")
+    assert first.filter(pl.col("series_id") == "anbima_ima:irf_m/change_year").row(0, named=True)["value"] is None
+
+
+def test_ima_sh_agrees_with_the_xml_on_the_overlap_day_and_keeps_5_plus_apart() -> None:
+    sh = _ok(series.OBSERVATION, _sh("ima_sh_20261106.txt", date(2026, 11, 6))[0])
+    xml = _ok(
+        series.OBSERVATION,
+        series.parse_ima((FIX / "anbima_ima/ima_completo.xml").read_bytes(), _row("ima_completo"))[0],
+    )
+    both = sh.join(xml, on="series_id", suffix="_xml")
+    assert both.height > 80
+    both = both.filter(pl.col("value").is_not_null())
+    # the txt rounds PMR to whole days and yield to 4 decimals; every other figure is identical to the XML's
+    tol = pl.when(pl.col("series_id").str.ends_with("/pmr")).then(1).when(pl.col("series_id").str.ends_with("/yield"))
+    tol = tol.then(Decimal("0.0001")).otherwise(0)
+    off = both.filter((pl.col("value") - pl.col("value_xml")).abs() > tol)
+    assert off.is_empty(), off.select("series_id", "value", "value_xml")
+    ids = set(sh["series_id"].to_list())
+    assert {"anbima_ima:ima_b_5/index", "anbima_ima:ima_b_5_mais/index", "anbima_ima:irf_m_1_mais/index"} <= ids
+
+
+def test_ima_sh_refuses_a_stub_a_wrong_date_and_a_changed_header() -> None:
+    with pytest.raises(series.NotData):
+        _sh("ima_sh_no_data_stub.txt", date(2001, 12, 3))
+    with pytest.raises(series.LayoutError, match="asked for"):  # a stale server session answering another date
+        _sh("ima_sh_20200102.txt", date(2020, 1, 3))
+    blob = (
+        (FIX / "anbima_ima/ima_sh_20200102.txt").read_bytes().replace("Duration(d.u.)".encode("latin-1"), b"Duration")
+    )
+    with pytest.raises(series.LayoutError, match="header changed"):
+        series.parse_ima_sh(blob, _row("ima_sh_txt"))
+
+
+def test_ima_connector_asks_for_the_history_with_a_fresh_session(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from fin.config import Zones
+    from fin.ingest import context
+    from fin.ingest.anbima_calendar import parse_holidays
+    from fin.ingest.base import Mode
+    from fin.reference.calendar import Calendar, build_calendar_days
+
+    xls = (FIX / "anbima_calendar" / "feriados_nacionais.xls").read_bytes()
+    cal = Calendar.from_frame(build_calendar_days(parse_holidays(xls).select("date", "name"), "fixture"))
+    monkeypatch.setattr(context, "calendar_for", lambda _z: cal)
+    monkeypatch.setattr(context, "today_brt", lambda: date(2026, 11, 8))
+    conn = context.ImaConnector.__new__(
+        context.ImaConnector
+    )  # the generated class needs the registry; the logic is here
+    conn.source_id = "anbima_ima"  # type: ignore[misc]
+    assert conn.stateless and conn.min_interval >= 0.5
+    specs = [s for s in conn.discover(Mode.SNAPSHOT, Zones(tmp_path)) if s.dataset_id == "ima_sh_txt"]
+    assert [s.reference_date for s in specs][:2] == [date(2026, 11, 6), date(2026, 11, 5)] and len(specs) == 11
+    s = specs[0]
+    assert s.method == "POST" and s.url.endswith("/informacoes/ima/ima-sh-down.asp") and s.min_bytes > 134
+    assert s.data and s.data["Dt_Ref"] == "06/11/2026"
+    back = [s for s in conn.discover(Mode.BACKFILL, Zones(tmp_path)) if s.dataset_id == "ima_sh_txt"]
+    assert back[-1].reference_date == date(2001, 12, 4) and len(back) > 6000
