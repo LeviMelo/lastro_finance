@@ -73,7 +73,7 @@ FIELDS: tuple[tuple[str, int, int], ...] = (
 
 QUOTE = Contract(
     table="staging.b3_cotahist.quote",
-    version=2,
+    version=3,
     description="One row per COTAHIST record (TIPREG 01): an instrument's session summary on one trading date.",
     columns=(
         Column("trade_date", pl.Date, "trading session date (DATPRE)", "data do pregão", "date", nullable=False),
@@ -148,11 +148,9 @@ QUOTE = Contract(
         Rule("tpmerc_known", pl.col("tpmerc").is_in(TPMERCS)),
         Rule("prices_non_negative", pl.min_horizontal("open", "high", "low", "avg", "close") >= 0),
         Rule("low_le_high", pl.col("low") <= pl.col("high")),
-        Rule(
-            "open_close_within_range",
-            pl.col("open").is_between(pl.col("low"), pl.col("high"))
-            & pl.col("close").is_between(pl.col("low"), pl.col("high")),
-        ),
+        # an open or close outside [low, high] is the file's (2020-06-08: dozens of closing auctions below the
+        # day's low): the session is kept as written and listed by the quality check `ohlc_inconsistent`; quarantining
+        # it had dropped 1,237 real sessions (measured 2026-11-08)
         Rule("trades_non_negative", (pl.col("n_trades") >= 0) & (pl.col("qty") >= 0)),
     ),
     key=("trade_date", "ticker", "tpmerc", "prazot"),
