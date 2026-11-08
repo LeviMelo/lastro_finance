@@ -53,6 +53,8 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `b3_fundosnet` | B3 | P | FII/Fiagro distribution notices 2016-11– | archiving | [note](docs/sources/b3_fundosnet.md) |
 | `b3_fundosnet_daily` | B3 | P | ETF daily NAV per quota and net assets 2018-06– | archiving | [note](docs/sources/b3_fundosnet_daily.md) |
 | `b3_fundosnet_cda` | B3 | P | ETF monthly portfolios 2018-09– | archiving | [note](docs/sources/b3_fundosnet_cda.md) |
+| `fred` | St. Louis Fed | S | 28 US/global series (rates, breakevens, dollar, spreads, oil, macro), owner key | parsed | [note](docs/sources/context_global.md) |
+| `tiingo` | Tiingo | S | daily prices, dividends, splits of 12 US benchmark ETFs and 5 Brazilian ADRs, owner token | parsed | [note](docs/sources/context_global.md) |
 | `binance` | Binance | S | crypto daily klines (BTC/ETH/USDT/SOL in BRL; BTC/ETH in USDT) 2017– | parsed | [note](docs/sources/binance.md) |
 | `b3_funds_listed` | B3 | P | listed ETFs/FIIs with acronym and Fundos.NET id; ETF report ids (acronym → CNPJ) | archiving | [note](docs/sources/b3_funds_listed.md) |
 | `ipeadata` | IPEA (FGV) | S | IGP-M 1989–, IGP-DI 1944– | archiving | [note](docs/sources/ipeadata.md) |

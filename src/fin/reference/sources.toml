@@ -552,3 +552,21 @@ tier = "S"
 ephemeral = false
 status = "parsed"
 recon = "docs/sources/binance.md"
+
+[fred]
+name = "FRED (Federal Reserve Bank of St. Louis): séries econômicas e de mercado"
+institution = "Federal Reserve Bank of St. Louis"
+access = "JSON API with the owner's free API key (secrets.toml)"
+tier = "S"
+ephemeral = false
+status = "parsed"
+recon = "docs/sources/context_global.md"
+
+[tiingo]
+name = "Tiingo: preços diários de ETFs americanos e ADRs"
+institution = "Tiingo"
+access = "JSON API, owner token in the Authorization header (secrets.toml)"
+tier = "S"
+ephemeral = false
+status = "parsed"
+recon = "docs/sources/context_global.md"

@@ -259,3 +259,41 @@ ext = "zip"
 every_days = 7
 about = "CFTC Commitments of Traders, weekly: legacy futures (deacot), disaggregated (commodities), financial futures"
 keys = ["deacot", "fut_disagg_txt_", "fut_fin_txt_"]
+
+# ---------------------------------------------------------------- United States: FRED (owner token, OQ-23)
+# Whole history per call; the key comes from secrets.toml (`secret`) and the manifest redacts it. Series whose
+# official original is already wired are left out (Treasury curve: us_treasury; VIX: cboe).
+[[file]]
+source = "fred"
+dataset = "fred_{key}"
+url = "https://api.stlouisfed.org/fred/series/observations"
+params = { series_id = "{key}", file_type = "json" }
+secret = { api_key = "fred_api_key" }
+ext = "json"
+every_days = 1
+about = "FRED series (current vintage): rates, breakevens, dollar, credit spreads, oil, conditions, US macro"
+keys = [
+  "DFF", "FEDFUNDS", "SOFR",                                        # policy and overnight rates
+  "DFII5", "DFII10", "T10YIE", "T5YIE", "T5YIFR", "T10Y2Y",         # TIPS real yields, breakevens, slope
+  "DTWEXBGS", "DTWEXEMEGS", "DEXBZUS", "DEXCHUS",                   # dollar indices, BRL and CNY per USD
+  "BAMLH0A0HYM2", "BAMLEMCBPIEY",                                   # credit: US HY OAS, EM corporate yield
+  "DCOILBRENTEU", "DCOILWTICO",                                     # oil spot
+  "NFCI", "WALCL",                                                  # financial conditions, Fed balance sheet
+  "CPIAUCSL", "CPILFESL", "PCEPILFE", "UNRATE", "PAYEMS", "INDPRO", "GDPC1",  # US macro
+  "SP500", "NASDAQCOM",                                             # equity indices (FRED's licensed windows)
+]
+
+[[file]]
+source = "fred"
+dataset = "fred_meta_{key}"
+url = "https://api.stlouisfed.org/fred/series"
+params = { series_id = "{key}", file_type = "json" }
+secret = { api_key = "fred_api_key" }
+ext = "json"
+every_days = 30
+about = "FRED series metadata: title, frequency, units, seasonal adjustment"
+keys = [
+  "DFF", "FEDFUNDS", "SOFR", "DFII5", "DFII10", "T10YIE", "T5YIE", "T5YIFR", "T10Y2Y", "DTWEXBGS", "DTWEXEMEGS",
+  "DEXBZUS", "DEXCHUS", "BAMLH0A0HYM2", "BAMLEMCBPIEY", "DCOILBRENTEU", "DCOILWTICO", "NFCI", "WALCL", "CPIAUCSL",
+  "CPILFESL", "PCEPILFE", "UNRATE", "PAYEMS", "INDPRO", "GDPC1", "SP500", "NASDAQCOM",
+]

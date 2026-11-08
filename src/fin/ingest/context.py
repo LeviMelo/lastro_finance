@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, ClassVar, cast
 from urllib.parse import quote, urlencode
 
-from fin.config import Zones
+from fin.config import Zones, secret
 from fin.ingest import series
 from fin.ingest.base import Connector, Mode
 from fin.ingest.fetch import FetchSpec
@@ -45,6 +45,7 @@ class Entry:
     keys: tuple[str, ...] = ()
     params: dict[str, str] = field(default_factory=lambda: {})
     incremental: dict[str, str] = field(default_factory=lambda: {})
+    secret: dict[str, str] = field(default_factory=lambda: {})  # query param -> owner token name (secrets.toml)
 
 
 @cache
@@ -65,6 +66,7 @@ def catalogue() -> tuple[Entry, ...]:
                 keys=tuple(e.get("keys", ())),
                 params={k: str(v) for k, v in e.get("params", {}).items()},
                 incremental={k: str(v) for k, v in e.get("incremental", {}).items()},
+                secret={k: str(v) for k, v in e.get("secret", {}).items()},
             )
         )
     return tuple(out)
@@ -115,6 +117,8 @@ class ContextConnector(Connector):
         since = today - timedelta(days=INCREMENTAL_DAYS)
         params = p.entry.incremental if incremental and p.entry.incremental else p.entry.params
         query = {k: _fill(v, p.key, p.year, since) for k, v in params.items()}
+        for param, name in p.entry.secret.items():  # the manifest redacts it (api_key, token): never stored
+            query[param] = secret(name) or ""
         url = _fill(p.entry.url, p.key, p.year, since)
         if any(" " in v for v in query.values()):
             # OData (BCB Olinda) rejects '+' for a space with HTTP 400 and accepts %20 (measured 2026-11-07)
@@ -135,6 +139,8 @@ class ContextConnector(Connector):
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
         today = today_brt()
         for entry in self.entries():
+            if any(secret(name) is None for name in entry.secret.values()):
+                continue  # an owner token not configured (secrets.toml): the entry waits for it
             plans = list(expand(entry, today))
             held = _held(zones, self.source_id, plans[0].dataset_id) if len(plans) == 1 else None
             for p in plans:

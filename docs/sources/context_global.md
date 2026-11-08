@@ -1,6 +1,6 @@
 # context_global — global context series (US Treasury, NY Fed, ECB, BIS, Cboe, EIA, World Bank, IMF, OECD, CFTC, BLS, FRED)
 
-**Tier:** P for each official publisher; U for Yahoo rows. **Recon date:** 2026-11-07 (all rows requested that day unless "not verified"). Wired: `src/fin/reference/context_series.toml` (ADR-0011). FRED and Tiingo need a free key (OQ-23).
+**Tier:** P for each official publisher; U for Yahoo rows. **Recon date:** 2026-11-07 (all rows requested that day unless "not verified"). Wired: `src/fin/reference/context_series.toml` (ADR-0011). FRED and Tiingo need a free key (OQ-23): the owner's keys are in the git-ignored `secrets.toml` since 2026-11-08, and FRED is wired (`fred`, 28 series).
 UA used: `lastro-fin/0.1.0 (personal research archiver; low request rate)`, <=1 req/s per host, curl. Date formats noted per source.
 Verified column = Y + sample value from today's request.
 
@@ -137,3 +137,10 @@ Recommendation: `httpx` + `polars` for the CSV/SDMX-CSV routes (all verified abo
   rows, 20 MB. Older files put a space after a closing quote, which a strict CSV reader refuses; Python's csv reads it.
   The disaggregated and financial reports of 2010-2012 name their date column `Report_Date_as_MM_DD_YYYY` but hold
   ISO dates. Changes, percentages and trader counts stay in raw.
+
+## FRED API (measured 2026-11-08 with the owner's key)
+- `https://api.stlouisfed.org/fred/series/observations?series_id=DGS10&api_key=…&file_type=json`: 200 JSON, header fields (realtime_start/end, count, limit 100000) and `observations[{realtime_start, realtime_end, date, value}]`; a missing value is `.`. `fred/series?series_id=…` gives title, frequency_short, units, seasonal_adjustment_short, observation_start (DGS10: 1962-01-02).
+- Tier S: FRED redistributes other publishers' series (ICE BofA spreads under licence windows; S&P 500 10 years). The rows are the current vintage; ALFRED (`realtime_start`/`realtime_end` parameters) keeps earlier vintages and is not requested yet.
+
+## Tiingo API (measured 2026-11-08 with the owner's token)
+- `https://api.tiingo.com/tiingo/daily/spy/prices?startDate=…&endDate=…` with header `Authorization: Token …`: 200 JSON list of `{date, open, high, low, close, volume, adjOpen…adjVolume, divCash, splitFactor}`; `…/tiingo/daily/spy` gives name, description, exchangeCode, startDate, endDate. Wired as `tiingo` (`ingest/tiingo.py`), 17 tickers.

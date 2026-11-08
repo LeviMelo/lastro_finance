@@ -50,6 +50,7 @@ from fin.ingest.snapshots import (
     TesouroPrecoTaxa,
 )
 from fin.ingest.snd_pu import SndPuHistorico
+from fin.ingest.tiingo import TiingoDaily
 from fin.reference.sources import registry
 
 CONNECTORS: dict[str, type[Connector]] = {
@@ -98,6 +99,7 @@ CONNECTORS: dict[str, type[Connector]] = {
         B3Holidays,
         B3FundsListed,
         BinanceKlines,
+        TiingoDaily,
         SndPuHistorico,
         *context_connectors(),
     )
@@ -129,6 +131,7 @@ DAILY: tuple[str, ...] = (
     "b3_fundosnet",
     "b3_fundosnet_daily",  # ETF daily NAV (not in CVM open data since 2018-09)
     "b3_fundosnet_cda",  # ETF monthly portfolios (not in CVM open data)
+    "tiingo",  # US benchmarks and ADRs, the last 10 days (owner token; nothing runs without it)
     "binance",  # crypto daily klines: new monthly files and this month's days (scope priority 3)
     "b3_funds_listed",  # B3's listed funds today (current state only) and each ETF's report ids
     "bcb_sgs",

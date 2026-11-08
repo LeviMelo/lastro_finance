@@ -15,6 +15,7 @@ Views:
 - `insider_movement`: CVM VLMO insider positions and trades by role group, with delivery date and latest flag;
 - `etf_daily` / `etf_nav`: ETF daily reports (every version / the latest per date), `etf_link` to the instrument;
   `etf_position`: ETF monthly portfolios; `crypto_daily`: Binance daily klines (tier S);
+- `us_daily_price`: Tiingo daily prices of US benchmarks and Brazilian ADRs (tier S);
 - `price_report_close`: B3 Price Report closes per ticker and day (fixed-income ETFs' only price);
 - debentures (ADR-0028): `debenture`, `debenture_terms`, `debenture_pu` (SND accrued PU), `debenture_secondary_price`;
 - `intraday_bar`: Yahoo 5-minute bars (tier U);
@@ -176,6 +177,11 @@ def views(z: Zones) -> dict[str, str]:
             FROM {_rp(s / "b3_pesquisapregao" / "price_report" / "**" / "*.parquet")}
             WHERE last_price IS NOT NULL
             QUALIFY row_number() OVER (PARTITION BY ticker, trade_date ORDER BY file_date DESC) = 1
+        """,
+        # US-listed prices with dividends and splits (Tiingo, tier S, owner token): benchmarks and Brazilian ADRs
+        "us_daily_price": f"""
+            FROM {_rp(s / "tiingo" / "daily" / "**" / "*.parquet")}
+            QUALIFY row_number() OVER (PARTITION BY ticker, trade_date ORDER BY raw_sha256 DESC) = 1
         """,
         # crypto daily klines (Binance, tier S): a daily file and the month's file repeat a day; one row per day
         "crypto_daily": f"""

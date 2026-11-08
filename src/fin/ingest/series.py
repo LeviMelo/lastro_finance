@@ -1408,6 +1408,49 @@ def _pair(parse: Any) -> Any:
 
 
 # source_id -> payload parser, for the connectors generated from the context catalogue (ingest/context.py)
+# ------------------------------------------------------------------------------------------------ FRED
+# `api.stlouisfed.org/fred/series/observations?series_id=X&file_type=json` (key in `api_key`, owner token, OQ-23):
+# {"realtime_start","realtime_end",...,"observations":[{"realtime_start","realtime_end","date","value"}]}; a missing
+# value is "." (measured 2026-11-08 on DGS10). `fred/series?series_id=X` gives title, frequency_short and units. The
+# rows are the vintage current on the request day (ALFRED keeps earlier vintages; not requested).
+_FRED_FREQ = {"D": "D", "W": "W", "BW": "W2", "M": "M", "Q": "Q", "SA": "S", "A": "A"}
+
+
+def parse_fred(blob: bytes, row: dict[str, Any]) -> pl.DataFrame:
+    doc = json.loads(blob)
+    code = dict(json.loads(row["request"])["params"] or {})["series_id"]
+    rows = [
+        {
+            "series_id": f"fred:{code}", "vt_date": date.fromisoformat(o["date"]), "vt_until": None,
+            "period_text": o["date"], "value_text": "" if o["value"] == "." else o["value"],
+            "missing_reason": "FRED '.': no observation" if o["value"] == "." else None,
+            "raw_locator": f"$.observations[{i}]",
+        }
+        for i, o in enumerate(doc["observations"])
+    ]  # fmt: skip
+    return _observations(rows, row)
+
+
+def parse_fred_meta(blob: bytes, row: dict[str, Any]) -> pl.DataFrame:
+    rows = []
+    for i, it in enumerate(json.loads(blob)["seriess"]):
+        fs = str(it.get("frequency_short") or "")
+        rows.append({
+            "series_id": f"fred:{it['id']}", "source_code": it["id"], "name": it["title"],
+            "frequency": _FRED_FREQ.get(fs, f"?{fs}"), "frequency_text": it.get("frequency"),
+            "unit": f"{it.get('units')} ({it.get('seasonal_adjustment_short')})", "raw_locator": f"$.seriess[{i}]",
+        })  # fmt: skip
+    return _frame(rows, row, _DEF_IN)
+
+
+def _fred(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+    ds = str(row["dataset_id"])
+    if ds.startswith("fred_meta_"):
+        yield Parsed("definition", ds, parse_fred_meta(blob, row))
+    else:
+        yield Parsed("observation", ds, parse_fred(blob, row))
+
+
 CATALOGUE_PARSERS: dict[str, Any] = {
     "us_treasury": _pair(parse_us_treasury),
     "nyfed": _pair(parse_nyfed),
@@ -1421,6 +1464,7 @@ CATALOGUE_PARSERS: dict[str, Any] = {
     "ecb": _sdmx("ecb"),
     "bis": _sdmx("bis"),
     "oecd": _sdmx("oecd"),
+    "fred": _fred,
 }
 
 
