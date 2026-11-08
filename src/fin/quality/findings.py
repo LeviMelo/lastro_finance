@@ -16,6 +16,7 @@ Checks:
   non-positive price (`error`: it breaks every return through it). The average (PREMED) is not checked: it lies
   outside high/low on 6,520 sessions (1989-91 and, from 2021, mostly BDRs), so it includes trades the high/low do
   not (docs/sources/b3_cotahist.md);
+- `fund_bridge`: CVM 175 classes whose quota does not continue the legacy fund's (jump or gap);
 - `balance_identity`: total assets = liabilities + equity on every consolidated CVM filing;
 - `cash_vs_yahoo`: every Yahoo dividend of a line we hold matched by a cash event of ours (completeness);
 - `fiagro_duplicate_filing`: a FIAGRO monthly filing listed twice; the later delivery wins;
@@ -619,6 +620,39 @@ def balance_identity(zones: Zones) -> pl.DataFrame:
     )
 
 
+def fund_bridge(zones: Zones) -> pl.DataFrame:
+    """CVM 175 (ADR-0025): a class whose first daily quota does not continue its legacy fund's (a jump beyond 1 % and
+    5 robust sigmas of the fund's own daily moves) or follows it only after a gap of more than 3 business days. The
+    quotas are kept as CVM publishes them; the finding says the class's series does not continue the fund's there."""
+    path = zones.core / "fund_lineage" / "fund_lineage.parquet"
+    if not path.exists():
+        return _frame([])
+    from fin.core import funds
+    from fin.ingest.anbima_calendar import load_calendar
+    from fin.reference.calendar import Calendar
+
+    lin = pl.read_parquet(path)
+    res = funds.bridge_check(lin, funds.load_daily(zones, lin), Calendar.from_frame(load_calendar(zones)))
+    bad = res.filter(pl.col("status").is_in(["jump", "gap"]))
+    return bad.select(
+        pl.lit("fund_bridge").alias("check_id"),
+        pl.lit("warn").alias("severity"),
+        pl.lit("issuer").alias("entity_kind"),
+        pl.format("{}<{}", "class_cnpj", "predecessor_cnpj").alias("entity_id"),
+        pl.col("first_class").alias("vt"),
+        pl.format("{} quota {} -> {} ({} business days)", "status", "q_before", "q_after", "gap_bd").alias("observed"),
+        pl.lit("the class's first quota within 1 % (or 5 sigmas) of the fund's last, within 3 business days").alias(
+            "expected"
+        ),
+        pl.lit("the CVM 175 class's quota series does not continue its legacy fund's").alias("detail"),
+        pl.lit("core fund_lineage; staging cvm_fi_inf_diario/daily").alias("evidence"),
+        pl.lit("acknowledged").alias("status"),
+        pl.lit("rule: quotas are kept as CVM publishes them; a return across this switch is not computed").alias(
+            "resolution_note"
+        ),
+    )
+
+
 CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "vna_ntnb_vs_ipca": vna_ntnb_vs_ipca,
     "share_count_unit_mismatch": share_count_unit_mismatch,
@@ -630,6 +664,7 @@ CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "fiagro_duplicate_filing": fiagro_duplicate_filing,
     "cash_vs_yahoo": cash_vs_yahoo,
     "balance_identity": balance_identity,
+    "fund_bridge": fund_bridge,
 }
 
 

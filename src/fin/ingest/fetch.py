@@ -13,7 +13,8 @@ source's data exactly (CRC-checked); the zip's compressed bytes are transport an
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass, field, replace
 from datetime import date
 from typing import Any
 
@@ -43,6 +44,8 @@ class FetchSpec:
     # a 200 whose Content-Type starts with none of these is an error page served as success: an error, not stored
     content_types: tuple[str, ...] = ()
     unpack_members: bool = False  # a zip stored as its members (ADR-0014)
+    # reduce a large payload to the part kept (ADR-0027): (kept bytes, kept ext, record of the full download)
+    extract: Callable[[bytes], tuple[bytes, str, dict[str, Any]]] | None = None
     locator: str | None = None  # e.g. "page=3"; the part of a multi-request payload this object is
     notes: str | None = None
 
@@ -145,8 +148,19 @@ class Fetcher:
 
         if spec.unpack_members:
             return self._unpack(spec, resp, request, key, fetched_at)
+        content, ext = resp.content, spec.ext
+        if spec.extract is not None:  # keep only the part that matters; record what the full download was
+            import json
+
+            content, ext, record = spec.extract(resp.content)
+            record = {"request": json.loads(request), "full_sha256": hashlib.sha256(resp.content).hexdigest(),
+                      "full_bytes": len(resp.content), **record}  # fmt: skip
+            rec = self.raw.put_bytes(json.dumps(record, sort_keys=True, ensure_ascii=False).encode("utf-8"), "json")
+            self.run.log("fetch.extracted", url=spec.url, record_sha256=rec.sha256, **{
+                k: record[k] for k in ("full_sha256", "full_bytes")})  # fmt: skip
+            spec = replace(spec, notes=f"{spec.notes or spec.locator or ''};record={rec.sha256}")
         base = self.run.manifest.previous_version(spec.source_id, spec.dataset_id, spec.notes or spec.locator)
-        ref = self.raw.put_bytes(resp.content, spec.ext, base=base)
+        ref = self.raw.put_bytes(content, ext, base=base)
         row = ManifestRow(
             raw_sha256=ref.sha256,
             raw_ext=ref.ext,
