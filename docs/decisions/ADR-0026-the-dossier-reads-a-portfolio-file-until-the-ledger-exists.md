@@ -30,3 +30,9 @@ buy-and-hold path, labeled as not being forecasts:
 - weights by the issuers' CVM sector.
 
 On the sample: volatility 16.50 %, drawdown −15.50 % (2026-04-13 to 2026-08-14), beta 0.82.
+
+**Addendum (2026-11-08): Tesouro Direto.**
+- A holding named `"Tesouro <title> <maturity>"` (e.g. `"Tesouro IPCA+ 2035-05-15"`) is valued at the morning sell
+  PU, the price at which Tesouro buys it back.
+- Its return is the PU ratio.
+- A bond with semiannual coupons shows only that ratio, since its coupons are paid out and are not in the PU.

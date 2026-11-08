@@ -26,3 +26,11 @@ def test_dossier_values_holdings_and_labels_missing(zones: Zones, tmp_path: Path
     assert "| ACME3 | 100 | R$ 10,00 (2025-09-02) | R$ 1.000,00 |" in text
     assert "NOPE3" in text and "sem preço" in text
     assert (zones.exports / "dossier-2025-09-05" / "holdings.parquet").exists()
+
+
+def test_tesouro_holding_key() -> None:
+    from fin.export.dossier import TESOURO
+
+    m = TESOURO.match("Tesouro IPCA+ com Juros Semestrais 2035-05-15")
+    assert m and m.group(1) == "Tesouro IPCA+ com Juros Semestrais" and m.group(2) == "2035-05-15"
+    assert TESOURO.match("ITUB4") is None

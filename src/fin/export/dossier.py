@@ -14,6 +14,7 @@ The portfolio file is TOML, until the ledger (Stage I) exists:
 
 from __future__ import annotations
 
+import re
 import tomllib
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -50,9 +51,40 @@ def _q(con: duckdb.DuckDBPyConnection, sql: str, params: list[Any]) -> pl.DataFr
     return pl.DataFrame(cur.fetchall(), schema=cols, orient="row", infer_schema_length=None)
 
 
+TESOURO = re.compile(r"^(Tesouro .+?) (\d{4}-\d{2}-\d{2})$")  # "Tesouro IPCA+ 2035-05-15": title and maturity
+
+
+def tesouro_pu(con: duckdb.DuckDBPyConnection, title: str, maturity: date, d: date) -> tuple[str, date, float] | None:
+    """(instrument_id, base date, morning sell PU) of a Tesouro Direto bond on or before `d`."""
+    try:
+        r = con.execute(
+            "SELECT b.instrument_id, p.base_date, CAST(p.sell_pu AS DOUBLE) FROM tesouro_price_daily p "
+            "JOIN tesouro_bond b USING (instrument_id) WHERE b.title = ? AND b.maturity = ? AND p.base_date <= ? "
+            "AND p.sell_pu > 0 ORDER BY p.base_date DESC LIMIT 1",
+            [title, maturity, d],
+        ).fetchone()
+    except duckdb.CatalogException:
+        return None
+    return (r[0], r[1], r[2]) if r else None
+
+
 def holdings_table(con: duckdb.DuckDBPyConnection, p: Portfolio, as_of: date) -> pl.DataFrame:
     rows = []
     for tk, qty in p.holdings.items():
+        m = TESOURO.match(tk)
+        if m:  # Tesouro Direto: valued at the morning sell PU, the price Tesouro pays to buy it back
+            tp = tesouro_pu(con, m.group(1), date.fromisoformat(m.group(2)), as_of)
+            if tp is None:
+                rows.append({"ticker": tk, "quantity": qty, "status": "sem preço (título não encontrado)"})
+                continue
+            iid, d, pu = tp
+            rows.append({
+                "ticker": tk, "instrument_id": iid, "asset_class": "tesouro_direto", "quantity": qty,
+                "price_date": d, "close_brl": pu, "market_value_brl": qty * pu,
+                "method": "Tesouro Direto: PU de venda (resgate) da manhã",
+                "status": "ok" if (as_of - d).days <= 7 else f"preço defasado ({(as_of - d).days} dias)",
+            })  # fmt: skip
+            continue
         r = con.execute(
             """
             SELECT i.instrument_id, ins.asset_class, pd.trade_date, CAST(pd.close AS DOUBLE)
@@ -88,6 +120,15 @@ def performance(con: duckdb.DuckDBPyConnection, h: pl.DataFrame, since: date, as
     start value (quantity x the raw close on `since`), which weights the portfolio's buy-and-hold return."""
     out = []
     for r in h.filter(pl.col("instrument_id").is_not_null()).iter_rows(named=True):
+        m = TESOURO.match(r["ticker"])
+        if m:  # the PU ratio; a coupon bond's coupons are paid out and are not in it
+            mat = date.fromisoformat(m.group(2))
+            t0, t1 = tesouro_pu(con, m.group(1), mat, since), tesouro_pu(con, m.group(1), mat, as_of)
+            ret = (t1[2] / t0[2] - 1) if t0 and t1 else None
+            coupons = "Juros Semestrais" in m.group(1)
+            out.append({"ticker": r["ticker"], "total_return": None if coupons else ret, "price_return": ret,
+                        "start_value_brl": r["quantity"] * t0[2] if t0 else None})  # fmt: skip
+            continue
         x = con.execute(
             """
             SELECT
@@ -293,7 +334,7 @@ def build(zones: Zones, portfolio_path: Path, as_of: date) -> Path:
     covered = set(fund["line"].to_list()) if fund.height else set()
     issuers = {tk[:4] for tk in covered}
     for tk in h["ticker"].to_list():
-        if tk not in covered and tk[:4] not in issuers:
+        if tk not in covered and tk[:4] not in issuers and not TESOURO.match(tk):
             lines.append(f"| {tk} | — | sem dados na data | — | — | — |")
     lines += ["", "## Próximos eventos", ""]
     if up.height:
