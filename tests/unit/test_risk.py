@@ -40,3 +40,26 @@ def test_value_path_follows_the_tesouro_sell_pu() -> None:
     h = pl.DataFrame({"instrument_id": ["t1"], "asset_class": ["tesouro_direto"], "quantity": [2.0]})
     p = risk.value_path(con, h, date(2026, 1, 1), date(2026, 1, 31))
     assert p["value_brl"].to_list() == [2000.0, 2020.0]  # a zero PU (no sale that day) is not a price
+
+
+def test_an_etf_line_is_looked_through_its_latest_delivered_portfolio() -> None:
+    import duckdb
+
+    con = duckdb.connect()
+    con.execute("""
+        CREATE TABLE etf_link AS SELECT 'E' AS instrument_id, 'F' AS fund_cnpj, true AS verified;
+        CREATE TABLE etf_position AS SELECT * FROM (VALUES
+            (1, 'F', DATE '2026-01-01', TIMESTAMPTZ '2026-02-10 12:00:00+00', 'AAAA3', 60.0),
+            (1, 'F', DATE '2026-01-01', TIMESTAMPTZ '2026-02-10 12:00:00+00', NULL, 40.0),
+            (2, 'F', DATE '2026-02-01', TIMESTAMPTZ '2026-03-10 12:00:00+00', 'BBBB3', 100.0))
+          t(doc_id, fund_cnpj, reference_month, delivered_at, asset_code, market_value_brl);
+        CREATE TABLE instrument_identifier AS SELECT * FROM (VALUES ('a', 'TICKER', 'AAAA3'), ('b', 'TICKER', 'BBBB3'))
+          t(instrument_id, scheme, value);
+        CREATE TABLE issuer_instrument AS SELECT * FROM (VALUES ('a', 'ia'), ('b', 'ib')) t(instrument_id, issuer_id);
+        CREATE TABLE issuer AS SELECT * FROM (VALUES ('ia', 'Bancos'), ('ib', 'Energia')) t(issuer_id, sector);
+    """)  # fmt: skip
+    h = pl.DataFrame({"instrument_id": ["E"], "weight": [0.5]})
+    feb = dict(risk.sector_exposure(con, h, date(2026, 2, 20)).rows())  # the March delivery is not known yet
+    assert feb == {"Bancos": 0.3, "ETF: outros ativos": 0.2}
+    mar = dict(risk.sector_exposure(con, h, date(2026, 3, 20)).rows())
+    assert mar == {"Energia": 0.5}

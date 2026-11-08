@@ -306,7 +306,7 @@ def build(zones: Zones, portfolio_path: Path, as_of: date) -> Path:
     except duckdb.CatalogException:
         ix = None
     st = risk.stats(path, ix)
-    sec = risk.sector_exposure(con, h)
+    sec = risk.sector_exposure(con, h, as_of)
     for name, df in (("holdings", h), ("performance", perf), ("upcoming", up), ("fundamentals", fund),
                      ("findings", fnd), ("value_path", path), ("sector_exposure", sec), ("etf", etf)):  # fmt: skip
         if df.height:

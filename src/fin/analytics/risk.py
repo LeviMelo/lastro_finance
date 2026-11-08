@@ -75,23 +75,72 @@ def stats(path: pl.DataFrame, index: pl.DataFrame | None = None) -> dict[str, fl
     return {"volatility": vol, "max_drawdown": float(dd["dd"][i]), "peak": peak, "trough": trough, "beta": beta}
 
 
-def sector_exposure(con: duckdb.DuckDBPyConnection, holdings: pl.DataFrame) -> pl.DataFrame:
-    """Current weights by the issuer's CVM sector."""
-    h = holdings.filter(pl.col("instrument_id").is_not_null() & pl.col("weight").is_not_null())
-    if not h.height:
-        return pl.DataFrame(schema={"sector": pl.String, "weight": pl.Float64})
+def _sectors(con: duckdb.DuckDBPyConnection, ids: list[str]) -> pl.DataFrame:
     try:
         cur = con.execute(
             "SELECT ii.instrument_id, any_value(s.sector) FROM issuer_instrument ii JOIN issuer s USING (issuer_id) "
             "WHERE ii.instrument_id IN (SELECT unnest(?)) GROUP BY 1",
-            [h["instrument_id"].to_list()],
+            [ids],
         )
-        sec = pl.DataFrame(cur.fetchall(), schema=["instrument_id", "sector"], orient="row")
+        return pl.DataFrame(cur.fetchall(), schema={"instrument_id": pl.String, "sector": pl.String}, orient="row")
     except duckdb.Error:  # no issuer tables (or no sector) in this catalog: every line is "sem setor"
-        sec = pl.DataFrame(schema={"instrument_id": pl.String, "sector": pl.String})
+        return pl.DataFrame(schema={"instrument_id": pl.String, "sector": pl.String})
+
+
+def etf_look_through(con: duckdb.DuckDBPyConnection, ids: list[str], as_of: date | None) -> pl.DataFrame:
+    """(instrument_id of the ETF, held instrument_id or null, share of the ETF's portfolio) from the ETF's latest
+    monthly portfolio (Fundos.NET CDA) delivered by `as_of`; positions without a traded ticker stay unmapped."""
+    empty = pl.DataFrame(schema={"etf_id": pl.String, "held_id": pl.String, "share": pl.Float64})
+    if not ids:
+        return empty
+    try:
+        cur = con.execute(
+            """
+            WITH l AS (SELECT instrument_id AS etf_id, fund_cnpj FROM etf_link WHERE verified
+                       AND instrument_id IN (SELECT unnest(?))),
+            d AS (
+                SELECT l.etf_id, p.doc_id FROM l JOIN etf_position p USING (fund_cnpj)
+                WHERE ? IS NULL OR CAST(p.delivered_at AT TIME ZONE 'America/Sao_Paulo' AS DATE) <= ?
+                QUALIFY dense_rank() OVER (PARTITION BY l.etf_id ORDER BY p.reference_month DESC,
+                                           p.delivered_at DESC, p.doc_id DESC) = 1
+            ),
+            pos AS (
+                SELECT d.etf_id, p.asset_code, CAST(p.market_value_brl AS DOUBLE) AS v
+                FROM d JOIN etf_position p USING (doc_id) WHERE p.market_value_brl > 0
+            ),
+            tk AS (SELECT value AS asset_code, any_value(instrument_id) AS held_id FROM instrument_identifier
+                   WHERE scheme = 'TICKER' GROUP BY 1)
+            SELECT pos.etf_id, tk.held_id, sum(v) / sum(sum(v)) OVER (PARTITION BY pos.etf_id) AS share
+            FROM pos LEFT JOIN tk USING (asset_code) GROUP BY pos.etf_id, tk.held_id
+            """,
+            [ids, as_of, as_of],
+        )
+        return pl.DataFrame(
+            cur.fetchall(), schema={"etf_id": pl.String, "held_id": pl.String, "share": pl.Float64}, orient="row"
+        )
+    except duckdb.CatalogException:  # no ETF tables in this catalog (a broken query must still fail loudly)
+        return empty
+
+
+def sector_exposure(con: duckdb.DuckDBPyConnection, holdings: pl.DataFrame, as_of: date | None = None) -> pl.DataFrame:
+    """Current weights by the issuer's CVM sector. An ETF line is looked through its latest monthly portfolio
+    delivered by `as_of`: its shares go to their issuers' sectors, the rest to "ETF: outros ativos"."""
+    h = holdings.filter(pl.col("instrument_id").is_not_null() & pl.col("weight").is_not_null())
+    if not h.height:
+        return pl.DataFrame(schema={"sector": pl.String, "weight": pl.Float64})
+    lt = etf_look_through(con, h["instrument_id"].to_list(), as_of)
+    direct = h.filter(~pl.col("instrument_id").is_in(lt["etf_id"].implode())).select("instrument_id", "weight")
+    through = h.join(lt, left_on="instrument_id", right_on="etf_id").select(
+        pl.col("held_id").alias("instrument_id"), (pl.col("weight") * pl.col("share")).alias("weight")
+    )
+    lines = pl.concat([direct, through.filter(pl.col("instrument_id").is_not_null())])
+    sec = _sectors(con, lines["instrument_id"].unique().to_list())
+    out = lines.join(sec, on="instrument_id", how="left").with_columns(pl.col("sector").fill_null("sem setor"))
+    other = through.filter(pl.col("instrument_id").is_null()).select(
+        pl.lit("ETF: outros ativos").alias("sector"), "weight"
+    )
     return (
-        h.join(sec, on="instrument_id", how="left")
-        .with_columns(pl.col("sector").fill_null("sem setor"))
+        pl.concat([out.select("sector", "weight"), other])
         .group_by("sector")
         .agg(pl.col("weight").sum())
         .sort("weight", descending=True)

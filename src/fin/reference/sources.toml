@@ -543,3 +543,12 @@ tier = "P"
 ephemeral = false
 status = "archiving"
 recon = "docs/sources/context_br.md"
+
+[binance]
+name = "Binance: klines diários de pares spot (bulk data)"
+institution = "Binance"
+access = "Static zip files on data.binance.vision, S3 listing, no login"
+tier = "S"
+ephemeral = false
+status = "parsed"
+recon = "docs/sources/binance.md"

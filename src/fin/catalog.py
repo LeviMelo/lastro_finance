@@ -13,7 +13,8 @@ Views:
 - `price_adjusted`: standard-lot closes with split and cash adjustment to today's basis (derived on read);
 - `fii_distribution`: FII/Fiagro distributions with their delivery minute;
 - `insider_movement`: CVM VLMO insider positions and trades by role group, with delivery date and latest flag;
-- `etf_daily` / `etf_nav`: ETF daily reports (every version / the latest per date) and `etf_link` to the instrument;
+- `etf_daily` / `etf_nav`: ETF daily reports (every version / the latest per date), `etf_link` to the instrument;
+  `etf_position`: ETF monthly portfolios; `crypto_daily`: Binance daily klines (tier S);
 - debentures (ADR-0028): `debenture`, `debenture_terms`, `debenture_pu` (SND accrued PU), `debenture_secondary_price`;
 - `intraday_bar`: Yahoo 5-minute bars (tier U);
 - macro `universe(date, asset_class)`: instruments trading in the 30 days up to a date, delisted later or not;
@@ -166,6 +167,20 @@ def views(z: Zones) -> dict[str, str]:
         "etf_daily": _scan(c / "etf_nav" / "*.parquet"),
         "etf_nav": f"SELECT * FROM {_rp(c / 'etf_nav' / '*.parquet')} WHERE is_latest",
         "etf_link": _scan(c / "etf_link" / "*.parquet"),
+        # crypto daily klines (Binance, tier S): a daily file and the month's file repeat a day; one row per day
+        "crypto_daily": f"""
+            FROM {_rp(s / "binance" / "kline" / "**" / "*.parquet")}
+            QUALIFY row_number() OVER (PARTITION BY symbol, day ORDER BY raw_sha256) = 1
+        """,
+        # ETF monthly portfolios (Fundos.NET CDA) with the delivery minute of each document
+        "etf_position": f"""
+            SELECT p.*, l.delivered_at
+            FROM {_rp(s / "b3_fundosnet_cda" / "position" / "**" / "*.parquet")} p
+            LEFT JOIN (
+                SELECT doc_id, min(delivered_at) AS delivered_at
+                FROM {_rp(s / "b3_fundosnet_cda" / "listing" / "**" / "*.parquet")} GROUP BY doc_id
+            ) l USING (doc_id)
+        """,
         # insider positions and trades by role group (CVM VLMO), each version with its delivery date (knowledge date)
         # and whether it is the latest version of that company-month
         "insider_movement": f"""
