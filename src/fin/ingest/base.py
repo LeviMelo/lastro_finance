@@ -62,6 +62,7 @@ class Connector(ABC):
     user_agent: ClassVar[str | None] = None  # None: the default generic UA
     min_interval: ClassVar[float] = 0.2  # seconds between request starts per host; adaptive (ingest/http.py)
     concurrency: ClassVar[int] = 1  # requests in flight at once (ADR-0023)
+    timeout: ClassVar[float] = 120.0  # seconds to wait for a response (a source that builds files on demand needs more)
     dedup_staging: ClassVar[bool] = False  # its files are re-sent whole: keep only rows that changed (ADR-0014)
     whole_datasets: ClassVar[frozenset[str]] = frozenset()  # exempt: identical rows there are distinct facts
 
@@ -130,7 +131,9 @@ def load(
 def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode, **options: Any) -> int:
     """Discover, fetch, parse, validate, load. Returns the number of fetch errors (each also recorded on the run)."""
     raw = RawStore(zones.raw)
-    client = PoliteClient(user_agent=connector.user_agent or _default_ua(), min_interval=connector.min_interval)
+    client = PoliteClient(
+        user_agent=connector.user_agent or _default_ua(), min_interval=connector.min_interval, timeout=connector.timeout
+    )
     fetcher = Fetcher(run, raw, client, connector.version)
     errors = 0
     try:

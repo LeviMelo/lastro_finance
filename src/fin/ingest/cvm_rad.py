@@ -36,7 +36,8 @@ from fin.schema import Contract
 from fin.store.manifest import Manifest
 from fin.store.tables import read_parquet_dir
 
-STATEMENTS_MEMBER = re.compile(r"^\d{6}(?:DFP|ITR)\d{2}-\d{2}-\d{4}v\d+\.xml$", re.IGNORECASE)
+# the date may carry a time ("027251DFP31-12-2025 00_00_00v2.xml", measured 2026-11-08)
+STATEMENTS_MEMBER = re.compile(r"^\d{6}(?:DFP|ITR)\d{2}-\d{2}-\d{4}(?: \d{2}_\d{2}_\d{2})?v\d+\.xml$", re.IGNORECASE)
 URL = "https://www.rad.cvm.gov.br/ENETCONSULTA/frmDownloadDocumento.aspx?CodigoInstituicao=1&NumeroSequencialDocumento={doc_id}"
 MIN_BYTES = 100_000  # RAD answers 200 with a ~300-byte HTML stub when it is busy: absent now, tried again next run
 _DOC = re.compile(r"doc=(\d+)")
@@ -196,7 +197,7 @@ Period = tuple[str, date | None, date]  # (period_order, start, end)
 def _day(text: str | None) -> date | None:
     if text is None or not text.strip():
         return None
-    d, m, y = text.strip().split("/")
+    d, m, y = text.strip().split()[0].split("/")  # some filings write "31/12/2025 00:00:00"
     return date(int(y), int(m), int(d))
 
 
@@ -424,7 +425,7 @@ def _dmpl(
 
 
 def _equity_label(text: str) -> str:
-    t = text.strip().casefold()
+    t = re.sub(r"\s*/\s*", "/", text.strip().casefold()).replace("lucro/", "lucros/")  # "Lucro / Prejuízo"
     for prefix, label in _EQUITY_TEXT:
         if t.startswith(prefix):
             return label
@@ -726,6 +727,7 @@ class CvmRadVersions(Connector):
     contracts: ClassVar[dict[str, Contract]] = {"statement_line": STATEMENT_LINE, "share_capital": SHARE_CAPITAL}
     min_interval: ClassVar[float] = 0.25
     concurrency: ClassVar[int] = 4
+    timeout: ClassVar[float] = 600.0  # RAD builds each zip on request: some take minutes (3 timeouts at 120 s)
     dedup_staging: ClassVar[bool] = False
 
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:

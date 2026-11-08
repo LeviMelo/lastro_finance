@@ -413,3 +413,12 @@ def test_run_archives_stripped_xml_with_its_record_and_does_not_ask_twice(
     staged = list((zones.staging / "cvm_rad_versions").rglob("*.parquet"))
     assert {part for p in staged for part in p.parts} >= {"statement_line", "share_capital"}
     assert any("year=2010" in p.parts for p in staged)  # the legacy payload was parsed too
+
+
+def test_variants_seen_in_the_backfill() -> None:
+    """2026-11-08 backfill: a member name with a time, a date with a time, and 'Lucro / Prejuízo Acumulado'."""
+    from fin.ingest import cvm_rad
+
+    assert cvm_rad.STATEMENTS_MEMBER.match("027251DFP31-12-2025 00_00_00v2.xml")
+    assert str(cvm_rad._day("31/12/2025 00:00:00")) == "2025-12-31"
+    assert cvm_rad._equity_label("Lucro / Prejuízo Acumulado") == "Lucros ou Prejuízos Acumulados"
