@@ -133,7 +133,9 @@ def test_http_retries_5xx_then_succeeds() -> None:
     slept: list[float] = []
     c = PoliteClient(transport=httpx.MockTransport(handler), min_interval=0, sleep=slept.append)
     assert c.request("GET", "https://example.test/").content == b"ok"
-    assert n["i"] == 3 and len(slept) == 2
+    # two backoffs, and the host's spacing grew after each 503 (adaptive, ADR-0023), then shrinks on the 200
+    assert n["i"] == 3 and len(slept) == 4
+    assert c._interval["example.test"] == 0.9
 
 
 def test_run_record_counts_and_status(zones: Zones) -> None:

@@ -33,3 +33,6 @@ Decimal comma, dates dd/mm/yyyy, `--` = no value, footnote markers `(*)`/`(**)` 
 
 ## 7. Open questions
 - Where the reference date sits in the file; extra fields in xls; SND/B3 as free credit-price history.
+
+## 8. Parsed (staging, `ingest/anbima_parsers.py`, 2026-11-07)
+`debenture_rate`, partition `ref_date=` taken from the manifest (the file carries no date; settles open question §7). 15 `@` fields: `--` and `N/D` become null; `Nome` is split from its `(*)`/`(**)` marks; `Índice/Correção` is read into `indexer` (DI, IPCA, IGP-M, PRE) + `spread_pct` or `percent_of_di` (all 5 patterns seen: `DI + n%`, `IPCA + n%`, `PREFIXADO n%`, `n% do DI`, `IGP-M`; any other text raises). The last field is a date (maturity of the reference NTN-B). `% Reune` unit/meaning is not documented in the file (kept as published). 1,270-1,275 debentures a day; reparse 7,631 rows (6 days), 0 quarantined.

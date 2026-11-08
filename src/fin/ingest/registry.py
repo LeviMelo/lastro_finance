@@ -21,7 +21,9 @@ from fin.ingest.b3_cotahist import B3Cotahist
 from fin.ingest.b3_events import B3CompanyEvents
 from fin.ingest.base import Connector
 from fin.ingest.context import context_connectors
+from fin.ingest.cvm_funds import CvmFiCda, CvmFii, CvmFiInfDiario
 from fin.ingest.intraday import YahooIntraday
+from fin.ingest.ptax import BcbPtax
 from fin.ingest.snapshots import (
     AnbimaDebentures,
     AnbimaEttj,
@@ -60,10 +62,14 @@ CONNECTORS: dict[str, type[Connector]] = {
         TesouroPrecoTaxa,
         NefinFactors,
         BcbSgs,
+        BcbPtax,
         CvmDfpItr,
         CvmFca,
         CvmFre,
         CvmIpe,
+        CvmFii,
+        CvmFiInfDiario,
+        CvmFiCda,
         FundosNetRendimentos,
         IbgeSidra,
         Ipeadata,
@@ -99,6 +105,7 @@ DAILY: tuple[str, ...] = (
     "snd_debentures",  # terms snapshot daily, agenda weekly: neither keeps history
     "b3_fundosnet",
     "bcb_sgs",
+    "bcb_ptax",
     "ipeadata",
     "ibge_sidra",
     "tesouro_vna",
@@ -107,6 +114,9 @@ DAILY: tuple[str, ...] = (
     "cvm_fca",
     "cvm_fre",
     "cvm_ipe",
+    "cvm_fii",
+    "cvm_fi_inf_diario",
+    "cvm_fi_cda",
     "yahoo_intraday",  # tier U: 5-minute bars exist only ~60 days back, so they are archived as they pass
     "b3_company_events",  # each issuer weekly: the Supplement is current state only
     # the context catalogue (reference/context_series.toml): each entry carries its own cadence

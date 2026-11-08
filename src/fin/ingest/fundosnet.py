@@ -26,7 +26,7 @@ from fin.ingest.base import NotData, Parsed
 from fin.schema import Column, Contract, Rule
 
 BRT = ZoneInfo("America/Sao_Paulo")
-VALUE = pl.Decimal(38, 18)  # measured: up to 18 decimals and 7 integer digits (2026-11-07)
+VALUE = pl.Decimal(38, 22)  # measured: up to 19 decimals (1 notice) and 7 integer digits (2026-11-08)
 KT = pl.Datetime("us", "UTC")
 KINDS = ("rendimento", "amortizacao")
 
@@ -144,26 +144,36 @@ def parse_distribution(blob: bytes, row: dict[str, Any]) -> pl.DataFrame:
         "info_date": _day(_text(g, "DataInformacao")),
     }
     out: list[dict[str, Any]] = []
-    for i, prov in enumerate(informe.findall("Provento"), start=1):
+    # two layouts (measured on all 36,384 notices, 2026-11-08): from 2022, one <Provento> per class with its own
+    # CodISIN/CodNegociacao and ValorProvento (20,415); before, Rendimento/Amortizacao directly under
+    # InformeRendimentos, the ISIN in DadosGerais (CodISINCota) and the value in ValorProventoCota (15,969)
+    provs = informe.findall("Provento")
+    blocks = (
+        [(f"InformeRendimentos/Provento[{i}]", p, _text(p, "CodISIN"), _text(p, "CodNegociacao"))
+         for i, p in enumerate(provs, start=1)]
+        if provs
+        else [("InformeRendimentos", informe, _text(g, "CodISINCota"), _text(g, "CodNegociacaoCota"))]
+    )  # fmt: skip
+    for where, prov, isin, code in blocks:
         for tag, kind in (("Rendimento", "rendimento"), ("Amortizacao", "amortizacao")):
             el = prov.find(tag)
-            if el is None:
+            if el is None or len(el) == 0:  # an empty <Rendimento/> declares nothing
                 continue
             exempt = _text(el, "RendimentoIsentoIR")
             out.append(
                 common
                 | {
-                    "isin": _text(prov, "CodISIN"),
-                    "trading_code": _text(prov, "CodNegociacao"),
+                    "isin": isin,
+                    "trading_code": code,
                     "kind": kind,
                     "amortization_type": el.get("tipo"),
-                    "approval_text": _text(el, "AtoSocietarioAprovacao"),
+                    "approval_text": _text(el, "AtoSocietarioAprovacao") or _text(el, "DataAprovacao"),
                     "base_date": _day(_text(el, "DataBase")),
                     "payment_date": _day(_text(el, "DataPagamento")),
-                    "value_per_quota": _text(el, "ValorProvento"),
+                    "value_per_quota": _text(el, "ValorProvento") or _text(el, "ValorProventoCota"),
                     "reference_period": _text(el, "PeriodoReferencia"),
                     "tax_exempt": None if exempt is None else {"Sim": True, "Não": False}.get(exempt),
-                    "raw_locator": f"InformeRendimentos/Provento[{i}]/{tag}",
+                    "raw_locator": f"{where}/{tag}",
                 }
             )
     too_fine = [r["value_per_quota"] for r in out if _decimals(r["value_per_quota"]) > VALUE.scale]

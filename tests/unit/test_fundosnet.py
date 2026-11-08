@@ -63,8 +63,8 @@ def test_monthly_report_filed_as_notice_is_not_data() -> None:
 
 
 def test_value_past_scale_is_refused() -> None:
-    blob = (FIX / "doc_1371379.xml").read_bytes().replace(b">0.4<", b">0.4000000000000000001<")
-    assert b"0.4000000000000000001" in blob
+    blob = (FIX / "doc_1371379.xml").read_bytes().replace(b">0.4<", b">0.40000000000000000000001<")  # 23 decimals
+    assert b"0.40000000000000000000001" in blob
     with pytest.raises(fundosnet.LayoutError):
         fundosnet.parse_distribution(blob, _row(1371379))
 
@@ -75,3 +75,19 @@ def test_listing_gives_delivery_minute_in_utc() -> None:
     assert (good.height, bad.height) == (200, 0)
     first = good.row(0, named=True)
     assert first["doc_id"] == 1371379 and first["delivered_at"] == datetime(2026, 11, 6, 21, 8, tzinfo=UTC)
+
+
+def test_old_layout_without_provento() -> None:
+    # notices before 2022: Rendimento/Amortizacao directly under InformeRendimentos, ISIN in DadosGerais
+    blob = b"""<?xml version="1.0" encoding="UTF-8"?><DadosEconomicoFinanceiros><DadosGerais>
+<NomeFundo>F</NomeFundo><CNPJFundo>13842683000176</CNPJFundo><CNPJAdministrador>00806535000154</CNPJAdministrador>
+<CodISINCota>BRVLJSCTF020</CodISINCota><CodNegociacaoCota>VLJS11</CodNegociacaoCota></DadosGerais>
+<InformeRendimentos><Rendimento></Rendimento><Amortizacao tipo="Parcial"><DataAprovacao>2022-11-10</DataAprovacao>
+<DataBase>2022-11-10</DataBase><DataPagamento>2022-11-21</DataPagamento>
+<ValorProventoCota>23.9888159102366</ValorProventoCota><PeriodoReferencia>NOVEMBRO</PeriodoReferencia>
+</Amortizacao></InformeRendimentos></DadosEconomicoFinanceiros>"""
+    df = fundosnet.parse_distribution(blob, _row(374888))
+    assert df.select("isin", "trading_code", "kind", "amortization_type").rows() == [
+        ("BRVLJSCTF020", "VLJS11", "amortizacao", "Parcial")
+    ]
+    assert str(df["value_per_quota"][0]).startswith("23.9888159102366")

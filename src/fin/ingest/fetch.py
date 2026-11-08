@@ -74,8 +74,9 @@ class Fetcher:
         self.client = client
         self.connector_version = connector_version
 
-    def fetch(self, spec: FetchSpec) -> FetchOutcome | None:
-        """The outcome, or None when the source answered with one of `spec.absent_status`."""
+    def download(self, spec: FetchSpec) -> tuple[Any, Any, Any]:
+        """The network half of `fetch`: (fetched_at, response, previous manifest row). Thread-safe; it writes
+        nothing, so several can run at once (`Connector.concurrency`)."""
         request = canonical_request(spec.request())
         key = hashlib.sha256(request.encode("utf-8")).hexdigest()
         headers = dict(spec.headers or {})
@@ -85,7 +86,6 @@ class Fetcher:
                 headers["If-None-Match"] = previous["etag"]
             if previous["last_modified"]:
                 headers["If-Modified-Since"] = previous["last_modified"]
-
         fetched_at = utc_now()
         resp = self.client.request(
             spec.method,
@@ -96,6 +96,14 @@ class Fetcher:
             content=spec.content.encode("utf-8") if spec.content is not None else None,
             headers=headers,
         )
+        return fetched_at, resp, previous
+
+    def fetch(self, spec: FetchSpec, downloaded: tuple[Any, Any, Any] | None = None) -> FetchOutcome | None:
+        """The outcome, or None when the source answered with one of `spec.absent_status`. `downloaded`: the result
+        of `download(spec)` made earlier (concurrently); the archive and manifest are written here, in order."""
+        request = canonical_request(spec.request())
+        key = hashlib.sha256(request.encode("utf-8")).hexdigest()
+        fetched_at, resp, previous = downloaded if downloaded is not None else self.download(spec)
         if resp.status_code in spec.absent_status or (resp.status_code == 200 and len(resp.content) < spec.min_bytes):
             self.run.log(
                 "fetch.absent",

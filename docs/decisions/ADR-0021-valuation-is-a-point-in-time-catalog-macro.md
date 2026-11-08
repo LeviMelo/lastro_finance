@@ -30,5 +30,6 @@ them daily would copy what the zones already hold (ADR-0014, ADR-0017).
   continuous: R$ 409.8 bn on 12-22, R$ 419.6 bn on 12-30.
 
 **Limits.**
-- Before 2020 (FRE counts) treasury shares are not subtracted, so market cap is overstated by the treasury share.
+- Before 2020, treasury now comes from the FRE's own "Ações Tesouraria" row (`posicao_acionaria`; 10,416 of 10,428
+  documents). Itaú 2015-06-30: R$ 205.1 bn becomes 202.95 bn.
 - A PN price stands for all preferred classes (PNA, PNB).

@@ -205,6 +205,11 @@ def link_price_jump(zones: Zones) -> pl.DataFrame:
             pl.col("price_ratio").round(4),
         ).alias("detail"),
         pl.format("instrument_link {}>{}@{}", "from_instrument_id", "to_instrument_id", "link_date").alias("evidence"),
+        pl.lit("acknowledged").alias("status"),
+        pl.lit(
+            "rule: the link keeps the measured ratio: a merger's exchange ratio (DURA3 -> DTEX3, 2.63) or a real move "
+            "across a restructuring (GOLL4 -> GOLL54, 2025); a holding crossing the link converts at it"
+        ).alias("resolution_note"),
     )
 
 
@@ -212,7 +217,7 @@ def stock_event_unproven(zones: Zones) -> pl.DataFrame:
     ev = read_parquet_dir(zones.core / "corporate_event")
     if ev is None:
         return _frame([])
-    c = ev.filter(pl.col("status").is_in(["candidate", "conflicting"]) & pl.col("ratio_num").is_not_null())
+    c = ev.filter(pl.col("status").is_in(["conflicting", "unsupported"]) & pl.col("ratio_num").is_not_null())
     return c.select(
         pl.lit("stock_event_unproven").alias("check_id"),
         # conflicting: reported (often by two sources) but the price did not move by the ratio
@@ -226,6 +231,10 @@ def stock_event_unproven(zones: Zones) -> pl.DataFrame:
             "{} {}:{} ({}) from {}; it adjusts nothing", "event_type", "ratio_num", "ratio_den", "status", "sources"
         ).alias("detail"),
         pl.format("corporate_event {}@{}", "instrument_id", "ex_date").alias("evidence"),
+        pl.lit("acknowledged").alias("status"),
+        pl.lit(
+            "rule: decided in core.corporate_event (ADR-0016): not applied, contradicted by the price or unconfirmed"
+        ).alias("resolution_note"),
     )
 
 
@@ -333,7 +342,86 @@ def cotahist_vs_yahoo(zones: Zones) -> pl.DataFrame:
         .with_columns((pl.col("y_close") / (pl.col("close") * pl.col("k"))).alias("r"))
         .sort("instrument_id", "ticker", "month")
     )
-    return level_shifts(j)
+    return classify_yahoo(zones, level_shifts(j))
+
+
+def classify_yahoo(zones: Zones, leads: pl.DataFrame) -> pl.DataFrame:
+    """Decides each Yahoo lead from our own data (status by rule, reason in `resolution_note`):
+    - `acknowledged`, Yahoo lacks one of our applied stock events: one is within 45 days with a ratio within 30 %
+      (in log) of the shift;
+    - `acknowledged`, Yahoo's monthly close is noise or wrong: our split-adjusted daily series has no one-day move
+      of even half the shift in the window (the month before to the month after);
+    - `open` otherwise: our series moves by the shift and no event of ours explains it."""
+    if not leads.height:
+        return leads.with_columns(pl.lit(None, dtype=pl.String).alias("status"),
+                                  pl.lit(None, dtype=pl.String).alias("resolution_note"))  # fmt: skip
+    lead = leads.with_columns(
+        pl.col("entity_id").str.split(":").list.first().alias("_i"),
+        pl.col("observed").cast(pl.Float64).log().alias("_ls"),
+        pl.int_range(pl.len()).alias("_r"),
+    )
+    ids = lead["_i"].unique().to_list()
+    ev = read_parquet_dir(zones.core / "corporate_event")
+    explained = pl.DataFrame(schema={"_r": pl.Int64})
+    if ev is not None:
+        st = ev.filter(
+            pl.col("ratio_num").is_not_null() & pl.col("status").is_in(["confirmed", "price_only", "official"])
+        ).select(
+            pl.col("instrument_id").alias("_i"),
+            "ex_date",
+            (pl.col("ratio_num").cast(pl.Float64) / pl.col("ratio_den").cast(pl.Float64)).log().alias("_le"),
+        )
+        explained = (
+            lead.join(st, on="_i")
+            .filter(
+                ((pl.col("ex_date") - pl.col("vt")).dt.total_days().abs() <= 45)
+                & ((pl.col("_le").abs() - pl.col("_ls").abs()).abs() <= 0.3 * pl.col("_ls").abs())
+            )
+            .select(pl.col("_r").cast(pl.Int64))
+            .unique()
+        )
+    path, fac = zones.core / "price_daily", zones.derived / "adjustment_factor"
+    brl = pl.col("brl_num").cast(pl.Float64) / pl.col("brl_den").cast(pl.Float64)
+    day = (
+        pl.scan_parquet(path / "*.parquet")
+        .filter((pl.col("market_segment") == "lote_padrao") & pl.col("instrument_id").is_in(ids))
+        .select(pl.col("instrument_id").alias("_i"), "trade_date", (pl.col("close").cast(pl.Float64) * brl).alias("c"))
+        .sort("_i", "trade_date")
+        .with_columns((pl.col("c") / pl.col("c").shift(1)).over("_i").log().alias("lr"))
+        .collect()
+    )
+    if fac.exists():  # the adjusted one-day move: raw move minus the log factor applied that day
+        f = pl.read_parquet(fac / "*.parquet").select(
+            pl.col("instrument_id").alias("_i"), pl.col("ex_date").alias("trade_date"), "split_factor"
+        )
+        day = day.join(f, on=["_i", "trade_date"], how="left").with_columns(
+            (pl.col("lr") - pl.col("split_factor").fill_null(1.0).log()).alias("lr")
+        )
+    moved = (
+        lead.join(day, on="_i")
+        .filter(
+            pl.col("trade_date").is_between(
+                pl.col("vt").dt.offset_by("-1mo"), pl.col("vt").dt.offset_by("1mo").dt.month_end()
+            )
+        )
+        .group_by("_r")
+        .agg((pl.col("lr").abs().max() >= 0.5 * pl.col("_ls").abs().first()).alias("_moved"))
+    )
+    out = lead.join(moved, on="_r", how="left").with_columns(
+        pl.col("_r").is_in(explained["_r"].to_list()).alias("_expl"),
+        (pl.col("_ls").abs() < math.log(1.25)).alias("_small"),
+    )
+    return out.with_columns(
+        pl.when(pl.col("_expl") | ~pl.col("_moved").fill_null(False) | pl.col("_small"))
+        .then(pl.lit("acknowledged"))
+        .otherwise(pl.lit("open")).alias("status"),
+        pl.when(pl.col("_expl")).then(pl.lit("rule: Yahoo lacks a stock event we apply (within 45 days, same size)"))
+        .when(~pl.col("_moved").fill_null(False))
+        .then(pl.lit("rule: our split-adjusted series has no move of half the shift: Yahoo's close is noise or wrong"))
+        .when(pl.col("_small"))
+        .then(pl.lit("rule: a shift under 25 % (the smallest implied event) lined up with a real market move: noise"))
+        .alias("resolution_note"),
+    ).drop("_i", "_ls", "_r", "_moved", "_expl", "_small")  # fmt: skip
 
 
 def level_shifts(j: pl.DataFrame) -> pl.DataFrame:
@@ -402,13 +490,21 @@ def run(
     for name, check in CHECKS.items():
         if only and name not in only:
             continue
-        df = check(zones).select(COLS)
+        raw = check(zones)
+        ruled = [c for c in ("status", "resolution_note") if c in raw.columns]  # a status a check decides by rule
+        df = raw.select(*COLS, *ruled)
         df = df.with_columns(
             pl.struct("check_id", "entity_id", "vt")
             .map_elements(lambda s: finding_id(s["check_id"], s["entity_id"], s["vt"]), return_dtype=pl.String)
             .alias("finding_id")
         )
-        df = df.join(res, on="finding_id", how="left").with_columns(pl.col("status").fill_null("open"))
+        if ruled:  # resolutions.toml overrides a rule's decision
+            df = df.join(res, on="finding_id", how="left", suffix="_toml").with_columns(
+                pl.coalesce("status_toml", "status").fill_null("open").alias("status"),
+                pl.coalesce("resolution_note_toml", "resolution_note").alias("resolution_note"),
+            )
+        else:
+            df = df.join(res, on="finding_id", how="left").with_columns(pl.col("status").fill_null("open"))
         good, bad = DQ_FINDING.split(df.select(DQ_FINDING.names).unique("finding_id").sort("finding_id"))
         write_parquet(good, zones.quality / "dq_finding" / f"{name}.parquet")
         out[name] = good.height

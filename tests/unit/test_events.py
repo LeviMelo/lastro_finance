@@ -65,7 +65,8 @@ def test_status_needs_two_sources_or_the_price() -> None:
         }
     )
     out = df.select(events.status(pl.col("sources"), pl.col("move"), pl.col("net")).alias("s"))["s"].to_list()
-    assert out == ["confirmed", "confirmed", "price_only", "candidate"]  # 40 for 100: neither agrees nor contradicts
+    # 40 for 100 neither agrees nor contradicts: Yahoo alone with an inconclusive price is not applied
+    assert out == ["confirmed", "confirmed", "price_only", "unsupported"]
 
 
 def test_price_contradicting_the_ratio_is_conflicting_whatever_the_sources() -> None:
@@ -79,3 +80,10 @@ def test_price_contradicting_the_ratio_is_conflicting_whatever_the_sources() -> 
     )
     got = df.select(events.status(pl.col("sources"), pl.col("move"), pl.col("net")).alias("s"))["s"].to_list()
     assert got == ["conflicting", "confirmed", "price_only"]
+
+
+def test_implied_ratio_snaps_to_a_simple_fraction() -> None:
+    assert events._snap(1.4963) == (3, 2)  # CMIG4 2007: Yahoo's step for a 50 % bonus
+    assert events._snap(0.0001) == (1, 10000)  # MWET4 2005: a 10,000:1 regrouping
+    assert events._snap(1.2) == (6, 5)
+    assert events._snap(1.26) == (5, 4)

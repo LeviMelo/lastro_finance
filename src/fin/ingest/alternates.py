@@ -332,6 +332,8 @@ class FundosNetRendimentos(Connector):
     dedup_staging: ClassVar[bool] = True  # listing pages overlap
     BASE = "https://fnet.bmfbovespa.com.br/fnet/publico"
     PAGE = 200  # 500 is refused with a 302 (measured 2026-11-07)
+    concurrency: ClassVar[int] = 8  # one small XML per notice; latency, not bandwidth, bounds it (ADR-0023)
+    min_interval: ClassVar[float] = 0.05
 
     def __init__(self) -> None:
         self._held_ids: set[int] = set()

@@ -22,7 +22,8 @@ PLAN §4.4 says that tier-U facts never feed L3 alone, and PLAN §11 says to res
 - **Scraping is a route like any other, with limits:**
   - only pages that render without login;
   - only where robots.txt and the published terms do not forbid it;
-  - at most 1 request/s per host;
+  - per-source request limits with adaptive backoff (the blanket 1 request/s first written here is replaced
+    by ADR-0023);
   - a Cloudflare or JavaScript challenge, a CAPTCHA or an HTTP 429 ends the attempt; none is bypassed.
 - **Excluded by these limits:**
   - ANBIMA: its terms forbid spiders and data mining (termos de uso §2.4, §8.2), and ANBIMA Data needs a token;

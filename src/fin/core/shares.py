@@ -14,7 +14,7 @@ Filings of issuers without a B3 count, or whose anchor is unknown, get `unit` nu
 FRE `capital_social` (form `fre`, 2010-) states whole shares: against the nearest DFP/ITR count with a known unit
 (2020-), 2,161 of 2,251 agree within 30 % (measured 2026-11-07). An FRE row is the paid-in capital of the latest
 approval in the document, dated by the delivery of the version (`reference_date` = `received_on`: an FRE is
-re-delivered within days of a capital change), unit 1, no treasury.
+re-delivered within days of a capital change), unit 1, treasury from the same document's "Ações Tesouraria" row.
 """
 
 from __future__ import annotations
@@ -133,6 +133,24 @@ def fre_counts(zones: Zones) -> pl.DataFrame | None:
         .unique("doc_id", keep="last")
         .join(docs.select("doc_id", "received_on").unique("doc_id"), on="doc_id")
     )
+    tr = read_parquet_dir(zones.staging / "cvm_fre" / "treasury")
+    if tr is not None:  # the 'Ações Tesouraria' row of the same document (ingest/cvm_fre.py)
+        # some documents carry a second, all-zero treasury row: the largest one is the filing's
+        tr = (
+            tr.sort("total", nulls_last=False)
+            .unique("doc_id", keep="last")
+            .select(
+                "doc_id",
+                pl.col("common").alias("common_treasury"),
+                pl.col("preferred").alias("preferred_treasury"),
+                pl.col("total").alias("treasury"),
+            )
+        )
+        pi = pi.join(tr, on="doc_id", how="left")
+    else:
+        pi = pi.with_columns(
+            pl.lit(None, dtype=pl.Int64).alias(c) for c in ("common_treasury", "preferred_treasury", "treasury")
+        )
     null = pl.lit(None, dtype=pl.Int64)
     return pi.select(
         pl.col("cnpj").str.replace_all(r"\D", "").alias("issuer_cnpj"),
@@ -144,9 +162,9 @@ def fre_counts(zones: Zones) -> pl.DataFrame | None:
         "common",
         "preferred",
         "total",
-        null.alias("treasury"),
-        null.alias("common_treasury"),
-        null.alias("preferred_treasury"),
+        "treasury",
+        "common_treasury",
+        "preferred_treasury",
         pl.col("total").fill_null(0).alias("total_as_filed"),
         null.alias("anchor_b3_total"),
     ).unique(["issuer_cnpj", "form", "reference_date", "version"], keep="last")

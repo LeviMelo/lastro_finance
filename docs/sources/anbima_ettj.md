@@ -39,3 +39,6 @@ Curve = group (PREFIXADOS / IPCA); bond errors keyed by Titulo + SELIC code + Ve
 
 ## 7. Open questions
 - Publication time; xls/xml/csv layouts; exact 6th-day boundary (`Dt_Ref_Ver` says 20261029).
+
+## 8. Parsed (staging, `ingest/anbima_parsers.py`, 2026-11-07)
+Four tables per day, partition `ref_date=`: `parameter` (Svensson beta1-4, lambda1-2, curve PREFIXADOS|IPCA), `vertex` (business days; ETTJ IPCA, ETTJ PREF, implied inflation, % a.a.), `circular_vertex` (Circ. 3.361), `bond_error` (per bond, % a.a.). Units confirmed by golden test: betas are annual rates as fractions, t = du/252, lambdas multiply t (Svensson reproduces PREF/IPCA vertices at 252/504/2520 du to 0.0002 pp). The 87-byte out-of-window stub raises `NotData`. Reparse of the 6 archived days: 12 parameter, 390 vertex, 60 circular, 186 bond-error rows, 0 quarantined.

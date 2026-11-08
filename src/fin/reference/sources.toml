@@ -19,7 +19,7 @@ institution = "ANBIMA"
 access = "HTTP files per day (.txt, .xls)"
 tier = "P"
 ephemeral = true
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/anbima_titulos_publicos.md"
 
 [b3_bdi]
@@ -46,7 +46,7 @@ institution = "B3"
 access = "TS files via pesquisapregao (2000-); web CSV since 2026-10-05"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/b3_reference_rates.md"
 
 [bcb_sgs]
@@ -127,7 +127,7 @@ institution = "CVM"
 access = "HTTP monthly zips; yearly archives before 2021"
 tier = "P"
 ephemeral = false
-status = "recon"
+status = "parsed"
 recon = "docs/sources/cvm_fi_inf_diario.md"
 
 [cvm_fi_cda]
@@ -136,7 +136,7 @@ institution = "CVM"
 access = "HTTP monthly zips"
 tier = "P"
 ephemeral = false
-status = "recon"
+status = "parsed"
 recon = "docs/sources/cvm_fi_cda.md"
 
 [cvm_fii]
@@ -145,7 +145,7 @@ institution = "CVM"
 access = "HTTP yearly zips"
 tier = "P"
 ephemeral = false
-status = "recon"
+status = "parsed"
 recon = "docs/sources/cvm_fii.md"
 
 [cvm_fie]
@@ -172,7 +172,7 @@ institution = "ANBIMA"
 access = "POST form CZ-down.asp, 6 business days"
 tier = "P"
 ephemeral = true
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/anbima_ettj.md"
 
 [anbima_vna]
@@ -181,7 +181,7 @@ institution = "ANBIMA"
 access = "POST form vna-down.asp, 6 business days"
 tier = "P"
 ephemeral = true
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/anbima_vna.md"
 
 [anbima_projecoes]
@@ -190,7 +190,7 @@ institution = "ANBIMA"
 access = "HTML page Quadro Indicadores, latest only"
 tier = "P"
 ephemeral = true
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/anbima_projecoes.md"
 
 [anbima_debentures]
@@ -199,7 +199,7 @@ institution = "ANBIMA"
 access = "HTTP files arqs/dbYYMMDD.txt, 6 business days"
 tier = "P"
 ephemeral = true
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/anbima_debentures.md"
 
 [nefin]
@@ -208,7 +208,7 @@ institution = "NEFIN-FEA/USP"
 access = "HTTP CSVs under /nefindata/risk-factors/"
 tier = "S"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/nefin.md"
 
 [snd_debentures]
@@ -244,7 +244,7 @@ institution = "Banco Central do Brasil"
 access = "OData JSON, full history per call"
 tier = "P"
 ephemeral = false
-status = "recon"
+status = "parsed"
 recon = "docs/sources/bcb_ptax.md"
 
 [bcb_focus]

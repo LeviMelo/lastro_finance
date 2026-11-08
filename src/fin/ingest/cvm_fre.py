@@ -1,8 +1,11 @@
 """CVM FRE (Formulário de Referência) yearly zip -> staging `document` and `capital_social` (docs/sources/cvm_fre.md).
 
-Only two members are parsed:
+Three members are parsed:
 - the index `fre_cia_aberta_<Y>.csv`: every delivered version, with its delivery date (the knowledge date);
-- `capital_social`: capital and share counts (whole shares) of the latest version of each company's FRE.
+- `capital_social`: capital and share counts (whole shares) of the latest version of each company's FRE;
+- `posicao_acionaria`: **only the "Ações Tesouraria" row** of each document (shares held in treasury, ON/PN), as
+  dataset `treasury`. Every company files one (667 of 667 in 2012). The other rows name shareholders (people
+  included), so they are never read into a frame.
 
 The other members are not parsed. Some hold personal data of administrators and of shareholders.
 cp1252, `;`, header checked.
@@ -47,7 +50,17 @@ CAPITAL = {
     "Quantidade_Acoes_Preferenciais": "preferred",
     "Quantidade_Total_Acoes": "total",
 }
-DATES = {"reference_date", "received_on", "approved_on"}
+TREASURY = {
+    "CNPJ_Companhia": "cnpj",
+    "Data_Referencia": "reference_date",
+    "Versao": "version",
+    "ID_Documento": "doc_id",
+    "Quantidade_Acao_Ordinaria_Circulacao": "common",
+    "Quantidade_Acao_Preferencial_Circulacao": "preferred",
+    "Quantidade_Total_Acoes_Circulacao": "total",
+    "Data_Composicao_Capital_Social": "composition_date",
+}
+DATES = {"reference_date", "received_on", "approved_on", "composition_date"}
 INTS = {"version": pl.Int16, "common": pl.Int64, "preferred": pl.Int64, "total": pl.Int64}
 KEYS = {"cnpj", "reference_date", "version", "doc_id"}
 
@@ -87,7 +100,10 @@ DOCUMENT = _contract("document", "An FRE version as CVM's yearly index lists it.
 CAPITAL_SOCIAL = _contract(
     "capital_social", "A capital row (issued, subscribed, paid in) of the latest FRE version.", CAPITAL
 )
-CONTRACTS = {"document": DOCUMENT, "capital_social": CAPITAL_SOCIAL}
+TREASURY_SHARES = _contract(
+    "treasury", "Shares held in treasury (the 'Ações Tesouraria' row of posicao_acionaria).", TREASURY
+)
+CONTRACTS = {"document": DOCUMENT, "capital_social": CAPITAL_SOCIAL, "treasury": TREASURY_SHARES}
 
 
 def _cast(k: str, v: str) -> pl.Expr:
@@ -115,6 +131,31 @@ def parse_member(data: bytes, name: str, cols: dict[str, str], row: dict[str, An
     )
 
 
+def parse_treasury(data: bytes, name: str, row: dict[str, Any]) -> pl.DataFrame:
+    """The treasury row of each document; the shareholder rows are dropped line by line, before any parsing."""
+    lines = data.decode("cp1252").split("\n")
+    head = lines[0].rstrip("\r").split(";")
+    missing = [k for k in (*TREASURY, "Acionista", "ID_Acionista_Relacionado") if k not in head]
+    if missing:
+        raise LayoutError(f"FRE {name}: columns missing: {missing}")
+    ia, ir = head.index("Acionista"), head.index("ID_Acionista_Relacionado")
+    names = ("ações tesouraria", "ações em tesouraria")
+    keep: list[tuple[int, list[str]]] = []
+    for i, line in enumerate(lines[1:], start=2):
+        f = line.rstrip("\r").split(";")
+        if len(f) == len(head) and f[ia].strip().lower() in names and not f[ir]:
+            keep.append((i, f))
+    cols = {v: [f[head.index(k)] for _, f in keep] for k, v in TREASURY.items()}
+    schema = {**{v: pl.String for v in TREASURY.values()}, "i": pl.Int64}
+    df = pl.DataFrame({**cols, "i": [i for i, _ in keep]}, schema=schema)
+    return df.select(
+        *[_cast(v, v) for v in TREASURY.values()],
+        pl.lit(row["raw_sha256"]).alias("raw_sha256"),
+        (pl.lit(f"member={name};line=") + pl.col("i").cast(pl.String)).alias("raw_locator"),
+        pl.lit(row["ingest_run_id"]).alias("ingest_run_id"),
+    )
+
+
 def parse_payload(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
     notes = row.get("notes") or ""
     if "|" in notes:  # an unpacked member (ADR-0014)
@@ -125,10 +166,12 @@ def parse_payload(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
     else:
         return  # the JSON record of an unpacked zip
     for name, data in members:
-        m = re.fullmatch(r"fre_cia_aberta_(?:(capital_social)_)?(\d{4})\.csv", name)
+        m = re.fullmatch(r"fre_cia_aberta_(?:(capital_social|posicao_acionaria)_)?(\d{4})\.csv", name)
         if not m:
             continue  # members not parsed (see the module docstring)
-        if m.group(1):
+        if m.group(1) == "posicao_acionaria":
+            yield Parsed("treasury", f"year={m.group(2)}", parse_treasury(data, name, row))
+        elif m.group(1):
             yield Parsed("capital_social", f"year={m.group(2)}", parse_member(data, name, CAPITAL, row))
         else:
             yield Parsed("document", f"year={m.group(2)}", parse_member(data, name, INDEX, row))

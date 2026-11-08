@@ -14,7 +14,8 @@
 - LASTRO automates what the owner could fetch by hand for the management of the owner's own portfolio. That is the
   personal, non-commercial use the general terms allow. The B3 and ANBIMA connectors keep running.
 - **Conditions that keep it so:**
-  - at most 1 request/s per host;
+  - per-source request limits with adaptive backoff (the blanket 1 request/s first written here is replaced
+    by ADR-0023);
   - only public pages, no login;
   - no CAPTCHA or bot challenge bypassed;
   - nothing redistributed, published or sold;

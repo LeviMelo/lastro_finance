@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import asdict, dataclass
 from enum import StrEnum
 from typing import Any, ClassVar
@@ -59,7 +60,8 @@ class Connector(ABC):
     version: ClassVar[str]
     contracts: ClassVar[dict[str, Contract]] = {}
     user_agent: ClassVar[str | None] = None  # None: the default generic UA
-    min_interval: ClassVar[float] = 1.0
+    min_interval: ClassVar[float] = 0.2  # seconds between request starts per host; adaptive (ingest/http.py)
+    concurrency: ClassVar[int] = 1  # requests in flight at once (ADR-0023)
     dedup_staging: ClassVar[bool] = False  # its files are re-sent whole: keep only rows that changed (ADR-0014)
     whole_datasets: ClassVar[frozenset[str]] = frozenset()  # exempt: identical rows there are distinct facts
 
@@ -133,10 +135,17 @@ def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode
     errors = 0
     try:
         queue = list(connector.discover(mode, zones, **options))
+        pool = ThreadPoolExecutor(connector.concurrency) if connector.concurrency > 1 else None
+        ahead: dict[int, Future[Any]] = {}
         while queue:
+            if pool is not None:  # keep `concurrency` downloads in flight ahead of the (sequential) archiving
+                for s in queue[: connector.concurrency * 2]:
+                    if id(s) not in ahead:
+                        ahead[id(s)] = pool.submit(fetcher.download, s)
             spec = queue.pop(0)
             try:
-                out = fetcher.fetch(spec)
+                fut = ahead.pop(id(spec), None)
+                out = fetcher.fetch(spec, fut.result() if fut is not None else None)
             except FetchError as e:
                 errors += 1
                 run.error(f"{spec.source_id}/{spec.dataset_id}", str(e), url=spec.url, status=e.status)
@@ -164,6 +173,8 @@ def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode
             }
             prev = _previous(connector, raw, run.manifest.cached(), row) if connector.dedup_staging else None
             _load_isolated(connector, zones, run, blob, row, prev)
+        if pool is not None:
+            pool.shutdown(wait=True, cancel_futures=True)
         connector.derive(zones, run)
     finally:
         client.close()

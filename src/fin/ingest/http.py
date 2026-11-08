@@ -1,5 +1,9 @@
-"""Polite HTTP (PLAN §4.12): per-host spacing, exponential backoff with full jitter, Retry-After, a descriptive
-generic User-Agent, and no personal data in any header.
+"""Polite HTTP (PLAN §4.12): per-source limits, adaptive per-host spacing, exponential backoff with full jitter,
+Retry-After, a descriptive generic User-Agent, and no personal data in any header.
+
+Spacing is adaptive (ADR-0023): a host starts at the connector's `min_interval` between request starts; a 429 or
+5xx doubles its interval (up to 10 s), and each clean answer shrinks it back by 10 % toward the floor. The client is
+thread-safe, so a connector with `concurrency` > 1 keeps that many requests in flight while starts stay spaced.
 
 Some government hosts reset non-browser clients; a source opts into `BROWSER_UA` in the registry, and its recon
 note records why.
@@ -8,6 +12,7 @@ note records why.
 from __future__ import annotations
 
 import random
+import threading
 import time
 from collections.abc import Callable, Mapping
 from typing import Any
@@ -17,7 +22,7 @@ import httpx
 
 from fin import __version__
 
-DEFAULT_UA = f"lastro-fin/{__version__} (personal research archiver; low request rate)"
+DEFAULT_UA = f"lastro-fin/{__version__} (personal research archiver)"
 BROWSER_UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
 )
@@ -46,6 +51,8 @@ class PoliteClient:
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self.min_interval = min_interval
+        self._interval: dict[str, float] = {}
+        self._lock = threading.Lock()
         self.max_retries = max_retries
         self.backoff_base = backoff_base
         self.backoff_cap = backoff_cap
@@ -86,17 +93,38 @@ class PoliteClient:
                 if attempt < self.max_retries:
                     self._backoff(attempt, None)
                 continue
-            if resp.status_code in RETRY_STATUS and attempt < self.max_retries:
-                self._backoff(attempt, resp.headers.get("Retry-After"))
-                continue
+            if resp.status_code in RETRY_STATUS:
+                self._slower(host)
+                if attempt < self.max_retries:
+                    self._backoff(attempt, resp.headers.get("Retry-After"))
+                    continue
+            else:
+                self._faster(host)
             return resp
         raise FetchError(url, f"gave up after {self.max_retries + 1} attempts: {last_exc!r}")
 
+    MAX_INTERVAL = 10.0
+
     def _space(self, host: str) -> None:
-        wait = self._last.get(host, float("-inf")) + self.min_interval - self._clock()
-        if wait > 0:
-            self._sleep(wait)
-        self._last[host] = self._clock()
+        """Reserve the next start slot for `host` under the lock, then wait for it outside the lock."""
+        with self._lock:
+            interval = self._interval.get(host, self.min_interval)
+            now = self._clock()
+            start = max(now, self._last.get(host, float("-inf")) + interval)
+            self._last[host] = start
+        if start > now:
+            self._sleep(start - now)
+
+    def _slower(self, host: str) -> None:
+        with self._lock:
+            cur = self._interval.get(host, self.min_interval)
+            self._interval[host] = min(self.MAX_INTERVAL, max(cur * 2, 0.5))
+
+    def _faster(self, host: str) -> None:
+        with self._lock:
+            cur = self._interval.get(host, self.min_interval)
+            if cur > self.min_interval:
+                self._interval[host] = max(self.min_interval, cur * 0.9)
 
     def _backoff(self, attempt: int, retry_after: str | None) -> None:
         if retry_after is not None and retry_after.isdigit():

@@ -47,3 +47,6 @@
 | B3 reference rates / BCB | curves (DI x pré) from B3 for the pré curve; not ANBIMA. |
 
 **Implication:** ANBIMA indicative rates, ETTJ, VNA and debenture rates have **no free systematic history**: LASTRO must archive all four daily from now on (≈ 180 KB + 3 KB + 1 KB + 3 KB per day), and treat 2012–2018 Wayback files as a sparse best-effort backfill.
+
+## 8b. Parsed (staging, `ingest/anbima_parsers.py`, 2026-11-07)
+`bond_rate` from `ms_txt` only (the `.xls` twin is archived, not parsed): 15 fields, dates YYYYMMDD, rates % a.a. (LFT: spread over Selic), `price_brl` = PU. `Desvio padrao` has no stated unit (kept as published). 50 rows a day; reparse 300 rows (6 days), 0 quarantined.

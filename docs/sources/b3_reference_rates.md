@@ -57,3 +57,10 @@ The web CSV is a ~23-business-day window → **archive daily**, but **TS gives f
 - Exact TaxaSwap field semantics for per-curve codes, vertex type F/M and the last 5-digit field; the official layout of TaxaSwap.txt was not found (only the unrelated `Eletro.xls`).
 - Whether TS is complete day by day (holes) and whether older files are ever rewritten.
 - Which TS curve codes map to ANBIMA/B3 "pre-fixados" used by the valuation engine (PRE = "DIxPRE", DIC = "DI X IPCA" by value match).
+
+## 8. Parsed (TS route, `ingest/b3_taxaswap.py`, 2026-11-07)
+- Archive holds 6,413 TS days (2001-01-02 -> 2026-11-06); the download is a zip -> `TS<YYMMDD>.ex_` (PKSFX exe, read as a zip, never executed) -> `TaxaSwap.txt` (member casing varies: `TAXASWAP.TXT`, `TaxasSwap.txt`). Three fixed widths, all confirmed on the real days: 65 chars (2001-01-02..2002-10-24, 12-digit value), 67 (2002-10-25..2003-05-15, 14-digit value), 72 (2003-05-16.., adds vertex type F|M and a 5-digit nominal vertex). Value = integer with 7 implied decimals; sequence = line number. DIC identical to the web CSV (test), PRE agrees to 0.005.
+- Staging `swap_rate` (partition `ref_date=`), source-shaped: curve_code, description, calendar/business days, value (units differ by curve: % a.a. for rate curves, index-like for INP/IPC), vertex_type, vertex_nominal, `file_date`. Reparse: 111,181,032 rows, 178 curve codes, 0 quarantined, 0 errors (449 MB parquet).
+- **Repeated days:** the files of 2005-01-25, 2010-12-24 and 2010-12-31 contain the previous session's rows (ref_date 2005-01-24, 2010-12-23, 2010-12-30; `file_date` differs): B3 re-served the last session. Consumers take the rows with `file_date == ref_date` or de-duplicate by (ref_date, curve, vertex).
+- Still unverified: meaning of F/M and of the 5-digit field (equals the nominal calendar-day vertex in samples); the web-CSV route (`GetDownloadFile`, 2026-10-05..) is archived by nobody yet and not parsed.
+

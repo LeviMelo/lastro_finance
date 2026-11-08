@@ -66,8 +66,8 @@ uv run fin ingest daily                   # the daily snapshot job (ephemeral so
 - **Owner-facing text is pt-BR** with Brazilian market terms; code, identifiers and internal docs are English.
 - **Ask the owner only for owner decisions** (PLAN §12, OPEN_QUESTIONS) and personal documents; decide
   engineering defaults, record them as ADRs.
-- **Respect source terms**: ≤ 1 request/s per host, generic UA with no personal email, no CAPTCHA bypass,
-  no scraping behind logins.
+- **Respect source terms**: per-source limits with adaptive backoff on 429/5xx (ADR-0023), never a blanket rate
+  that makes a backfill take days; generic UA with no personal email, no CAPTCHA bypass, no scraping behind logins.
 - **Dependencies** (owner): install the library the job needs into the uv environment and declare it in
   `pyproject.toml`; never hand-roll a weaker substitute. Ask only for heavy or license-restricted ones.
 - **Agents** (owner, 2026-11-07): at most 3 subagents at a time, Sonnet for low/medium tasks (recon, surveys);

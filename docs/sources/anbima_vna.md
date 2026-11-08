@@ -35,3 +35,6 @@ LFT;210100;20.201,049997;13,65
 
 ## 7. Open questions
 - csv/xls/xml layouts; time of day; any free published VNA before 2026-10 for validating our computation.
+
+## 8. Parsed (staging, `ingest/anbima_parsers.py`, 2026-11-07)
+`vna`: day x {NTN-B, NTN-C, LFT}: `vna_brl` (BRL per bond), `index_pct` (% per month for NTN-B/C, % a.a. Selic for LFT), `index_status` F|P, `valid_from` (both null on the ragged LFT row). The 45-byte "Não existem registros" stub raises `NotData`. Reparse: 18 rows (6 days), 0 quarantined.

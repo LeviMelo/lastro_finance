@@ -64,4 +64,25 @@ multiplied ITUB4's prices before 2011-11 by 100.
 - Result: 57 stock events become conflicting: 926 confirmed, 70 price only, 66 candidates.
 - The golden cases are unchanged, and the ITUB4 2011 Yahoo finding is gone.
 
+**Addendum (2026-11-08): every event is decided; the official prices are evidence.**
+- **The price check works in BRL, corrected for IPCA.** A currency change (÷1,000 in 1989 and 1993, ÷2,750 in 1994) is
+  not an event, and 1986-94 sessions months apart drift 20-80 % a month. Beyond 90 days the move says nothing. This
+  alone turned 21 of the 57 `conflicting` events into agreeing ones.
+- **Statuses are final.** The applied ones are `confirmed`, `price_only` and `official` (B3 alone, price
+  inconclusive). The not-applied ones are `conflicting`, `unpriced` (no session on one side) and `unsupported` (Yahoo
+  alone, price inconclusive). `candidate` no longer exists.
+- **Re-dating.** A reported ex-date the price disagrees with is moved to the session within 30 days where the price
+  did move by the ratio (`ex_date_reported` keeps the source's date); 19 events.
+- **`QUOTE_BASIS`.** COTAHIST itself shows 991 changes of FATCOT with a continuous quoted price. At each, the price
+  per share jumps by the factor: a regrouping (MGEL4 2004-06-29: 4.90 per 1,000 to 4.95 per share), or the 1987-89
+  mass flag changes. Each is an adjustment, skipped where an applied event of that size is within 5 days.
+- **Implied events.** A Yahoo level shift of at least 1.25 can be matched (within 30 % in log) by a one-day move of
+  the raw BRL close that our factors leave in place. It becomes a `confirmed` event when a CVM filing announces it,
+  or when the move is 3x or more. 10 events: MWET4/MWET3/AZEV4 2005 (1:10,000), BRKM6 2005 (1:1,000), CMIG4
+  2007/2009, USIM6 2008, BRAP3 2021 (2:1), MAXR11 2021 (22:1).
+- **Result:** 940 confirmed, 71 price only, 39 official, 45 unpriced, 30 conflicting, 4 unsupported, and 990
+  QUOTE_BASIS. Golden cases unchanged.
+- **Not adjusted yet:** spin-offs (B3 `CIS RED CAP`, e.g. PCAR3 → ASAI3 2021). Their factor needs the value of the
+  shares received, and B3's factor unit depends on the label.
+
 **Not done.** Mergers and ISIN changes without a B3 event, as event legs (ADR-0019).

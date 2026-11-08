@@ -11,7 +11,8 @@ stated ratio across the ex-date (`price_check`: the close of the last session wi
 without it, divided by the ratio). The status is `conflicting` when the price contradicts the ratio (it did not
 move although the ratio is large enough to show, whatever the sources say: adjusting would put a jump into the
 adjusted series), else `confirmed` (two sources, or B3 and the price check), `price_only` (one source, the price
-check agrees), `candidate` otherwise. Only `confirmed` and `price_only` events enter the adjustment factors. The
+check agrees), else `unpriced`, `official` or `unsupported` (see `status`): every event is decided. Only
+`confirmed`, `price_only` and `official` events enter the adjustment factors. The
 check is made on the day's net ratio per source group (B3 may record one operation as two same-day events), and
 passes when the move is closer to the ratio than to no event, within a factor of 2.
 
@@ -47,7 +48,10 @@ B3_STOCK = {
     "GRUPAMENTO": "REVERSE_SPLIT",  # factor = new per old: ratio = f
 }
 B3_CASH = {"DIVIDENDO": "DIVIDEND", "JRS CAP PROPRIO": "JCP", "RENDIMENTO": "INCOME", "AMORTIZACAO": "AMORTIZATION"}
-TYPES = ("DIVIDEND", "JCP", "INCOME", "AMORTIZATION", "OTHER_CASH", "BONUS", "SPLIT", "REVERSE_SPLIT", "RIGHTS")
+TYPES = (
+    "DIVIDEND", "JCP", "INCOME", "AMORTIZATION", "OTHER_CASH", "BONUS", "SPLIT", "REVERSE_SPLIT", "RIGHTS",
+    "QUOTE_BASIS",
+)  # fmt: skip
 
 EVENT = Contract(
     table="core.corporate_event",
@@ -60,7 +64,7 @@ EVENT = Contract(
         Column(
             "event_type",
             pl.String,
-            "DIVIDEND, JCP, INCOME, AMORTIZATION, OTHER_CASH, BONUS, SPLIT, REVERSE_SPLIT",
+            "DIVIDEND, JCP, INCOME, AMORTIZATION, OTHER_CASH, BONUS, SPLIT, REVERSE_SPLIT, RIGHTS, QUOTE_BASIS",
             "tipo",
             nullable=False,
         ),
@@ -68,6 +72,13 @@ EVENT = Contract(
             "data_com", pl.Date, "last session with the right (null when only Yahoo reports it)", "data com", "date"
         ),
         Column("ex_date", pl.Date, "first session without the right", "data ex", "date", nullable=False),
+        Column(
+            "ex_date_reported",
+            pl.Date,
+            "stock events: the ex-date the source reported, when the price moved the event to another session",
+            "data ex informada",
+            "date",
+        ),
         Column("ratio_num", pl.Int64, "stock events: new shares per ratio_den old", "razão (numerador)", "shares"),
         Column("ratio_den", pl.Int64, "see ratio_num", "razão (denominador)", "shares"),
         Column(
@@ -97,7 +108,7 @@ EVENT = Contract(
         Column(
             "status",
             pl.String,
-            "confirmed, price_only, candidate, conflicting (stock events); reported (cash)",
+            "applied: confirmed, price_only, official; not: conflicting, unpriced, unsupported; cash: reported",
             "situação",
             nullable=False,
         ),
@@ -255,12 +266,45 @@ def _group(sources: pl.Expr) -> pl.Expr:
     return pl.when(sources.str.contains("b3")).then(pl.lit("b3")).otherwise(pl.lit("yahoo"))
 
 
-def price_check(events: pl.DataFrame, prices: pl.LazyFrame) -> pl.DataFrame:
-    """For each (instrument, ex-date, source group): the net ratio of the day's events, and the raw move
-    close(last session before ex) / close(ex). `price_check` = move / net ratio (1 = exact)."""
+MAX_GAP_DAYS = 90  # beyond this the price move between two sessions says nothing about the event
+
+
+def ipca_level(zones: Zones) -> pl.DataFrame:
+    """IPCA index (IBGE, SIDRA 1737 v2266) per month: the level at the start (`i0`, end of the previous month) and
+    at the end (`i1`) of each month, to interpolate a daily level geometrically."""
+    path = zones.core / "series_observation"
+    if not path.exists():
+        return pl.DataFrame(schema={"month": pl.Date, "i0": pl.Float64, "i1": pl.Float64})
+    s = (
+        pl.scan_parquet(path / "*.parquet")
+        .filter(pl.col("series_id") == "ibge_sidra:1737/v2266")
+        .select((pl.col("vt_reference") + "-01").str.to_date().alias("month"), pl.col("value").cast(pl.Float64))
+        .collect()
+        .unique("month", keep="last")
+        .sort("month")
+    )
+    return s.select("month", pl.col("value").shift(1).alias("i0"), pl.col("value").alias("i1")).drop_nulls()
+
+
+def _level(d: str, ipca: pl.DataFrame, frame: pl.DataFrame) -> pl.DataFrame:
+    """Adds `_lv<d>`: the IPCA level interpolated on date column `d` (null outside the index)."""
+    m = ipca.rename({"month": f"_m{d}", "i0": f"_i0{d}", "i1": f"_i1{d}"})
+    f = frame.with_columns(pl.col(d).dt.truncate("1mo").alias(f"_m{d}")).join(m, on=f"_m{d}", how="left")
+    frac = pl.col(d).dt.day().cast(pl.Float64) / pl.col(d).dt.month_end().dt.day().cast(pl.Float64)
+    lv = pl.col(f"_i0{d}") * (pl.col(f"_i1{d}") / pl.col(f"_i0{d}")) ** frac
+    return f.with_columns(lv.alias(f"_lv{d}")).drop(f"_m{d}", f"_i0{d}", f"_i1{d}")
+
+
+def price_check(events: pl.DataFrame, prices: pl.LazyFrame, ipca: pl.DataFrame | None = None) -> pl.DataFrame:
+    """For each (instrument, ex-date, source group): the net ratio of the day's events, and the move
+    close(last session before ex) / close(first session from ex), both in BRL (a currency change is not an event)
+    and corrected for IPCA inflation between the two sessions (1986-94 sessions can be months apart at 20-80 % a
+    month). `price_check` = move / net ratio (1 = exact). `_priced`: the line traded on both sides; the move is
+    null when the two sessions are more than 90 days apart."""
+    brl = pl.col("brl_num").cast(pl.Float64) / pl.col("brl_den").cast(pl.Float64)
     closes = (
         prices.filter(pl.col("market_segment") == "lote_padrao")
-        .select("instrument_id", "trade_date", pl.col("close").cast(pl.Float64))
+        .select("instrument_id", "trade_date", (pl.col("close").cast(pl.Float64) * brl).alias("close"))
         .collect()
     )
     ratio = pl.col("ratio_num").cast(pl.Float64) / pl.col("ratio_den").cast(pl.Float64)
@@ -268,22 +312,93 @@ def price_check(events: pl.DataFrame, prices: pl.LazyFrame) -> pl.DataFrame:
     day = ev.group_by("instrument_id", "ex_date", "_g").agg(ratio.product().alias("_net"))
     day = day.with_columns(pl.col("ex_date").alias("_t1"), pl.col("ex_date").dt.offset_by("-1d").alias("_t0"))
     day = day.sort("instrument_id", "_t1").join_asof(
-        closes.rename({"trade_date": "_t1", "close": "_c_ex"}).sort("instrument_id", "_t1"),
+        closes.with_columns(pl.col("trade_date").alias("_d1"))
+        .rename({"trade_date": "_t1", "close": "_c_ex"})
+        .sort("instrument_id", "_t1"),
         on="_t1",
         by="instrument_id",
         strategy="forward",
     )
     day = day.sort("instrument_id", "_t0").join_asof(
-        closes.rename({"trade_date": "_t0", "close": "_c_before"}).sort("instrument_id", "_t0"),
+        closes.with_columns(pl.col("trade_date").alias("_d0"))
+        .rename({"trade_date": "_t0", "close": "_c_before"})
+        .sort("instrument_id", "_t0"),
         on="_t0",
         by="instrument_id",
         strategy="backward",
     )
-    day = day.with_columns((pl.col("_c_before") / pl.col("_c_ex")).alias("_move")).select(
-        "instrument_id", "ex_date", "_g", "_net", "_move"
-    )
+    if ipca is not None and ipca.height:
+        day = _level("_d1", ipca, _level("_d0", ipca, day))
+        infl = (pl.col("_lv_d1") / pl.col("_lv_d0")).fill_null(1.0)
+    else:
+        infl = pl.lit(1.0)
+    gap = (pl.col("_d1") - pl.col("_d0")).dt.total_days()
+    day = day.with_columns(
+        (pl.col("_d0").is_not_null() & pl.col("_d1").is_not_null()).alias("_priced"),
+        pl.when(gap <= MAX_GAP_DAYS).then(pl.col("_c_before") / pl.col("_c_ex") * infl).alias("_move"),
+    ).select("instrument_id", "ex_date", "_g", "_net", "_move", "_priced")
     out = ev.join(day, on=["instrument_id", "ex_date", "_g"], how="left")
     return out.with_columns((pl.col("_move") / pl.col("_net")).alias("price_check"))
+
+
+REDATE_DAYS = 30
+
+
+def redate(stock: pl.DataFrame, prices: pl.LazyFrame) -> pl.DataFrame:
+    """An event whose price does not agree on its reported ex-date is moved to the session within 30 days where
+    the price did move by its ratio (one-day move in BRL; the closest such session wins). Yahoo's split dates are
+    often a few days off, and so are some of B3's oldest records: the price fixes the ex-date. The reported date is
+    kept in `ex_date_reported`; re-dated events get their price check from that session."""
+    brl = pl.col("brl_num").cast(pl.Float64) / pl.col("brl_den").cast(pl.Float64)
+    day = (
+        prices.filter(pl.col("market_segment") == "lote_padrao")
+        .select("instrument_id", "trade_date", (pl.col("close").cast(pl.Float64) * brl).alias("c"))
+        .sort("instrument_id", "trade_date")
+        .with_columns((pl.col("c").shift(1).over("instrument_id") / pl.col("c")).alias("_m1"))
+        .filter(pl.col("_m1").is_not_null())
+        .select("instrument_id", "trade_date", "_m1")
+    )
+    ratio = pl.col("ratio_num").cast(pl.Float64) / pl.col("ratio_den").cast(pl.Float64)
+    s = stock.with_row_index("_r").with_columns(pl.col("ex_date").alias("ex_date_reported"))
+    off = s.filter(~agrees(pl.col("_move"), pl.col("_net")).fill_null(False)).select(
+        "_r", "instrument_id", "ex_date", ratio.alias("_rt")
+    )
+    ids = off["instrument_id"].unique().to_list()
+    cand = (
+        off.lazy()
+        .join(day.filter(pl.col("instrument_id").is_in(ids)), on="instrument_id")
+        .filter(
+            ((pl.col("trade_date") - pl.col("ex_date")).dt.total_days().abs() <= REDATE_DAYS)
+            & (pl.col("trade_date") != pl.col("ex_date"))
+            & agrees(pl.col("_m1"), pl.col("_rt"))
+            & (pl.col("_rt").log().abs() >= SMALL_LOG)  # a 5 % move is found on any day: never re-dated
+        )
+        .with_columns((pl.col("trade_date") - pl.col("ex_date")).dt.total_days().abs().alias("_dist"))
+        .sort("_r", "_dist")
+        .unique("_r", keep="first")
+        .select("_r", pl.col("trade_date").alias("_new"), pl.col("_m1").alias("_newmove"))
+        .collect()
+    )
+    s = s.join(cand, on="_r", how="left")
+    return (
+        s.with_columns(
+            pl.coalesce("_new", "ex_date").alias("ex_date"),
+            pl.when(pl.col("_new").is_not_null() & (pl.col("_new") <= pl.col("data_com")))
+            .then(None)
+            .otherwise(pl.col("data_com"))
+            .alias("data_com"),
+            pl.when(pl.col("_new").is_not_null()).then(pl.col("_newmove")).otherwise(pl.col("_move")).alias("_move"),
+            pl.when(pl.col("_new").is_not_null()).then(ratio).otherwise(pl.col("_net")).alias("_net"),
+            (pl.col("_priced") | pl.col("_new").is_not_null()).alias("_priced"),
+        )
+        .with_columns(
+            pl.when(pl.col("_new").is_not_null())
+            .then(pl.col("_move") / pl.col("_net"))
+            .otherwise(pl.col("price_check"))
+            .alias("price_check")
+        )
+        .drop("_r", "_new", "_newmove")
+    )
 
 
 def agrees(move: pl.Expr, net: pl.Expr) -> pl.Expr:
@@ -380,15 +495,174 @@ def contradicts(move: pl.Expr, net: pl.Expr) -> pl.Expr:
     return (lm.abs() < (lm - ln).abs()) & (ln.abs() >= SMALL_LOG)
 
 
-def status(sources: pl.Expr, move: pl.Expr, net: pl.Expr) -> pl.Expr:
+APPLIED = ("confirmed", "price_only", "official")
+
+
+def status(sources: pl.Expr, move: pl.Expr, net: pl.Expr, priced: pl.Expr | None = None) -> pl.Expr:
+    """Every stock event is decided; `APPLIED` statuses adjust prices, the others do not:
+    - `conflicting`: the price contradicts the ratio, whatever the sources say (rejected);
+    - `confirmed`: two sources, or B3 and an agreeing price; `price_only`: one source and an agreeing price;
+    - `unpriced`: the line did not trade on one side of the ex-date, so no price of it is affected;
+    - `official`: B3 (the registrar's record) alone with an inconclusive price (sessions far apart, or a move
+      between the bands): applied;
+    - `unsupported`: Yahoo (tier U) alone with an inconclusive price: rejected."""
     agree = agrees(move, net).fill_null(False)
     two = sources.str.contains(",")
+    has_price = priced if priced is not None else move.is_not_null()
     return (
         pl.when(contradicts(move, net).fill_null(False)).then(pl.lit("conflicting"))
         .when(two | (sources.str.contains("b3") & agree)).then(pl.lit("confirmed"))
         .when(agree).then(pl.lit("price_only"))
-        .otherwise(pl.lit("candidate"))
+        .when(~has_price.fill_null(False)).then(pl.lit("unpriced"))
+        .when(sources.str.contains("b3")).then(pl.lit("official"))
+        .otherwise(pl.lit("unsupported"))
     )  # fmt: skip
+
+
+def quote_basis_events(prices: pl.LazyFrame, stock: pl.DataFrame) -> pl.DataFrame:
+    """COTAHIST's own evidence of a change of share basis (ADR-0016 addendum). At a session where FATCOT changes
+    and the quoted price (per FATCOT shares, in BRL) is continuous (between 0.5 and 2 times the previous session's)
+    while the price per share jumps by the factor, the line now quotes FATCOT_old/FATCOT_new old shares as one: a
+    regrouping (MGEL4 2004-06-29: 4.90 per 1,000 to 4.95 per share), or, in the 1987-89 mass changes, a flag that
+    changed while prices stayed per lot. Either way the per-share series must be continuous across it. A
+    `QUOTE_BASIS` event (ratio FATCOT_new : FATCOT_old) is made unless an applied stock event of about that size
+    (within 2x) is within 5 days."""
+    brl = pl.col("brl_num").cast(pl.Float64) / pl.col("brl_den").cast(pl.Float64)
+    p = (
+        prices.filter(pl.col("market_segment") == "lote_padrao")
+        .select(
+            "instrument_id",
+            "trade_date",
+            pl.col("quote_factor").cast(pl.Int64).alias("qf"),
+            (pl.col("close").cast(pl.Float64) * brl).alias("u"),
+        )
+        .sort("instrument_id", "trade_date")
+        .with_columns(
+            pl.col("qf").shift(1).over("instrument_id").alias("qf0"),
+            pl.col("u").shift(1).over("instrument_id").alias("u0"),
+            pl.col("trade_date").shift(1).over("instrument_id").alias("d0"),
+        )
+        .filter(pl.col("qf0").is_not_null() & (pl.col("qf") != pl.col("qf0")) & (pl.col("u0") > 0))
+        .collect()
+    )
+    unit = pl.col("u") / pl.col("u0")
+    lot = unit * pl.col("qf") / pl.col("qf0")
+    p = p.filter(lot.is_between(0.5, 2.0) & ~unit.is_between(0.5, 2.0))
+    if stock.height:
+        applied = stock.filter(pl.col("status").is_in(APPLIED) & pl.col("ratio_num").is_not_null()).select(
+            "instrument_id",
+            pl.col("ex_date").alias("_ex"),
+            (pl.col("ratio_num").cast(pl.Float64) / pl.col("ratio_den").cast(pl.Float64)).alias("_r"),
+        )
+        near = (
+            p.join(applied, on="instrument_id")
+            .filter(
+                ((pl.col("_ex") - pl.col("trade_date")).dt.total_days().abs() <= 5)
+                & ((pl.col("_r") * pl.col("qf0") / pl.col("qf")).log().abs() <= math.log(2))
+            )
+            .select("instrument_id", "trade_date")
+            .unique()
+        )
+        p = p.join(near, on=["instrument_id", "trade_date"], how="anti")
+    return p.select(
+        "instrument_id",
+        pl.lit("QUOTE_BASIS").alias("event_type"),
+        pl.col("d0").alias("data_com"),
+        pl.col("trade_date").alias("ex_date"),
+        pl.col("qf").alias("ratio_num"),
+        pl.col("qf0").alias("ratio_den"),
+        pl.lit("b3_cotahist").alias("sources"),
+        (1 / lot).alias("price_check"),
+        pl.lit("confirmed").alias("status"),
+    )
+
+
+IMPLIED_MIN = 1.25  # smallest ratio an implied event may have: below it, one day's price noise looks the same
+IMPLIED_NO_FILING = 3.0  # a one-day move of 3x or more needs no filing: no market moves a share that far
+
+
+def _snap(s: float) -> tuple[int, int] | None:
+    """New shares per old as a simple fraction near `s` (within 5 %; within 10 % for ratios of 10 or more)."""
+    from fractions import Fraction
+
+    big = max(s, 1 / s)
+    f = Fraction(big).limit_denominator(10) if big < 10 else Fraction(round(big))
+    if f <= 0 or abs(float(f) / big - 1) > (0.10 if big >= 10 else 0.05):
+        return None
+    return (f.numerator, f.denominator) if s >= 1 else (f.denominator, f.numerator)
+
+
+def implied_events(zones: Zones, prices: pl.LazyFrame, fac: pl.DataFrame) -> pl.DataFrame:
+    """Stock events no source lists but the official prices and Yahoo agree on (ADR-0016 addendum): a level shift
+    of Yahoo's split-adjusted close against ours (quality check `cotahist_vs_yahoo`, run on the factors so far)
+    of at least 1.25, matched (within 30 % in log) by a one-day move of B3's raw close in BRL that our factors leave
+    in place. It is kept when a CVM IPE filing announces a bonus, split or regrouping around it, or when the move
+    is 3x or more. The ratio is the simple fraction nearest Yahoo's step; the ex-date is the day of the move."""
+    from fin.quality.findings import cotahist_vs_yahoo
+
+    leads = cotahist_vs_yahoo(zones)
+    if not leads.height:
+        return pl.DataFrame()
+    leads = leads.select(
+        pl.col("entity_id").str.split(":").list.first().alias("instrument_id"),
+        pl.col("vt").alias("month"),
+        pl.col("observed").cast(pl.Float64).alias("s"),
+    ).filter((pl.col("s") > 0) & (pl.col("s").log().abs() >= math.log(IMPLIED_MIN)))
+    if not leads.height:
+        return pl.DataFrame()
+    brl = pl.col("brl_num").cast(pl.Float64) / pl.col("brl_den").cast(pl.Float64)
+    day = (
+        prices.filter(
+            (pl.col("market_segment") == "lote_padrao")
+            & pl.col("instrument_id").is_in(leads["instrument_id"].unique().to_list())
+        )
+        .select("instrument_id", "trade_date", (pl.col("close").cast(pl.Float64) * brl).alias("c"))
+        .sort("instrument_id", "trade_date")
+        .with_columns(
+            (pl.col("c") / pl.col("c").shift(1)).over("instrument_id").log().alias("lr"),
+            pl.col("trade_date").shift(1).over("instrument_id").alias("d0"),
+        )
+        .collect()
+        .join(fac.select("instrument_id", pl.col("ex_date").alias("trade_date"), "split_factor"),
+              on=["instrument_id", "trade_date"], how="left")
+        .filter(pl.col("split_factor").fill_null(1.0) == 1.0)  # a day our factors already adjust is not a miss
+    )  # fmt: skip
+    ls = pl.col("s").log()
+    j = (
+        leads.join(day, on="instrument_id")
+        .filter(
+            pl.col("trade_date").is_between(
+                pl.col("month").dt.offset_by("-1mo"), pl.col("month").dt.offset_by("1mo").dt.month_end()
+            )
+            & ((pl.col("lr") + ls).abs() <= 0.3 * ls.abs())
+        )
+        .sort("instrument_id", "month", (pl.col("lr") + ls).abs())
+        .unique(["instrument_id", "month"], keep="first")
+    )
+    rows = []
+    for r in j.iter_rows(named=True):
+        snapped = _snap(r["s"])
+        if snapped is None:
+            continue
+        num, den = snapped
+        rows.append(
+            {
+                "instrument_id": r["instrument_id"],
+                "event_type": "REVERSE_SPLIT" if num < den else ("BONUS" if num / den < 2 else "SPLIT"),
+                "data_com": r["d0"],
+                "ex_date": r["trade_date"],
+                "ratio_num": num,
+                "ratio_den": den,
+                "sources": "b3_cotahist,yahoo_chart",
+                "price_check": math.exp(-r["lr"]) / (num / den),
+                "_big": max(r["s"], 1 / r["s"]) >= IMPLIED_NO_FILING,
+            }
+        )
+    if not rows:
+        return pl.DataFrame()
+    ev = ipe_evidence(zones, pl.DataFrame(rows))
+    ev = ev.filter(pl.col("sources").str.contains("cvm_ipe") | pl.col("_big")).drop("_big")
+    return ev.with_columns(pl.lit("confirmed").alias("status"), pl.col("ex_date").alias("ex_date_reported"))
 
 
 def rights_events(zones: Zones, dates: pl.Series) -> pl.DataFrame:
@@ -542,7 +816,7 @@ def share_classes(zones: Zones) -> pl.DataFrame:
 def factors(events: pl.DataFrame, prices: pl.LazyFrame) -> pl.DataFrame:
     usable = events.filter(
         (pl.col("ratio_num").is_null() & pl.col("cash_per_share").is_not_null())
-        | pl.col("status").is_in(["confirmed", "price_only"])
+        | pl.col("status").is_in(APPLIED)
         | (pl.col("event_type") == "RIGHTS")
     )
     closes = (
@@ -596,11 +870,11 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
     prices = pl.scan_parquet(zones.core / "price_daily" / "*.parquet")
     stock = stock_events(zones, dates)
     if stock.height:
-        stock = price_check(stock, prices)
+        stock = redate(price_check(stock, prices, ipca_level(zones)), prices)
         stock = ipe_evidence(zones, stock)
-        stock = stock.with_columns(status(pl.col("sources"), pl.col("_move"), pl.col("_net")).alias("status")).drop(
-            "_g", "_net", "_move"
-        )
+        stock = stock.with_columns(
+            status(pl.col("sources"), pl.col("_move"), pl.col("_net"), pl.col("_priced")).alias("status")
+        ).drop("_g", "_net", "_move", "_priced")
         stock = stock.with_columns(
             pl.lit(None, dtype=CASH).alias("cash_per_share"),
             pl.lit(None, dtype=pl.Date).alias("payment_date"),
@@ -615,20 +889,34 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
             pl.lit("reported").alias("status"),
         )
     rights = rights_events(zones, dates)
+    basis = quote_basis_events(prices, stock)
     cols = [c for c in EVENT.names if c != "event_id"]
     schema = EVENT.schema()
 
     def fill(f: pl.DataFrame) -> pl.DataFrame:
         return f.with_columns([pl.lit(None, dtype=schema[c]).alias(c) for c in cols if c not in f.columns]).select(cols)
 
-    allev = pl.concat([fill(f) for f in (stock, cash, rights) if f.height], how="vertical_relaxed")
-    allev = allev.filter(pl.col("ex_date").is_not_null()).sort("instrument_id", "ex_date", "event_type", "sources")
-    allev = allev.with_columns(
-        (
-            pl.col("instrument_id") + "|" + pl.col("event_type") + "|" + pl.col("ex_date").cast(pl.String) + "|"
-            + pl.int_range(pl.len()).over("instrument_id", "event_type", "ex_date").cast(pl.String)
-        ).alias("event_id")
-    ).select(EVENT.names)  # fmt: skip
+    parts = [fill(f) for f in (stock, cash, rights, basis) if f.height]
+
+    def assemble(parts: list[pl.DataFrame]) -> pl.DataFrame:
+        allev = pl.concat(parts, how="vertical_relaxed").filter(pl.col("ex_date").is_not_null())
+        allev = allev.sort("instrument_id", "ex_date", "event_type", "sources")
+        return allev.with_columns(
+            (
+                pl.col("instrument_id") + "|" + pl.col("event_type") + "|" + pl.col("ex_date").cast(pl.String) + "|"
+                + pl.int_range(pl.len()).over("instrument_id", "event_type", "ex_date").cast(pl.String)
+            ).alias("event_id")
+        ).select(EVENT.names)  # fmt: skip
+
+    allev = assemble(parts)
+    # pass 2: events only the official prices and Yahoo show, found against the factors of pass 1
+    fac0 = factors(EVENT.split(allev)[0], prices)
+    write_parquet(
+        fac0.sort("instrument_id", "ex_date"), zones.derived / "adjustment_factor" / "adjustment_factor.parquet"
+    )
+    implied = implied_events(zones, prices, fac0)
+    if implied.height:
+        allev = assemble([*parts, fill(implied)])
     good, bad = EVENT.split(allev)
     write_parquet(good, zones.core / "corporate_event" / "corporate_event.parquet")
     q = zones.quarantine / "core" / "corporate_event.parquet"

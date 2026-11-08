@@ -33,4 +33,12 @@ Currency symbol (ISO-like, `simbolo`); no ISIN.
 Not ephemeral: full history per call, intraday bulletins kept. Late-day value for D is available the same day (~13:06 close).
 
 ## 7. Open questions
-- Whether published values are ever revised; PTAX series start/depth for non-USD currencies; bulletins' earliest date.
+- Whether published values are ever revised (the daily job re-reads the last 30 days, so a revision becomes a new series version).
+
+## 8. Parsed (`ingest/ptax.py`, 2026-11-07)
+- **Fetched:** `Moedas` first, then one `CotacaoMoedaPeriodo` per listed currency (full history 1984-01-01 → today the first time or on backfill, then the last 30 days, reaching back a week before the previous fetch if that is older). `CotacaoDolarPeriodo` is exactly the USD Fechamento rows of `CotacaoMoedaPeriodo` (10,505 identical rows) and is not fetched; the parser still reads it (`dolar_period`). Depth measured per currency: all 9 non-USD currencies and USD start 1984-11-29 except EUR (1998-12-31, the euro); one request is 11-14 MB / 7-9 s for ~67-81k bulletins; 798,021 bulletins in all.
+- **Bulletins:** Abertura, Intermediário (up to ~13 a day in the 1990s), Fechamento (the PTAX; 10,505 USD days), Fechamento Interbancário (1999-10-27 → 2011-06-30, 2,856 USD rows). Parity convention from `Moedas.tipoMoeda`: A = currency units per USD (JPY 157.1), B = USD per currency unit (EUR 1.1146); `cotacao*` is always BRL per 1 unit.
+- **Staging:** `quote` (all bulletins, exact decimals, `quoted_at` naive BRT), `currency`, and series `bcb_ptax:<CCY>:buy|sell` (Fechamento, one value a day: the later of the 9 days with two rows) into `observation`/`definition` -> core `series_observation`. Reparse/e2e: 797,967 quotes valid, 202,946 series observations, 0 core quarantine.
+- **Quarantine (54 rows, all currencies):** `Intermediário` bulletins 1999-01-04..2002-04-30 with every rate 0 (AUD/CAD/CHF/DKK/NOK/SEK/GBP/JPY/USD 5 each, EUR 9): the source publishes zeros, not a quote; raw keeps them, rule `brl_rates_positive`.
+- Cross-check: ANBIMA Quadro Indicadores 2026-11-06 USD 5.5007/5.5013 and EUR 6.1300/6.1317 equal the PTAX Fechamento rows.
+

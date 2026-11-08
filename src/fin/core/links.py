@@ -133,6 +133,11 @@ def name_continuity(zones: Zones) -> pl.DataFrame:
         & (pl.col("k0_b") > pl.col("k1"))
         & (pl.col("k0_b") - pl.col("k1") <= 5)
     )
+    # subscription rights are never the same line of shares as anything (AMER1 -> AMER95, TMAR1 -> TMAR11)
+    ip = zones.core / "instrument" / "instrument.parquet"
+    if ip.exists():
+        rights = pl.read_parquet(ip).filter(pl.col("asset_class") == "right")["instrument_id"].to_list()
+        j = j.filter(~pl.col("instrument_id").is_in(rights) & ~pl.col("instrument_id_b").is_in(rights))
     # one to one only: a name shared by several lines that end or start together is not evidence
     j = j.filter((pl.len().over("instrument_id") == 1) & (pl.len().over("instrument_id_b") == 1))
     return j.select(

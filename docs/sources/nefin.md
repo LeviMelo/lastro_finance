@@ -30,3 +30,6 @@ Not ephemeral; the full history is re-published each update. Archive the file wh
 
 ## 7. Open questions
 - Update cadence (monthly? quarterly?) and licence/citation terms; whether history is restated between releases.
+
+## 8. Parsed (staging, `ingest/nefin.py`, 2026-11-07)
+`factor`: wide, one row per (weighting value|equal, frequency D|M, `period_start`): rm_minus_rf, smb, hml, wml, iml, risk_free as exact decimals (fractions per period; exponent notation such as `7.18e-05` occurs and is exact). The row counter is dropped. Whole-file re-sends keep only changed rows (`dedup_staging`). Reparse: 13,350 rows (6,367 x 2 daily + 308 x 2 monthly), 0 quarantined.

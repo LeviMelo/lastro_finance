@@ -1,6 +1,6 @@
 # STATUS.md
 
-What is true now. Rewritten in place, never appended; history is in git. Last rewritten 2026-11-07.
+What is true now. Rewritten in place, never appended; history is in git. Last rewritten 2026-11-08.
 
 ## Where the project is
 
@@ -12,9 +12,10 @@ Day one (2026-11-07).
 - **Stage A passes its exit criteria.** **Stage B** has a note for every registered source (52). **Stage C**:
   - core `price_daily` (spot and odd lot, 1986–2026, 7.34 M sessions) with instrument identity: 8,464
     instruments, ISIN and time-ranged tickers, 911 pre-1995 codes linked (ADR-0015);
-  - core `series_observation`: 1,174 macro and market series, 585,075 values with units (ADR-0013);
-  - core `corporate_event` (dividends, JCP, FII income, bonuses, splits, rights) from B3, Yahoo and Fundos.NET,
-    graded by the price move, and derived adjustment factors (ADR-0016); core `tesouro_bond` and
+  - core `series_observation`: 1,342+ series, 882,063 values with units (ADR-0013), PTAX for 10 currencies 1984–;
+  - core `corporate_event` (51,819: dividends, JCP, FII income, bonuses, splits, rights, quote-basis changes) from
+    B3, Yahoo, Fundos.NET, CVM IPE and COTAHIST itself, every stock event decided, and derived adjustment factors
+    (ADR-0016); core `tesouro_bond` and
     `tesouro_price_daily` (150 bonds, 2004–);
   - the query layer: `data/catalog.duckdb`, views only, incl. `fundamental_fact` and `price_adjusted` (ADR-0017);
   - staging `expectation`: Focus market expectations 2000– (3.6 M statistics);
@@ -23,13 +24,8 @@ Day one (2026-11-07).
     148 on 2015-06-30; share counts from DFP/ITR 2020– and FRE 2010–; ADR-0021);
   - staging: Tesouro Direto 2004–, FII distributions, CVM statements 2010– (66.8 M lines), intraday 5-minute bars
     (archived from 2026-11-07).
-- **Data quality** (ADR-0022): `fin quality` runs 6 named checks into `dq_finding`. There are 455 findings:
-  - 2 acknowledged;
-  - 321 open COTAHIST-vs-Yahoo split leads;
-  - 9 link price jumps;
-  - 57 conflicting and 66 unproven events.
-
-  Their review status is in `fin/quality/resolutions.toml`.
+- **Data quality** (ADR-0022): `fin quality` runs 6 named checks into `dq_finding`: 345 findings, 286 decided by
+  rule or review. The 59 open ones are Yahoo split leads, mostly spin-offs we do not adjust yet.
 - **Storage is lean by rule** (ADR-0014): re-sent files as deltas, CVM zips as member deltas, staging keeps changed
   rows, small files compacted. C: has 49 GB free: the binding limit.
 - **Data gaps are mapped and ranked** ([gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md)). Everything
@@ -39,42 +35,36 @@ Day one (2026-11-07).
 
 - **Holdings data (priority 1):**
   - COTAHIST prices 1986–;
-  - FII distributions 2016– (Fundos.NET backfill running: about half of 36,584 notices at 22:30 UTC);
+  - FII distributions 2016– (all 36,583 Fundos.NET notices, both layouts: 40,490 payouts);
   - Tesouro Direto 2004–; VNA 2000–; CDI and Selic 1986–; IPCA 1979–;
   - Yahoo events for 848 tickers (U), and the CVM filings index 2003–, which proves them.
 - **Company data:**
-  - CVM statements (DFP 2010–, ITR 2011–), FCA, FRE and IPE, kept as versions from now on;
+  - CVM statements (DFP 2010–, ITR 2011–), FRE (share counts, treasury) and IPE, kept as versions from now on;
+  - FII monthly/quarterly/annual reports 2016– (NAV per quota, assets, vacancy); fund daily NAV 2000– and fund
+    holdings (CDA) 2023– (backfills running 2026-11-08);
   - B3 instrument files 2025-06–.
 - **Context data (priority 2)** ([backfill](docs/evaluation/2026-11-07-context-catalogue-backfill.md)), from the
   catalogue `src/fin/reference/context_series.toml`:
   - Brazilian macro: 60 SGS series, 11 SIDRA tables, Ipeadata, Copom since 1996, Focus since 2000;
-  - B3 index levels (Ibovespa 1968–); B3 curves 2001–; futures 2018– (mirror);
+  - B3 index levels (Ibovespa 1968–); B3 reference-rate curves 2001– (111 M vertices); futures 2018– (mirror);
+  - ANBIMA ETTJ, VNA, debentures, government bonds, projections; NEFIN risk factors;
   - global rates (Treasury, Fed, ECB, BIS), VIX, oil, commodities (Pink Sheet 1960–, IMF, CEPEA), OECD leading
     indicators, CFTC positioning.
 - **Ephemeral sources are archived daily**: ANBIMA (6 datasets including IMA), B3 BDI tables (including investor
   flows), index compositions, CVM registries, SND terms, and Yahoo 5-minute bars (U). The 2026-11-07 run was started by
   hand (0 errors).
 
-## Not done, and waiting on whom
+## Not done
 
-- **The owner:**
-  - approve registering the Windows scheduled task (`scripts/schedule_daily.ps1`). Until then `fin ingest daily`
-    runs by hand, and **a day not run is lost for the today-only sources**;
-  - free FRED and Tiingo tokens (OQ-23);
-  - paid sources (OQ-10); PLAN §12 OQ-11 and OQ-14 to OQ-16.
-- **Engineering:**
-  - parsers for the remaining archived payloads: B3 snapshots, CVM FCA/FRE, ANBIMA daily files;
-  - the mirror-vs-ANBIMA overlap check; calendar 1986–2000 (OQ-22); an ESPECI table for asset classes.
+- **Blocked by the harness:** registering the Windows scheduled task (`scripts/schedule_daily.ps1`) is refused as
+  persistence. Until a permission rule allows it, `fin ingest daily` runs by hand, and a day not run is lost for the
+  today-only sources.
+- **Owner decisions:** free FRED and Tiingo tokens (OQ-23); paid sources (OQ-10); PLAN §12 OQ-11 and OQ-14 to OQ-16.
 
-## Next
+## Next (engineering)
 
-1. **Events:** 926 stock events are confirmed and 70 price-only. 57 are conflicting (the price contradicts the
-   ratio, e.g. ITUB4 2011's net-zero 1:100 + 100:1) and 66 candidates; neither adjusts anything (ADR-0016).
-   Next: review the 321 Yahoo split leads (`dq_finding`, `cotahist_vs_yahoo`).
-2. **Links:** 267 in `instrument_link`: ticker and name continuity, B3 cross-asset events (ADR-0019). ITAU4 → ITUB4
-   (2009) is linked. Next: FII issuers from Fundos.NET.
-3. **Fundamentals:** 16 standard metrics exist (`fundamental_metric`). `share_count` has a per-filing unit
-   (ADR-0020) and `valuation(d)` gives market cap, P/L and P/VP (ADR-0021). Insurers are covered by the same
-   account names.
-4. **Context:** every archived context source is parsed (Focus, Copom, CEPEA, ANP, ANBIMA IMA, CFTC included).
-   The IMA history before 2026-10-29 remains a gap.
+1. Spin-off adjustment (B3 `CIS RED CAP`): the remaining open Yahoo leads (PCAR3 2021 and others).
+2. CDA yearly archives 2005-2022 (members up to 640 MB): parse in batches.
+3. FIAGRO reports (another layout); the titulos `.xls` twin and B3 `PR` zips; CVM FCA.
+4. FII issuers linked to their quotas (Fundos.NET CNPJ → ISIN); the mirror-vs-ANBIMA overlap check; calendar
+   1986-2000 (OQ-22).

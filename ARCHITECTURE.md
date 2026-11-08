@@ -75,7 +75,12 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/series.py` | series payloads (SGS JSON and SOAP metadata, Ipeadata OData, SIDRA, Tesouro VNA workbooks, Treasury/NY Fed/Cboe CSVs, SDMX-CSV with the sources' unit codelists) → staging `observation`/`definition` → core `series_observation`/`series_definition`, versioned (ADR-0013) |
 | `ingest/cvm_statements.py` | CVM DFP/ITR zips → staging `statement_line` (every account line, value as written with its scale), `document` (every version and its delivery date), `share_capital` |
 | `ingest/cftc.py` | CFTC Commitments of Traders (3 reports) → staging `position`, long |
-| `ingest/cvm_fre.py` | FRE index and `capital_social` → staging `document`, `capital_social` |
+| `ingest/cvm_fre.py` | FRE index, `capital_social` and the treasury row of `posicao_acionaria` → staging `document`, `capital_social`, `treasury` |
+| `ingest/ptax.py` | BCB PTAX (Olinda OData): every currency 1984– → staging `quote`, `currency`; series `bcb_ptax:<CCY>:buy/sell` |
+| `ingest/anbima_parsers.py` | ANBIMA ETTJ (Svensson parameters, vertices), VNA, debentures, government bonds, projections |
+| `ingest/nefin.py` | NEFIN risk factors (market, SMB, HML, WML, IML, risk-free) |
+| `ingest/b3_taxaswap.py` | B3 reference rates (TaxaSwap TS files 2001–: DI, IPCA, FX curves by vertex) → staging `swap_rate` |
+| `ingest/cvm_funds.py` | CVM FII monthly/quarterly/annual reports, fund daily NAV (`inf_diario`), fund holdings (CDA) → staging |
 | `ingest/cvm_ipe.py` | CVM IPE yearly index → staging `document` (evidence for events) |
 | `ingest/copom.py` | BCB Copom decision history → staging `decision` |
 | `ingest/focus.py` | BCB Focus expectations (8 tables) → staging `expectation` |

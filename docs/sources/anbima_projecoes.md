@@ -20,3 +20,6 @@ Not parsed (HTML table; xls not fetched) *(not verified)*.
 
 ## 7. Open questions
 - Fetch and parse `Indicadores.xls`; whether ANBIMA Data exposes projection history (token needed).
+
+## 8. Parsed (staging, `ingest/anbima_parsers.py`, 2026-11-07)
+Layout confirmed on the archived page (fixture `tests/fixtures/anbima_projecoes/`): ISO-8859-1 XHTML; the stamp "Última Atualização: dd/mm/aaaa - hh:mm h" is `updated_at`; tall table `indicator`: selic_estimate, selic_bcb, di_b3, igpm/ipca `_index`, `_var_month`, `_projection` (with the reference month, e.g. `out/26`, `nov/26`), usd/eur buy/sell (BRL), tr, tbf, fds_quota. An unknown row label raises (layout change is loud). The USD sell 5.5013 of 2026-11-06 equals the PTAX close. Reparse: 17 rows, 0 quarantined. `Indicadores.xls` still not fetched.

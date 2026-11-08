@@ -25,7 +25,7 @@ import polars as pl
 
 from fin.config import Zones
 from fin.core import issuers
-from fin.ingest import tesouro
+from fin.ingest import anbima_parsers, b3_taxaswap, nefin, tesouro
 from fin.ingest.base import Connector, Mode, Parsed
 from fin.ingest.fetch import FetchSpec
 from fin.ingest.http import BROWSER_UA
@@ -106,9 +106,13 @@ class AnbimaTitulosPublicos(Connector):
     day, so ANBIMA's in-place corrections become new raw versions. A 404 is a day outside the window."""
 
     source_id: ClassVar[str] = "anbima_titulos_publicos"
-    version: ClassVar[str] = "0-archive"
+    version: ClassVar[str] = "1"
     BASE = "https://www.anbima.com.br/informacoes/merc-sec/arqs"
     LOOKBACK_BUSINESS_DAYS = 10
+    contracts: ClassVar[dict[str, Contract]] = {"bond_rate": anbima_parsers.BOND_RATE}
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return anbima_parsers.parse_titulos_payload(blob, row)
 
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
         cal = _calendar(zones)
@@ -150,7 +154,12 @@ class _AnbimaWindow(Connector):
 
 class AnbimaEttj(_AnbimaWindow):
     source_id: ClassVar[str] = "anbima_ettj"
+    version: ClassVar[str] = "1"
     FORM = "https://www.anbima.com.br/informacoes/est-termo/"
+    contracts: ClassVar[dict[str, Contract]] = anbima_parsers.ETTJ_CONTRACTS
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return anbima_parsers.parse_ettj_payload(blob, row)
 
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
         for d in self.days(zones):
@@ -177,7 +186,12 @@ class AnbimaEttj(_AnbimaWindow):
 
 class AnbimaVna(_AnbimaWindow):
     source_id: ClassVar[str] = "anbima_vna"
+    version: ClassVar[str] = "1"
     FORM = "https://www.anbima.com.br/informacoes/vna/"
+    contracts: ClassVar[dict[str, Contract]] = {"vna": anbima_parsers.VNA}
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return anbima_parsers.parse_vna_payload(blob, row)
 
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
         for d in self.days(zones):
@@ -205,7 +219,12 @@ class AnbimaVna(_AnbimaWindow):
 
 class AnbimaDebentures(_AnbimaWindow):
     source_id: ClassVar[str] = "anbima_debentures"
+    version: ClassVar[str] = "1"
     BASE = "https://www.anbima.com.br/informacoes/merc-sec-debentures/arqs"
+    contracts: ClassVar[dict[str, Contract]] = {"debenture_rate": anbima_parsers.DEBENTURE_RATE}
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return anbima_parsers.parse_debentures_payload(blob, row)
 
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
         for d in self.days(zones):
@@ -224,8 +243,12 @@ class AnbimaIndicadores(Connector):
     projections, latest values only (docs/sources/anbima_projecoes.md). Archived daily as HTML."""
 
     source_id: ClassVar[str] = "anbima_projecoes"
-    version: ClassVar[str] = "0-archive"
+    version: ClassVar[str] = "1"
     user_agent: ClassVar[str | None] = BROWSER_UA
+    contracts: ClassVar[dict[str, Contract]] = {"indicator": anbima_parsers.INDICATOR}
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return anbima_parsers.parse_indicators_payload(blob, row)
 
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
         yield FetchSpec(
@@ -269,8 +292,13 @@ class NefinFactors(Connector):
     """NEFIN-USP Brazilian risk factors, daily and monthly CSVs, rewritten in place (docs/sources/nefin.md)."""
 
     source_id: ClassVar[str] = "nefin"
-    version: ClassVar[str] = "0-archive"
+    version: ClassVar[str] = "1"
     BASE = "https://nefin.com.br/nefindata/risk-factors"
+    contracts: ClassVar[dict[str, Contract]] = nefin.CONTRACTS
+    dedup_staging: ClassVar[bool] = True  # the whole history, rewritten in place at each update
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return nefin.parse_payload(blob, row)
 
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
         for name in (
@@ -352,9 +380,14 @@ class B3PesquisaPregao(Connector):
     A day without a file answers HTTP 200 with a 22-byte empty zip (absent). Backfill takes `--years`."""
 
     source_id: ClassVar[str] = "b3_pesquisapregao"
-    version: ClassVar[str] = "0-archive"
+    version: ClassVar[str] = "1"  # TS parsed (b3_reference_rates); PR (BVBG.086) archived, not parsed yet
     user_agent: ClassVar[str | None] = BROWSER_UA
     URL = "https://www.b3.com.br/pesquisapregao/download"
+    contracts: ClassVar[dict[str, Contract]] = b3_taxaswap.CONTRACTS
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return b3_taxaswap.parse_payload(blob, row)
+
     FAMILIES: ClassVar[dict[str, tuple[str, str, date]]] = {
         # dataset: (file pattern, raw ext, first served)
         "PR": ("PR{d:%y%m%d}.zip", "zip", date(2018, 1, 2)),

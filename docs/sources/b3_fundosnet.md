@@ -21,12 +21,19 @@
 - Example: TINF11, 0.40 per unit, data-com 2026-11-06, paid 2026-11-13, delivered 2026-11-06 18:08.
 
 ## 3. Ephemerality and cost
-- Not ephemeral. The full history is 183 listing pages + 36,584 documents, ≈ 10 h at 1 request/s; a day adds a few
-  dozen.
+- Not ephemeral. The full history is 183 listing pages + 36,584 documents. Sequentially at 1 request/s it ran at
+  about 0.5 notices/s (≈ 20 h; the server answers in 1-2 s). With 8 downloads in flight (ADR-0023) the last 1,210
+  notices took 2 minutes after the listing walk. A day adds a few dozen.
 
 ## Parsed (2026-11-07, `ingest/fundosnet.py`; first 16,685 notices of the backfill)
-- Layout constant: every `DataBase`/`DataPagamento` ISO, every `ValorProvento` a plain decimal with **up to 18
-  decimals and 7 integer digits** (stored `Decimal(38,18)`; more decimals are refused, a cast would round).
+- **Two layouts** (all 36,384 notices surveyed 2026-11-08):
+  - from 2022: one `<Provento>` per class, with its own `CodISIN`/`CodNegociacao` and `ValorProvento` (20,415 notices);
+  - before: `Rendimento`/`Amortizacao` directly under `InformeRendimentos`, the ISIN in `DadosGerais`
+    (`CodISINCota`) and the value in `ValorProventoCota`, plus `DataAprovacao` (15,969 notices).
+  - The first parser read only the first layout, so 2016-2021 was missing. Both now give 40,790 rows; an empty
+    `<Rendimento/>` declares nothing.
+- Dates are ISO. Values are plain decimals with up to 19 decimals (one notice) and 7 integer digits, stored as
+  `Decimal(38,22)`. More decimals are refused, since a cast would round.
 - 19,299 Proventos: 18,514 Rendimento, 1,215 Amortizacao (1,093 Parcial, 122 Total); 430 carry both. Income tax
   flag: Sim 18,243, Não 271.
 - Quarantined by rule: 2 negative values (RENV11 −0.07, WSEC11 −0.075, 2024-10); 9 payments dated before the

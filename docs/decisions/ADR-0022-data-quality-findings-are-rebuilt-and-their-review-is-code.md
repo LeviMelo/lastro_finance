@@ -39,3 +39,11 @@ split-adjusted close, per line.
 - Now 321 open leads on 468 lines. Some are Yahoo defects (LREN3 before 2005-07); others are splits only Yahoo
   reports (CBOP11 2018, 10:1).
 - Total: 455 findings, 57 of them conflicting events.
+
+**Addendum (2026-11-08): checks decide by rule.** A check may set `status` and `resolution_note` itself, from a
+named rule; `resolutions.toml` still overrides it.
+- Yahoo leads are acknowledged in three cases: Yahoo lacks one of our applied events, our series has no matching
+  move (Yahoo noise or defect), or the shift is under 25 % (noise lined up with a real market move).
+- Link jumps keep their measured ratio: an exchange ratio or a real move.
+- Rejected events are acknowledged as decided in `corporate_event`.
+- Now 345 findings, 286 decided; 59 Yahoo leads are open, mostly spin-offs (ADR-0016 addendum).
