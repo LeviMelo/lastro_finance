@@ -81,3 +81,11 @@ Probe dates (non-empty body = served): 2026-11-06, 2025-11-06, 2024-11-06, 2023-
 - Header time: `BizGrpDtls/CreDtAndTm` is local (BRT) and the `CreDt` of each message is the same instant in UTC (18:39:38 vs 21:39:38Z); `snapshot_at` is the UTC one.
 - Leaves: 36 in all 14 days, listed in the module; `Prtry` always 8, `MktIdrCd` always BVMF, `MktDataStrmId` E (228,457) / T (3,315, the forwards) / O (1,706). The `Ccy` of the price fields varies (BRL, USD, EUR, MXN, RUB, ARS, JPY, CHF, CAD) but is one per message; `EqvtVal` is always BRL. Decimals: prices up to 4, `AdjstdValCtrct` up to 12, volumes 2. About 13 s per day to parse (4 x 130 MB). Reparse of the 14 days: 768,437 rows in, out, 0 quarantined (TS: 111,181,032 rows, 0 quarantined). Spot (2026-11-06, DI1F27): staged settlement price 98,087.22, rate 13.664, open interest 8,219,135, 14,025 trades, instrument id 409606, equal to the XML message (chosen from snapshot 4, seen in 4, identical).
 - Fixture: `PR261106_BVBG086_head.xml` (real header and wrapper) beside the excerpts; `tests/unit/test_b3_pr.py` rebuilds snapshot files from them.
+
+## PR history backfill (2026-11-08, ADR-0031)
+- Held: 2,199 days, 2018-01-02 → 2026-11-06, of 2,222 ANBIMA business days. 3.18 GB on disk as tar+zstd (zips
+  would take ~11–15 GB). Staging: 64.5 M `price_report` rows, one file per day.
+- The 23 days missing: 22 are B3 closures (São Paulo holidays on 25/01 and 09/07, 20/11, 24/12, 31/12).
+  **2021-06-10** traded, but B3 serves an empty 22-byte zip for `PR210610.zip` (probed twice): a gap at the
+  source. COTAHIST covers equities that day, and the pyield mirror the main futures.
+- 2023-07-19 nests the XML snapshots one zip deeper (zip → zip → zips → XML); the reader walks any depth up to 4.

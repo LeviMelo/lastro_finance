@@ -33,13 +33,14 @@ Day two (2026-11-08). The data layer (stages A–H) is built and measured; the d
   - COTAHIST prices 1986– (8,469 instruments, identity through ISIN and ticker changes);
   - corporate events 52,933 (every stock event decided; near-duplicates resolved against the price move; regroupings on lines Yahoo lacks proven by CVM filings or
     exact ratios; ADR-0016), adjusted prices on read;
-  - B3 Price Report 2018– (backfill running, kept as tar+zstd at ~3 MB a day, ADR-0031): settlements, open interest,
-    options and the fixed-income ETFs COTAHIST omits;
+  - B3 Price Report 2018– (2,199 days, 64.5 M rows, 3.2 GB as tar+zstd, ADR-0031): settlements, open interest,
+    options and the fixed-income ETFs COTAHIST omits (36 of them priced and verified against NAV, IMAB11 on 1,857 days);
   - B3's listed funds (daily).
 - **Companies:**
   - issuers linked to their shares through B3 roots, FCA codes, the ISIN issuer code, B3's ISIN registry and name
     history: 1,177 of 1,204 share and unit lines trading since 2010; unlinked volume ~0 from 2013 (ADR-0018);
-  - CVM DFP/ITR 2010– plus superseded versions from RAD (backfill running at ~650/h, ~6 h left);
+  - CVM DFP/ITR 2010– plus superseded versions from RAD (4,186 of 7,558 held; the rest running at ~630/h after a
+    'service busy' page had been read as absent);
   - FRE share counts and treasury, FCA, IPE 2003–;
   - insider trades by role group (VLMO 2018–, 419,707 lines);
   - valuation by date.
