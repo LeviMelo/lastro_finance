@@ -137,7 +137,12 @@ def _decode(data: bytes) -> str:
 
 
 def parse_csv(
-    data: bytes, name: str, t: Table, row: dict[str, Any], select: Iterable[Field] | None = None
+    data: bytes,
+    name: str,
+    t: Table,
+    row: dict[str, Any],
+    select: Iterable[Field] | None = None,
+    first_line: int = 2,
 ) -> pl.DataFrame:
     """The member as a typed frame: kept columns, then the three provenance columns. Header checked against `t`."""
     text = _decode(data)
@@ -152,7 +157,7 @@ def parse_csv(
     cols = [_expr(f) for f in present] + [
         pl.lit(None, dtype=KINDS[f.kind][0]).alias(f.name) for f in fields if f.src not in df.columns
     ]
-    out = df.with_row_index("i", offset=2).select(
+    out = df.with_row_index("i", offset=first_line).select(
         *cols,
         pl.lit(row["raw_sha256"]).alias("raw_sha256"),
         (pl.lit(f"member={name};line=") + pl.col("i").cast(pl.String)).alias("raw_locator"),
@@ -691,7 +696,29 @@ CDA_CONTRACTS = {
 _CPF = r"^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$"
 
 
-def parse_cda_position(data: bytes, name: str, block: int, row: dict[str, Any]) -> pl.DataFrame:
+SLICE_BYTES = 64 << 20  # members above this (CDA yearly archives: up to 640 MB) are parsed in slices
+
+
+def slices(data: bytes, size: int = SLICE_BYTES) -> Iterator[tuple[bytes, int]]:
+    """(header + a run of whole lines, line number of the run's first line) for a large CSV member; the member
+    itself when small. Each slice is typed and checked on its own, so a 640 MB member never sits in memory as
+    text and frame at once."""
+    if len(data) <= size:
+        yield data, 2
+        return
+    lf = b"\n"
+    nl = data.index(lf) + 1
+    head, pos, line = data[:nl], nl, 2
+    while pos < len(data):
+        end = data.find(lf, min(pos + size, len(data) - 1))
+        end = len(data) if end < 0 else end + 1
+        chunk = data[pos:end]
+        yield head + chunk, line
+        line += chunk.count(lf)
+        pos = end
+
+
+def parse_cda_position(data: bytes, name: str, block: int, row: dict[str, Any], first_line: int = 2) -> pl.DataFrame:
     """A BLC member as the union `position` frame. A natural person's CPF and name are dropped."""
     t = POSITION_TABLES[block]
     keep = tuple(
@@ -700,7 +727,7 @@ def parse_cda_position(data: bytes, name: str, block: int, row: dict[str, Any]) 
         else f
         for f in _POS_FIELDS
     )
-    df = parse_csv(data, name, t, row, select=keep)
+    df = parse_csv(data, name, t, row, select=keep, first_line=first_line)
     natural = pl.col("issuer_tax_id").str.strip_chars().str.contains(_CPF).fill_null(False) | (
         pl.col("issuer_person_type") == "PF"
     ).fill_null(False)
@@ -718,8 +745,12 @@ def parse_cda(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
             continue  # cda_fiim, cda_fie, *CONFID*: not parsed (module docstring)
         if m.group(2):
             yield Parsed("net_assets", _period(m.group(3)), parse_csv(data, name, NET_ASSETS, row))
-        else:
-            yield Parsed("position", _period(m.group(3)), parse_cda_position(data, name, int(m.group(1)), row))
+            continue
+        # one partition per slice (`.../part=k/<sha>.parquet`): slices of one member never overwrite each other
+        parts = list(slices(data))
+        for k, (piece, first) in enumerate(parts):
+            part = _period(m.group(3)) + (f"/part={k}" if len(parts) > 1 else "")
+            yield Parsed("position", part, parse_cda_position(piece, name, int(m.group(1)), row, first))
 
 
 # ------------------------------------------------------------------------------------------------ connectors
@@ -839,8 +870,8 @@ class CvmFiInfDiario(_CvmFundZips):
 
 
 class CvmFiCda(_CvmFundZips):
-    """Fund portfolios: monthly zips 2023-01-. The 2005-2022 yearly archives (1.2 GB zipped, members up to 640 MB
-    unzipped) are taken only with the option `hist=True`."""
+    """Fund portfolios: monthly zips 2023-01- and the 2005-2022 yearly archives (1.2 GB zipped, members up to 640 MB
+    unzipped, parsed in 64 MB slices: `slices`)."""
 
     source_id: ClassVar[str] = "cvm_fi_cda"
     contracts: ClassVar[dict[str, Contract]] = CDA_CONTRACTS
@@ -849,7 +880,7 @@ class CvmFiCda(_CvmFundZips):
     STEM: ClassVar[str] = "cda_fi"
     FIRST_MONTH: ClassVar[tuple[int, int] | None] = (2023, 1)
     HIST_YEARS: ClassVar[tuple[int, int] | None] = (2005, 2022)
-    HIST_DEFAULT: ClassVar[bool] = False
+    HIST_DEFAULT: ClassVar[bool] = True  # members up to 640 MB are parsed in 64 MB slices
     RECENT_WEEKLY_MONTHS: ClassVar[int] = 4  # a month fills over ~3 months (docs/sources/cvm_fi_cda.md)
     concurrency: ClassVar[int] = 3
 

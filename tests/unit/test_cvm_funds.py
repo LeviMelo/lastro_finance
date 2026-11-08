@@ -278,3 +278,15 @@ def test_discovery_plans(zones: Zones, monkeypatch: pytest.MonkeyPatch) -> None:
     # never seen and older: backfill only (2021-01, HIST).
     assert due[:3] == ["202611", "202610", "202609"] and "202511" in due and "202601" in due
     assert "202101" not in due and "hist2005" not in due
+
+
+def test_large_member_slices_keep_every_line_and_its_number() -> None:
+    from fin.ingest.cvm_funds import slices
+
+    data = b"A;B\n" + b"".join(f"{i};x\n".encode() for i in range(1000))
+    got = list(slices(data, size=1000))
+    assert len(got) > 3 and all(s.startswith(b"A;B\n") for s, _ in got)
+    lines = [ln for s, _ in got for ln in s.split(b"\n")[1:] if ln]
+    assert lines == [f"{i};x".encode() for i in range(1000)]
+    firsts = [f for _, f in got]
+    assert firsts[0] == 2 and all(int(s.split(b"\n")[1].split(b";")[0]) + 2 == f for s, f in got)
