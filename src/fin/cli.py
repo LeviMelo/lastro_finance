@@ -20,6 +20,24 @@ from fin.store.runs import SCHEMA as RUNS_SCHEMA
 from fin.store.runs import IngestRun, recover
 
 app = typer.Typer(help="LASTRO: dados e análise de investimentos pessoais.", no_args_is_help=True)
+export_app = typer.Typer(help="Exportações para o LLM externo (dossiê).", no_args_is_help=True)
+app.add_typer(export_app, name="export")
+
+
+@export_app.command("dossier")
+def dossier_cmd(
+    portfolio: Annotated[str, typer.Option(help="arquivo TOML da carteira ([holdings] ticker = quantidade)")],
+    as_of: Annotated[str | None, typer.Option("--as-of", help="data de referência AAAA-MM-DD (padrão: hoje)")] = None,
+) -> None:
+    """Gera o dossiê (Markdown + tabelas Parquet) em data/exports/dossier-<data>/."""
+    from datetime import date
+    from pathlib import Path
+
+    from fin.export.dossier import build
+    from fin.ingest.snapshots import today_brt
+
+    d = date.fromisoformat(as_of) if as_of else today_brt()
+    typer.echo(f"dossiê: {build(zones(), Path(portfolio), d)}")
 
 
 MIN_FREE = 5 * 10**9  # bytes of free disk below which ingest refuses to start

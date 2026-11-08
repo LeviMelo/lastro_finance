@@ -1,0 +1,24 @@
+# The PLAN §13.1 reference portfolio (r/investimentos, 2025-10-02): R$ 100,000 split by its weights at the
+# 2025-10-02 closes. A sample for `fin export dossier` until the ledger exists.
+
+[holdings]
+VALE3 = 53
+PETR4 = 216
+WEGE3 = 154
+ITUB3 = 184
+B3SA3 = 483
+LREN3 = 391
+GRND3 = 1009
+RADL3 = 327
+EGIE3 = 145
+HYPE3 = 306
+FLRY3 = 394
+ABEV3 = 459
+PSSA3 = 148
+SLCE3 = 354
+AGRO3 = 300
+MDIA3 = 196
+PRIO3 = 156
+
+[performance]
+since = 2025-10-02

@@ -60,11 +60,16 @@ Day one (2026-11-07).
   flows), index compositions, CVM registries, SND terms, and Yahoo 5-minute bars (U). The 2026-11-07 run was started by
   hand (0 errors).
 
+- **Dossier** (Stage L, ADR-0026): `fin export dossier` builds the PLAN §8 report from a portfolio file;
+  the sample `examples/portfolio_reference.toml` reproduces the golden portfolio's +37.36 %.
+
 ## Not done
 
 - **Blocked by the harness:** registering the Windows scheduled task (`scripts/schedule_daily.ps1`) is refused as
   persistence. Until a permission rule allows it, `fin ingest daily` runs by hand, and a day not run is lost for the
   today-only sources.
+- **The owner's documents** for the ledger (Stage I): brokerage notes (notas de corretagem) and B3 Área do
+  Investidor exports in `inbox/`. Until then the dossier reads a portfolio file.
 - **Owner decisions:** free FRED and Tiingo tokens (OQ-23); paid sources (OQ-10); PLAN §12 OQ-11 and OQ-14 to OQ-16.
 
 ## Next (engineering)
