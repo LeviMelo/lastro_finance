@@ -136,7 +136,8 @@ FACTOR = Contract(
         Column(
             "split_factor",
             pl.Float64,
-            "product of 1/ratio of the day's stock events",
+            "product of 1/ratio of the day's stock events, and of spin-offs' 1 - (shares received x their first close)"
+            " / cum close",
             "fator de desdobramento",
             "ratio",
             nullable=False,
@@ -863,6 +864,72 @@ def factors(events: pl.DataFrame, prices: pl.LazyFrame) -> pl.DataFrame:
     ).select(FACTOR.names)
 
 
+SPINOFF_LABELS = ("CIS RED CAP",)  # B3: spin-off with capital reduction; factor = new shares per 100 held
+SPINOFF_SESSIONS = 10  # the spun-off line must trade within this many sessions of the ex-date
+
+
+def spinoff_factors(zones: Zones, prices: pl.LazyFrame, dates: pl.Series) -> pl.DataFrame:
+    """Price factor of the parent at a spin-off (B3 `CIS RED CAP` whose issued asset is another ISIN): holders
+    receive `factor`/100 shares of the new line per share (PCAR3 -> ASAI3 2021: 100, 1 for 1; SANB -> GETT 2021: 25).
+    f = 1 - k x close(new line, first session from the ex-date) / close(parent, data-com), kept when 0 < f < 1. The
+    value moves to the new line, so the parent's earlier prices are scaled by f, as a split would be."""
+    s = _staging(zones, "b3_company_events", "stock_event")
+    empty = pl.DataFrame(schema={"instrument_id": pl.String, "ex_date": pl.Date, "spin_factor": pl.Float64})
+    if s is None:
+        return empty
+    ids = _ids(zones).filter(pl.col("scheme") == "ISIN").select("instrument_id", pl.col("value").alias("isin"))
+    ids = ids.unique("isin")
+    s = (
+        s.filter(
+            pl.col("label").is_in(SPINOFF_LABELS)
+            & pl.col("asset_issued").is_not_null()
+            & (pl.col("asset_issued") != pl.col("isin"))
+            & pl.col("last_date_prior").is_not_null()
+        )
+        .unique(["isin", "asset_issued", "factor", "last_date_prior"])
+        .join(ids, on="isin")
+        .join(ids.rename({"instrument_id": "to_id", "isin": "asset_issued"}), on="asset_issued")
+        .with_columns(pl.col("last_date_prior").alias("_com"))
+    )
+    if not s.height:
+        return empty
+    s = s.with_columns(next_session(dates, s["_com"]).alias("ex_date"))
+    brl = pl.col("brl_num").cast(pl.Float64) / pl.col("brl_den").cast(pl.Float64)
+    closes = (
+        prices.filter(pl.col("market_segment") == "lote_padrao")
+        .select("instrument_id", "trade_date", (pl.col("close").cast(pl.Float64) * brl).alias("c"))
+        .collect()
+        .sort("instrument_id", "trade_date")
+    )
+    cum = s.sort("instrument_id", "_com").join_asof(
+        closes.rename({"trade_date": "_com", "c": "_pa"}), on="_com", by="instrument_id", strategy="backward",
+        check_sortedness=False,
+    )  # fmt: skip
+    first = cum.with_columns(pl.col("ex_date").alias("_t")).sort("to_id", "_t").join_asof(
+        closes.rename({"instrument_id": "to_id", "trade_date": "_t", "c": "_pb"}).with_columns(
+            pl.col("_t").alias("_tb")
+        ),
+        on="_t", by="to_id", strategy="forward", check_sortedness=False,
+    )  # fmt: skip
+    k = pl.col("factor").cast(pl.Float64) / 100
+    within = pl.col("_tb").is_not_null() & (
+        (pl.col("_tb") - pl.col("ex_date")).dt.total_days() <= SPINOFF_SESSIONS * 2  # calendar days, ~10 sessions
+    )
+    f = first.filter(within & (pl.col("_pa") > 0)).with_columns((1 - k * pl.col("_pb") / pl.col("_pa")).alias("f"))
+    f = f.filter((pl.col("f") > 0) & (pl.col("f") < 1))
+    return f.group_by("instrument_id", "ex_date").agg(pl.col("f").product().alias("spin_factor"))
+
+
+def with_spinoffs(fac: pl.DataFrame, spin: pl.DataFrame) -> pl.DataFrame:
+    if not spin.height:
+        return fac
+    out = fac.join(spin, on=["instrument_id", "ex_date"], how="full", coalesce=True)
+    return out.with_columns(
+        (pl.col("split_factor").fill_null(1.0) * pl.col("spin_factor").fill_null(1.0)).alias("split_factor"),
+        pl.col("cash_factor").fill_null(1.0),
+    ).select(FACTOR.names)
+
+
 def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
     if not (zones.core / "price_daily").exists():
         return {}
@@ -910,7 +977,8 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
 
     allev = assemble(parts)
     # pass 2: events only the official prices and Yahoo show, found against the factors of pass 1
-    fac0 = factors(EVENT.split(allev)[0], prices)
+    spin = spinoff_factors(zones, prices, dates)
+    fac0 = with_spinoffs(factors(EVENT.split(allev)[0], prices), spin)
     write_parquet(
         fac0.sort("instrument_id", "ex_date"), zones.derived / "adjustment_factor" / "adjustment_factor.parquet"
     )
@@ -924,7 +992,7 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
         write_parquet(bad, q)
     else:
         q.unlink(missing_ok=True)
-    fac = factors(good, prices)
+    fac = with_spinoffs(factors(good, prices), spin)
     write_parquet(
         fac.sort("instrument_id", "ex_date"), zones.derived / "adjustment_factor" / "adjustment_factor.parquet"
     )

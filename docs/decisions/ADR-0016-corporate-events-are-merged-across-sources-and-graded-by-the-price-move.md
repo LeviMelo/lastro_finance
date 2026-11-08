@@ -82,7 +82,9 @@ multiplied ITUB4's prices before 2011-11 by 100.
   2007/2009, USIM6 2008, BRAP3 2021 (2:1), MAXR11 2021 (22:1).
 - **Result:** 940 confirmed, 71 price only, 39 official, 45 unpriced, 30 conflicting, 4 unsupported, and 990
   QUOTE_BASIS. Golden cases unchanged.
-- **Not adjusted yet:** spin-offs (B3 `CIS RED CAP`, e.g. PCAR3 → ASAI3 2021). Their factor needs the value of the
-  shares received, and B3's factor unit depends on the label.
+- **Spin-offs** (B3 `CIS RED CAP` issuing another ISIN). The factor is new shares per 100 held (PCAR3 → ASAI3:
+  100; SANB → GETT: 25). The parent's earlier prices are scaled by f = 1 - k × the first close of the new line
+  (within about 10 sessions) / the parent's cum close, folded into `split_factor`. 22 spin-offs: PCAR3 2021-03-01
+  f = 0.140, where Yahoo shows a shift of 7.55. The rest had no priced new line in time (Telebrás 1998).
 
 **Not done.** Mergers and ISIN changes without a B3 event, as event legs (ADR-0019).

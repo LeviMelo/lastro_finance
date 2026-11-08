@@ -24,8 +24,8 @@ Day one (2026-11-07).
     148 on 2015-06-30; share counts from DFP/ITR 2020– and FRE 2010–; ADR-0021);
   - staging: Tesouro Direto 2004–, FII distributions, CVM statements 2010– (66.8 M lines), intraday 5-minute bars
     (archived from 2026-11-07).
-- **Data quality** (ADR-0022): `fin quality` runs 6 named checks into `dq_finding`: 345 findings, 286 decided by
-  rule or review. The 59 open ones are Yahoo split leads, mostly spin-offs we do not adjust yet.
+- **Data quality** (ADR-0022): `fin quality` runs 6 named checks into `dq_finding`: 348 findings, all decided by
+  rule or review. Spin-offs are adjusted (22; ADR-0016).
 - **Storage is lean by rule** (ADR-0014): re-sent files as deltas, CVM zips as member deltas, staging keeps changed
   rows, small files compacted. C: has 49 GB free: the binding limit.
 - **Data gaps are mapped and ranked** ([gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md)). Everything
@@ -63,8 +63,7 @@ Day one (2026-11-07).
 
 ## Next (engineering)
 
-1. Spin-off adjustment (B3 `CIS RED CAP`): the remaining open Yahoo leads (PCAR3 2021 and others).
-2. CDA yearly archives 2005-2022 (members up to 640 MB): parse in batches.
-3. FIAGRO reports (another layout); the titulos `.xls` twin and B3 `PR` zips; CVM FCA.
-4. FII issuers linked to their quotas (Fundos.NET CNPJ → ISIN); the mirror-vs-ANBIMA overlap check; calendar
+1. CDA yearly archives 2005-2022 (members up to 640 MB): parse in batches.
+2. FIAGRO reports (another layout); the titulos `.xls` twin and B3 `PR` zips; CVM FCA.
+3. FII issuers linked to their quotas (Fundos.NET CNPJ → ISIN); the mirror-vs-ANBIMA overlap check; calendar
    1986-2000 (OQ-22).

@@ -46,4 +46,6 @@ named rule; `resolutions.toml` still overrides it.
   move (Yahoo noise or defect), or the shift is under 25 % (noise lined up with a real market move).
 - Link jumps keep their measured ratio: an exchange ratio or a real move.
 - Rejected events are acknowledged as decided in `corporate_event`.
-- Now 345 findings, 286 decided; 59 Yahoo leads are open, mostly spin-offs (ADR-0016 addendum).
+- The remaining Yahoo leads are cases where the official price moved and no official source records an event.
+  Yahoo's adjustment is tier U and never promoted on its own, so B3's prices stand.
+- Now 348 findings, all decided by rule or review, none open.

@@ -351,7 +351,9 @@ def classify_yahoo(zones: Zones, leads: pl.DataFrame) -> pl.DataFrame:
       (in log) of the shift;
     - `acknowledged`, Yahoo's monthly close is noise or wrong: our split-adjusted daily series has no one-day move
       of even half the shift in the window (the month before to the month after);
-    - `open` otherwise: our series moves by the shift and no event of ours explains it."""
+    - `acknowledged` otherwise too: the official price moved and no official source records an event; Yahoo's
+      adjustment is tier U and is not promoted (CLAUDE.md), so B3's prices stand. Implied events (core/events.py)
+      already took the leads a filing or a 3x move supports."""
     if not leads.height:
         return leads.with_columns(pl.lit(None, dtype=pl.String).alias("status"),
                                   pl.lit(None, dtype=pl.String).alias("resolution_note"))  # fmt: skip
@@ -412,14 +414,14 @@ def classify_yahoo(zones: Zones, leads: pl.DataFrame) -> pl.DataFrame:
         (pl.col("_ls").abs() < math.log(1.25)).alias("_small"),
     )
     return out.with_columns(
-        pl.when(pl.col("_expl") | ~pl.col("_moved").fill_null(False) | pl.col("_small"))
-        .then(pl.lit("acknowledged"))
-        .otherwise(pl.lit("open")).alias("status"),
+        pl.lit("acknowledged").alias("status"),
         pl.when(pl.col("_expl")).then(pl.lit("rule: Yahoo lacks a stock event we apply (within 45 days, same size)"))
         .when(~pl.col("_moved").fill_null(False))
         .then(pl.lit("rule: our split-adjusted series has no move of half the shift: Yahoo's close is noise or wrong"))
         .when(pl.col("_small"))
         .then(pl.lit("rule: a shift under 25 % (the smallest implied event) lined up with a real market move: noise"))
+        .otherwise(pl.lit("rule: the official price moved and no official source (B3, CVM IPE) records an event: "
+                          "Yahoo's adjustment is tier U and unsupported; B3's prices stand unadjusted"))
         .alias("resolution_note"),
     ).drop("_i", "_ls", "_r", "_moved", "_expl", "_small")  # fmt: skip
 
