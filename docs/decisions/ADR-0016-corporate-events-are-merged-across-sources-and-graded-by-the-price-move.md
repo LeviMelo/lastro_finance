@@ -54,4 +54,14 @@ A match adds `cvm_ipe` to the sources, which makes the event confirmed (two sour
 link. A Yahoo "split" whose filing speaks of a bonificação becomes a BONUS. Both ITUB 2025 bonuses match the
 filings of golden_events.md.
 
+**Addendum (2026-11-07): `conflicting`.** The new Yahoo reconciliation (ADR-0022) found that our split adjustment
+multiplied ITUB4's prices before 2011-11 by 100.
+- Cause: B3 and a CVM filing report a 1:100 reverse split on 2011-11-01. It was simultaneous with a 100:1 split
+  (net 1), and the price moved by 1.02, but two sources made the event `confirmed`.
+- Rule: when the price contradicts the ratio, the event is `conflicting` whatever the sources say, and it adjusts
+  nothing. The price contradicts the ratio when the move is closer to no event than to the ratio, with the ratio
+  beyond ±20 % of 1. Adjusting it would put a jump into our adjusted series.
+- Result: 57 stock events become conflicting: 926 confirmed, 70 price only, 66 candidates.
+- The golden cases are unchanged, and the ITUB4 2011 Yahoo finding is gone.
+
 **Not done.** Mergers and ISIN changes without a B3 event, as event legs (ADR-0019).

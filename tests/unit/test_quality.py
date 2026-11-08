@@ -52,3 +52,24 @@ def test_ohlc_zero_price_is_an_error(zones: Zones) -> None:
     write_parquet(p, zones.core / "price_daily" / "year=2021.parquet")
     out = findings.ohlc_inconsistent(zones)
     assert out.select("vt", "severity").rows() == [(date(2021, 5, 18), "error")]
+
+
+def test_yahoo_level_shift_found_once_and_single_months_ignored() -> None:
+    from datetime import timedelta
+
+    months = [date(2020, 1, 1) + timedelta(days=31 * i) for i in range(24)]
+    months = [m.replace(day=1) for m in months]
+    r = [1.0] * 12 + [2.0] * 12  # Yahoo applies a 2:1 split from month 12 that we do not
+    r[5] = 1.07  # one noisy month (Yahoo's monthly close is not always the last session's)
+    j = pl.DataFrame(
+        {
+            "instrument_id": ["I1"] * 24,
+            "ticker": ["ABCD3"] * 24,
+            "month": months,
+            "r": r,
+            "y_sha": ["s"] * 24,
+            "trade_date": months,
+        }
+    )
+    out = findings.level_shifts(j)
+    assert out["vt"].to_list() == [months[12]] and out["observed"][0] == "2.0"

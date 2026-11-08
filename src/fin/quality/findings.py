@@ -10,16 +10,21 @@ Checks:
 - `share_count_unit_mismatch`: FRE (whole shares) vs the nearest DFP/ITR count, off by a factor near 1,000;
 - `link_price_jump`: a ticker or name continuity link whose price ratio is outside [0.5, 2] with no stock event
   on either line within 10 days;
-- `stock_event_unproven`: a stock event no second source, filing or price move confirms (status `candidate`);
+- `stock_event_unproven`: a stock event no second source, filing or price move confirms (`candidate`, info), or
+  whose ratio the price contradicts (`conflicting`, warn); neither adjusts anything;
 - `ohlc_inconsistent`: a standard-lot session whose high or low does not bound its open and close, or with a
   non-positive price (`error`: it breaks every return through it). The average (PREMED) is not checked: it lies
   outside high/low on 6,520 sessions (1989-91 and, from 2021, mostly BDRs), so it includes trades the high/low do
-  not (docs/sources/b3_cotahist.md).
+  not (docs/sources/b3_cotahist.md);
+- `cotahist_vs_yahoo`: Yahoo's monthly close (split-adjusted) / our split-adjusted close, per line: a shift of more
+  than 10 % between the medians of the 6 months before and after is a split one side applies and the other does
+  not. Single months are noise: Yahoo's monthly close is often not the month's last close (CEAB3 2024-07).
 """
 
 from __future__ import annotations
 
 import hashlib
+import math
 import tomllib
 from collections.abc import Callable
 from decimal import ROUND_DOWN, Decimal
@@ -207,17 +212,18 @@ def stock_event_unproven(zones: Zones) -> pl.DataFrame:
     ev = read_parquet_dir(zones.core / "corporate_event")
     if ev is None:
         return _frame([])
-    c = ev.filter((pl.col("status") == "candidate") & pl.col("ratio_num").is_not_null())
+    c = ev.filter(pl.col("status").is_in(["candidate", "conflicting"]) & pl.col("ratio_num").is_not_null())
     return c.select(
         pl.lit("stock_event_unproven").alias("check_id"),
-        pl.lit("info").alias("severity"),
+        # conflicting: reported (often by two sources) but the price did not move by the ratio
+        pl.when(pl.col("status") == "conflicting").then(pl.lit("warn")).otherwise(pl.lit("info")).alias("severity"),
         pl.lit("instrument").alias("entity_kind"),
         pl.format("{}:{}:{}/{}", "instrument_id", "event_type", "ratio_num", "ratio_den").alias("entity_id"),
         pl.col("ex_date").alias("vt"),
         pl.col("price_check").round(4).cast(pl.String).alias("observed"),
         pl.lit("price_check near 1, a second source or an IPE filing").alias("expected"),
         pl.format(
-            "{} {}:{} reported by {} only; it adjusts nothing", "event_type", "ratio_num", "ratio_den", "sources"
+            "{} {}:{} ({}) from {}; it adjusts nothing", "event_type", "ratio_num", "ratio_den", "status", "sources"
         ).alias("detail"),
         pl.format("corporate_event {}@{}", "instrument_id", "ex_date").alias("evidence"),
     )
@@ -253,12 +259,128 @@ def ohlc_inconsistent(zones: Zones) -> pl.DataFrame:
     ).rename({"instrument_id": "entity_id", "trade_date": "vt", "raw_locator": "evidence"})
 
 
+YAHOO_STEP = 0.10  # a level shift of more than 10 % in Yahoo close / our split-adjusted close
+YAHOO_WINDOW = 6  # months on each side (medians: Yahoo's monthly close is not always the last session's)
+
+
+def _yahoo_monthly(zones: Zones) -> pl.DataFrame:
+    """Yahoo's monthly closes (split-adjusted, `range=max`) from the latest archived chart of each ticker."""
+    import json
+
+    from fin.store.manifest import Manifest
+    from fin.store.raw import RawStore
+
+    m = Manifest(zones.manifest).read().filter((pl.col("source_id") == "yahoo_chart") & (pl.col("http_status") == 200))
+    m = m.sort("fetched_at").unique("request_key", keep="last")
+    raw = RawStore(zones.raw)
+    parts: list[pl.DataFrame] = []
+    for sha in m["raw_sha256"].to_list():
+        res = (json.loads(raw.read(sha)).get("chart") or {}).get("result") or []
+        if not res or not res[0].get("timestamp"):
+            continue
+        r = res[0]
+        sym = str(r["meta"]["symbol"]).removesuffix(".SA")
+        # bars sit at local midnight; under the old DST (to 2019) the fixed offset puts them at 23:00 the day before
+        off = int(r["meta"].get("gmtoffset") or 0)
+        close = r["indicators"]["quote"][0].get("close") or []
+        parts.append(
+            pl.DataFrame(
+                {"ts": [ts + off + 43200 for ts in r["timestamp"]][:-1], "y_close": close[:-1]},  # last: partial
+                schema={"ts": pl.Int64, "y_close": pl.Float64},
+            ).with_columns(pl.lit(sym).alias("ticker"), pl.lit(sha).alias("y_sha"))
+        )
+    if not parts:
+        return pl.DataFrame(schema={"ticker": pl.String, "month": pl.Date, "y_close": pl.Float64, "y_sha": pl.String})
+    y = pl.concat(parts).drop_nulls("y_close")
+    return y.select(
+        "ticker", pl.from_epoch("ts", time_unit="s").dt.date().dt.truncate("1mo").alias("month"), "y_close", "y_sha"
+    ).unique(["ticker", "month"], keep="last")
+
+
+def cotahist_vs_yahoo(zones: Zones) -> pl.DataFrame:
+    path, fac = zones.core / "price_daily", zones.derived / "adjustment_factor"
+    if not path.exists():
+        return _frame([])
+    y = _yahoo_monthly(zones)
+    if not y.height:
+        return _frame([])
+    last = (
+        pl.scan_parquet(path / "*.parquet")
+        .filter(pl.col("market_segment") == "lote_padrao")
+        .filter(pl.col("ticker").is_in(y["ticker"].unique().to_list()))
+        .select("instrument_id", "ticker", "trade_date", pl.col("close").cast(pl.Float64))
+        .with_columns(pl.col("trade_date").dt.truncate("1mo").alias("month"))
+        .group_by("instrument_id", "ticker", "month")
+        .agg(pl.all().sort_by("trade_date").last())
+        .collect()
+    )
+    if fac.exists():  # our split adjustment to today's basis: the product of later split factors
+        f = pl.read_parquet(fac / "*.parquet").select("instrument_id", "ex_date", "split_factor")
+        adj = (
+            last.join(f, on="instrument_id", how="left")
+            .filter(pl.col("ex_date").is_null() | (pl.col("ex_date") > pl.col("trade_date")))
+            .group_by("instrument_id", "ticker", "month")
+            .agg(pl.col("split_factor").fill_null(1.0).log().sum().exp().alias("k"))
+        )
+        last = last.join(adj, on=["instrument_id", "ticker", "month"], how="left").with_columns(
+            pl.col("k").fill_null(1.0)
+        )
+    else:
+        last = last.with_columns(pl.lit(1.0).alias("k"))
+    j = (
+        last.join(y, on=["ticker", "month"])
+        .filter(pl.col("close") > 0)
+        .with_columns((pl.col("y_close") / (pl.col("close") * pl.col("k"))).alias("r"))
+        .sort("instrument_id", "ticker", "month")
+    )
+    return level_shifts(j)
+
+
+def level_shifts(j: pl.DataFrame) -> pl.DataFrame:
+    """Findings from monthly ratios `r` (Yahoo / ours) per (instrument_id, ticker), sorted by month."""
+    g = ["instrument_id", "ticker"]
+    lr = pl.col("r").log()
+    w = YAHOO_WINDOW
+    j = j.with_columns(  # median log-ratio of the w months before and of the w months from this one
+        lr.shift(1).rolling_median(w, min_samples=w).over(g).alias("_b"),
+        lr.reverse().rolling_median(w, min_samples=w).reverse().over(g).alias("_a"),
+        pl.col("month").shift(1).over(g).alias("m0"),
+    ).with_columns((pl.col("_a") - pl.col("_b")).alias("_s"), (lr - lr.shift(1)).abs().over(g).alias("_d"))
+    # months around a step all show the shift (a plateau of medians): keep, per run of them, the month of the
+    # largest one-month jump, i.e. the step itself
+    q = pl.col("_s").abs() > math.log(1 + YAHOO_STEP)
+    j = j.with_columns(q.alias("_q")).with_columns(
+        (pl.col("_q") != pl.col("_q").shift(1)).cum_sum().over(g).alias("_run")
+    )
+    j = j.filter(pl.col("_q")).filter(pl.col("_d") == pl.col("_d").max().over([*g, "_run"]))
+    step = pl.col("_s").exp().round(4)
+    return j.select(
+        pl.lit("cotahist_vs_yahoo").alias("check_id"),
+        pl.lit("warn").alias("severity"),
+        pl.lit("instrument").alias("entity_kind"),
+        pl.format("{}:{}", "instrument_id", "ticker").alias("entity_id"),
+        pl.col("month").alias("vt"),
+        step.cast(pl.String).alias("observed"),
+        pl.lit("1 (Yahoo and our split-adjusted closes keep one level)").alias("expected"),
+        pl.format(
+            "{}: Yahoo close / our split-adjusted close shifts level by {} from {} to {}: a split one side applies and "
+            "the other does not",
+            "ticker",
+            step,
+            "m0",
+            "month",
+        ).alias("detail"),
+        pl.format("yahoo_chart {} ; price_daily {}@{}", "y_sha", "instrument_id", "trade_date").alias("evidence"),
+    )
+
+
 CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "vna_ntnb_vs_ipca": vna_ntnb_vs_ipca,
     "share_count_unit_mismatch": share_count_unit_mismatch,
     "link_price_jump": link_price_jump,
     "stock_event_unproven": stock_event_unproven,
     "ohlc_inconsistent": ohlc_inconsistent,
+    "cotahist_vs_yahoo": cotahist_vs_yahoo,
 }
 
 

@@ -27,3 +27,15 @@ Until now disagreements were only written into source notes, or graded inside a 
 - `link_price_jump`, 9, open;
 - `stock_event_unproven`, 100;
 - `share_count_unit_mismatch`, 0. It found 5 before FRE anchored the units (ADR-0020 addendum).
+
+**Addendum, same day: `cotahist_vs_yahoo`.** Yahoo's monthly close (split-adjusted) is compared with our
+split-adjusted close, per line.
+- A level shift of more than 10 % between the medians of the 6 months before and after is a split that one side
+  applies and the other does not.
+- Single months are noise: Yahoo's monthly close is often not the month's last close (CEAB3 2024-07: 8.96 vs
+  8.44). Its timestamps also fall a day early under the old DST, fixed by reading them at local noon.
+- First run: it found that we multiplied ITUB4 before 2011-11 by 100, which led to the `conflicting` status
+  (ADR-0016 addendum).
+- Now 321 open leads on 468 lines. Some are Yahoo defects (LREN3 before 2005-07); others are splits only Yahoo
+  reports (CBOP11 2018, 10:1).
+- Total: 455 findings, 57 of them conflicting events.

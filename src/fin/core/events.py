@@ -8,11 +8,12 @@
 
 Each stock event carries its evidence: which sources report it, and whether the unadjusted prices moved by the
 stated ratio across the ex-date (`price_check`: the close of the last session with the right over the first session
-without it, divided by the ratio). The status is
-`confirmed` (two sources, or one source and the price check), `price_only` (one source, the price check agrees),
-`candidate` otherwise. Only `confirmed` and `price_only` events enter the adjustment factors. The check is made on
-the day's net ratio per source group (B3 may record one operation as two same-day events), and passes when the move
-is closer to the ratio than to no event, within a factor of 2.
+without it, divided by the ratio). The status is `conflicting` when the price contradicts the ratio (it did not
+move although the ratio is large enough to show, whatever the sources say: adjusting would put a jump into the
+adjusted series), else `confirmed` (two sources, or B3 and the price check), `price_only` (one source, the price
+check agrees), `candidate` otherwise. Only `confirmed` and `price_only` events enter the adjustment factors. The
+check is made on the day's net ratio per source group (B3 may record one operation as two same-day events), and
+passes when the move is closer to the ratio than to no event, within a factor of 2.
 
 The ex-date is the first B3 session after the data-com, taken from the sessions in `price_daily` (B3's own calendar);
 Yahoo dates are already ex-dates.
@@ -96,7 +97,7 @@ EVENT = Contract(
         Column(
             "status",
             pl.String,
-            "confirmed, price_only, candidate (stock events); reported (cash)",
+            "confirmed, price_only, candidate, conflicting (stock events); reported (cash)",
             "situação",
             nullable=False,
         ),
@@ -371,11 +372,20 @@ def ipe_evidence(zones: Zones, stock: pl.DataFrame) -> pl.DataFrame:
     return out.drop("_r", "cnpj", "_word", "_lo", "_hi", "_is_bonus")
 
 
+def contradicts(move: pl.Expr, net: pl.Expr) -> pl.Expr:
+    """The price did not move although the ratio is large enough to show: the move is closer to no event than to the
+    ratio (in log space) and the ratio is beyond ±20 % of 1. ITUB4 2011-11-01: B3 and a filing report a 1:100
+    reverse split, but it was simultaneous with a 100:1 split (net 1) and the price moved by 1.02."""
+    lm, ln = move.log(), net.log()
+    return (lm.abs() < (lm - ln).abs()) & (ln.abs() >= SMALL_LOG)
+
+
 def status(sources: pl.Expr, move: pl.Expr, net: pl.Expr) -> pl.Expr:
     agree = agrees(move, net).fill_null(False)
     two = sources.str.contains(",")
     return (
-        pl.when(two | (sources.str.contains("b3") & agree)).then(pl.lit("confirmed"))
+        pl.when(contradicts(move, net).fill_null(False)).then(pl.lit("conflicting"))
+        .when(two | (sources.str.contains("b3") & agree)).then(pl.lit("confirmed"))
         .when(agree).then(pl.lit("price_only"))
         .otherwise(pl.lit("candidate"))
     )  # fmt: skip

@@ -60,9 +60,22 @@ def test_status_needs_two_sources_or_the_price() -> None:
     df = pl.DataFrame(
         {
             "sources": ["b3_company_events,yahoo_chart", "b3_company_events", "yahoo_chart", "yahoo_chart"],
-            "move": [None, 1.03, 2.0, 1.0],
-            "net": [1.03, 1.03, 2.0, 2.0],
+            "move": [None, 1.03, 2.0, 40.0],
+            "net": [1.03, 1.03, 2.0, 100.0],
         }
     )
     out = df.select(events.status(pl.col("sources"), pl.col("move"), pl.col("net")).alias("s"))["s"].to_list()
-    assert out == ["confirmed", "confirmed", "price_only", "candidate"]
+    assert out == ["confirmed", "confirmed", "price_only", "candidate"]  # 40 for 100: neither agrees nor contradicts
+
+
+def test_price_contradicting_the_ratio_is_conflicting_whatever_the_sources() -> None:
+    # ITUB4 2011-11-01: B3 and a filing report 1:100, the price moved by 1.02 (a simultaneous 100:1 split)
+    df = pl.DataFrame(
+        {
+            "sources": ["b3_company_events,cvm_ipe", "b3_company_events", "yahoo_chart"],
+            "move": [1.0187, 0.0101, 1.01],
+            "net": [0.01, 0.01, 1.05],  # the last: a 5 % bonus inside the noise, never contradicted
+        }
+    )
+    got = df.select(events.status(pl.col("sources"), pl.col("move"), pl.col("net")).alias("s"))["s"].to_list()
+    assert got == ["conflicting", "confirmed", "price_only"]

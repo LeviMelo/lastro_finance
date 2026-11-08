@@ -23,8 +23,13 @@ Day one (2026-11-07).
     148 on 2015-06-30; share counts from DFP/ITR 2020– and FRE 2010–; ADR-0021);
   - staging: Tesouro Direto 2004–, FII distributions, CVM statements 2010– (66.8 M lines), intraday 5-minute bars
     (archived from 2026-11-07).
-- **Data quality** (ADR-0022): `fin quality` runs 5 named checks into `dq_finding` (111 findings: 2 acknowledged,
-  9 link price jumps open, 100 unproven events). Their review status is in `fin/quality/resolutions.toml`.
+- **Data quality** (ADR-0022): `fin quality` runs 6 named checks into `dq_finding`. There are 455 findings:
+  - 2 acknowledged;
+  - 321 open COTAHIST-vs-Yahoo split leads;
+  - 9 link price jumps;
+  - 57 conflicting and 66 unproven events.
+
+  Their review status is in `fin/quality/resolutions.toml`.
 - **Storage is lean by rule** (ADR-0014): re-sent files as deltas, CVM zips as member deltas, staging keeps changed
   rows, small files compacted. C: has 49 GB free: the binding limit.
 - **Data gaps are mapped and ranked** ([gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md)). Everything
@@ -63,9 +68,9 @@ Day one (2026-11-07).
 
 ## Next
 
-1. **Events:** 828 stock events are proven by a CVM IPE filing (ADR-0016). The 100 candidates left have no price
-   move on their own line, no IPE filing and no instrument link within 10 days. They stay candidates and adjust
-   nothing.
+1. **Events:** 926 stock events are confirmed and 70 price-only. 57 are conflicting (the price contradicts the
+   ratio, e.g. ITUB4 2011's net-zero 1:100 + 100:1) and 66 candidates; neither adjusts anything (ADR-0016).
+   Next: review the 321 Yahoo split leads (`dq_finding`, `cotahist_vs_yahoo`).
 2. **Links:** 267 in `instrument_link`: ticker and name continuity, B3 cross-asset events (ADR-0019). ITAU4 → ITUB4
    (2009) is linked. Next: FII issuers from Fundos.NET.
 3. **Fundamentals:** 16 standard metrics exist (`fundamental_metric`). `share_count` has a per-filing unit
