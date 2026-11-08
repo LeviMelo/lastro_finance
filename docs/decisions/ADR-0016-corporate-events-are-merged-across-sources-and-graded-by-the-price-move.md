@@ -44,6 +44,14 @@
 price / cum price, applied only when the subscription price is below the cum price. Identical cash rows are kept
 (distinct installments), taken from each issuer's latest run.
 
-**Not done.**
-- Mergers and ISIN changes as event legs (PLAN's event graph).
-- Proving each event against its IPE document.
+**Added: IPE evidence.** Each stock event is matched to the earliest IPE document of its issuer (CNPJ via
+`issuer_instrument`):
+- the category announces events (Fato Relevante, Aviso aos Acionistas, Comunicado ao Mercado, Assembleia);
+- the subject names the event (bonifica / desdobr / grupament);
+- it was delivered between 90 days before the data-com and 10 days after the ex-date.
+
+A match adds `cvm_ipe` to the sources, which makes the event confirmed (two sources), and keeps the protocol and
+link. A Yahoo "split" whose filing speaks of a bonificação becomes a BONUS. Both ITUB 2025 bonuses match the
+filings of golden_events.md.
+
+**Not done.** Mergers and ISIN changes without a B3 event, as event legs (ADR-0019).

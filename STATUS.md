@@ -62,7 +62,7 @@ Day one (2026-11-07).
 
 ## Next
 
-1. **Prove events against CVM IPE** documents; ISIN changes and mergers as event legs (PLAN's event graph).
+1. **Events:** 828 stock events are proven by a CVM IPE filing (ADR-0016). Next: the remaining 100 candidates.
 2. **Mergers without a B3 event** (ITAU4 → ITUB4, 2009) from CVM IPE; FII issuers from Fundos.NET. Links from ticker
    continuity and B3 cross-asset events exist (`instrument_link`, 170; ADR-0019).
 3. **Fundamentals:** 15 standard metrics exist (`fundamental_metric`); share counts have a per-filing unit

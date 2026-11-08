@@ -38,3 +38,9 @@ Persistent.
 ## 7. Open questions
 - Whether old (2003-2014) Link_Download documents still resolve.
 - Whether the empty shell depends on server-side load or on the document (the same URL succeeded on retry).
+
+## 8. Parsed (2026-11-07, `ingest/cvm_ipe.py`)
+- 749,235 document rows 2003-01-06 → 2026-10-30; the header is identical in every year. 246,855 rows have no
+  protocol (most of the older years, and some recent ones).
+- Used as evidence for stock events (ADR-0016): subject keywords `bonifica`, `desdobr`, `grupament`; ITUB's bonus
+  Fato Relevante of 2025-02-05 has subject "Bonificação de Ações" and no type or species.

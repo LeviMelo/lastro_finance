@@ -43,6 +43,22 @@ cash = con.execute(
     """
 ).fetchall()
 print("GRND3 2025-12-26 cash (golden sum 1.086264641):", cash)
+# the IPE filing that proves each ITUB bonus (golden_events.md rows 1 and 1b)
+for ex, protocol in (
+    ("2025-12-26", "019348IPE181220250198198217-32"),
+    ("2025-03-18", "019348IPE050220250104569311-22"),
+):
+    got = con.execute(
+        """
+        select e.ipe_protocol from corporate_event e join instrument_identifier i on i.instrument_id = e.instrument_id
+         and i.scheme = 'TICKER' and i.value = 'ITUB4'
+        where e.ex_date = ? and e.ratio_num is not null
+        """,
+        [dt.date.fromisoformat(ex)],
+    ).fetchall()
+    proven = any(r[0] == protocol for r in got)
+    print("OK " if proven else "MISS", "ITUB4", ex, "IPE", protocol, got)
+    missing += 0 if proven else 1
 ok_cash = bool(cash) and str(cash[0][3]).startswith("1.086264641")
 print("OK " if ok_cash else "MISS", "GRND3 cash sum")
 sys.exit(1 if missing or not ok_cash else 0)

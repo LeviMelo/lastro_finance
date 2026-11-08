@@ -100,7 +100,7 @@ institution = "CVM"
 access = "HTTP yearly zips + document links"
 tier = "P"
 ephemeral = false
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/cvm_ipe.md"
 
 [cvm_vlmo]

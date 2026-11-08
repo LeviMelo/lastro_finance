@@ -100,6 +100,9 @@ EVENT = Contract(
             "situação",
             nullable=False,
         ),
+        Column("ipe_protocol", pl.String, "CVM IPE document that announces it (stock events)", "protocolo IPE"),
+        Column("ipe_link", pl.String, "its download link", "link IPE"),
+        Column("ipe_delivered_on", pl.Date, "its delivery date", "entrega IPE", "date"),
     ),
     rules=(
         Rule("type_known", pl.col("event_type").is_in(TYPES)),
@@ -292,6 +295,80 @@ def agrees(move: pl.Expr, net: pl.Expr) -> pl.Expr:
     # a small ratio (a 5 % bonus) sits inside one day's price noise: it passes when the move is within 10 % of it
     small = (ln.abs() < SMALL_LOG) & (gap <= SMALL_GAP)
     return ((gap < lm.abs()) & (gap <= math.log(2))) | small
+
+
+IPE_WORDS = {  # event type -> words of the IPE subject that announce it (regex, lower case, accents kept)
+    "BONUS": "bonifica",
+    "SPLIT": "desdobr|bonifica",  # Yahoo reports bonuses as splits (ITUB 2025-03)
+    "REVERSE_SPLIT": "grupament",
+}
+IPE_CATEGORIES = ("Fato Relevante", "Aviso aos Acionistas", "Comunicado ao Mercado", "Assembleia")
+IPE_BEFORE_DAYS = 90
+IPE_AFTER_DAYS = 10
+
+
+def ipe_evidence(zones: Zones, stock: pl.DataFrame) -> pl.DataFrame:
+    """For each stock event, the earliest IPE document of the same issuer (CNPJ via `issuer_instrument`), of an
+    announcing category, whose subject names the event type, delivered from 90 days before the data-com (or
+    ex-date) to 10 days after the ex-date. Adds `cvm_ipe` to the sources of the events it proves."""
+    docs = _staging(zones, "cvm_ipe", "document")
+    link = zones.core / "issuer_instrument" / "issuer_instrument.parquet"
+    issuer = zones.core / "issuer" / "issuer.parquet"
+    empty = stock.with_columns(
+        pl.lit(None, dtype=pl.String).alias("ipe_protocol"),
+        pl.lit(None, dtype=pl.String).alias("ipe_link"),
+        pl.lit(None, dtype=pl.Date).alias("ipe_delivered_on"),
+    )
+    if docs is None or not link.exists() or not issuer.exists():
+        return empty
+    cnpj = pl.read_parquet(link).join(pl.read_parquet(issuer).select("issuer_id", "cnpj"), on="issuer_id")
+    cnpj = cnpj.select("instrument_id", "cnpj").unique("instrument_id")
+    text = (pl.col("subject").fill_null("") + " " + pl.col("doc_type").fill_null("")).str.to_lowercase()
+    docs = docs.filter(pl.col("category").is_in(IPE_CATEGORIES)).select(
+        pl.col("cnpj").str.replace_all(r"\D", "").alias("cnpj"),
+        "delivered_on",
+        pl.col("protocol").alias("ipe_protocol"),
+        pl.col("link").alias("ipe_link"),
+        text.alias("_text"),
+    )
+    ev = stock.with_row_index("_r").join(cnpj, on="instrument_id", how="left")
+    ev = ev.with_columns(
+        pl.col("event_type").replace_strict(IPE_WORDS, default=None).alias("_word"),
+        pl.coalesce("data_com", "ex_date").dt.offset_by(f"-{IPE_BEFORE_DAYS}d").alias("_lo"),
+        pl.col("ex_date").dt.offset_by(f"{IPE_AFTER_DAYS}d").alias("_hi"),
+    )
+    cand = (
+        ev.filter(pl.col("_word").is_not_null())
+        .join(docs, on="cnpj")
+        .filter(
+            pl.col("delivered_on").is_between(pl.col("_lo"), pl.col("_hi"))
+            & pl.col("_text").str.contains(pl.col("_word"))
+        )
+    )
+    best = (
+        cand.sort("delivered_on")
+        .unique("_r", keep="first")
+        .select(
+            "_r",
+            "ipe_protocol",
+            "ipe_link",
+            pl.col("delivered_on").alias("ipe_delivered_on"),
+            (pl.col("_text").str.contains("bonifica") & ~pl.col("_text").str.contains("desdobr")).alias("_is_bonus"),
+        )
+    )
+    out = ev.join(best, on="_r", how="left").sort("_r")
+    out = out.with_columns(
+        pl.when(pl.col("ipe_link").is_not_null())
+        .then(pl.col("sources") + ",cvm_ipe")
+        .otherwise(pl.col("sources"))
+        .alias("sources"),
+        # Yahoo reports a bonus as a split; the filing says which
+        pl.when(pl.col("_is_bonus").fill_null(False) & (pl.col("event_type") == "SPLIT"))
+        .then(pl.lit("BONUS"))
+        .otherwise(pl.col("event_type"))
+        .alias("event_type"),
+    )
+    return out.drop("_r", "cnpj", "_word", "_lo", "_hi", "_is_bonus")
 
 
 def status(sources: pl.Expr, move: pl.Expr, net: pl.Expr) -> pl.Expr:
@@ -510,6 +587,7 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
     stock = stock_events(zones, dates)
     if stock.height:
         stock = price_check(stock, prices)
+        stock = ipe_evidence(zones, stock)
         stock = stock.with_columns(status(pl.col("sources"), pl.col("_move"), pl.col("_net")).alias("status")).drop(
             "_g", "_net", "_move"
         )
@@ -528,7 +606,12 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
         )
     rights = rights_events(zones, dates)
     cols = [c for c in EVENT.names if c != "event_id"]
-    allev = pl.concat([f.select(cols) for f in (stock, cash, rights) if f.height], how="vertical_relaxed")
+    schema = EVENT.schema()
+
+    def fill(f: pl.DataFrame) -> pl.DataFrame:
+        return f.with_columns([pl.lit(None, dtype=schema[c]).alias(c) for c in cols if c not in f.columns]).select(cols)
+
+    allev = pl.concat([fill(f) for f in (stock, cash, rights) if f.height], how="vertical_relaxed")
     allev = allev.filter(pl.col("ex_date").is_not_null()).sort("instrument_id", "ex_date", "event_type", "sources")
     allev = allev.with_columns(
         (

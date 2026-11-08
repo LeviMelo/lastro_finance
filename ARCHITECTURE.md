@@ -73,6 +73,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/series.py` | series payloads (SGS JSON and SOAP metadata, Ipeadata OData, SIDRA, Tesouro VNA workbooks, Treasury/NY Fed/Cboe CSVs, SDMX-CSV with the sources' unit codelists) → staging `observation`/`definition` → core `series_observation`/`series_definition`, versioned (ADR-0013) |
 | `ingest/cvm_statements.py` | CVM DFP/ITR zips → staging `statement_line` (every account line, value as written with its scale), `document` (every version and its delivery date), `share_capital` |
 | `ingest/cftc.py` | CFTC Commitments of Traders (3 reports) → staging `position`, long |
+| `ingest/cvm_ipe.py` | CVM IPE yearly index → staging `document` (evidence for events) |
 | `ingest/copom.py` | BCB Copom decision history → staging `decision` |
 | `ingest/focus.py` | BCB Focus expectations (8 tables) → staging `expectation` |
 | `ingest/fundosnet.py` | Fundos.NET notices → staging `distribution` (per Provento and kind, exact BRL per quota) and `listing` (delivery minute = knowledge time, version) |

@@ -29,3 +29,11 @@ interrupted 20261107T221834Z-737899. Checks: `scripts/check_golden_events.py`, a
   than to no event, within 2×".
 - A full manifest read on every fetch (delta base, dedup, conditional request) dropped a backfill to 0.2 request/s;
   lookups are now cached per run, and it is back at 1/s.
+
+**After IPE evidence and the same-class rule (ADR-0016, ADR-0019).**
+- Stock events (bonuses, splits, reverse splits): 1,119.
+  - 949 confirmed, 828 of them by an IPE filing;
+  - 70 price-only;
+  - 100 candidates.
+- Both ITUB 2025 bonuses are matched to the exact Fato Relevante protocols of golden_events.md
+  (`scripts/check_golden_events.py`).
