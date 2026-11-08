@@ -6,7 +6,8 @@ Every statement below was measured on the recon date against a real response unl
 
 ## 1. Access
 - Base `https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/<Endpoint>/<param>`; `<param>` = standard base64 (with `=` padding; unpadded gives 200 with an empty body) of compact JSON. GET, no auth, no cookies. Plain curl UA and a Chrome UA both worked (200). No rate limiting seen at 1 req/s (about 150 requests).
-- Wrong or unknown filters return **200 with empty body or empty `results`**, never an error. Unknown endpoint names return 404 (`GetListedStockDividends`, `GetListedSubscriptions` do not exist).
+- Wrong or unknown filters return **200 with empty body or empty `results`**, never an error.
+- **`GetListedCashDividends` finds nothing for a `tradingName` containing "/"** ("AMBEV S/A": 0 records; "AMBEV SA" and "AMBEV S.A.": 40; measured 2026-11-08). The slash is dropped before the request; dots and hyphens work as written. The name is also a prefix match: "AMBEV" returns 134 records, older companies included. Fras-le's history ("FRAS-LE", "FRASLE") ends in 2002 at the source. Unknown endpoint names return 404 (`GetListedStockDividends`, `GetListedSubscriptions` do not exist).
 - **`"language":"pt-br"` is mandatory for a stable format.** With `en-us` the same fields come back US-formatted (`06/15/2007`, `2,926,680,320.30`, `0.86051967000`). Always send pt-br.
 - Param keys are case-sensitive; order is irrelevant. `pageSize` works up to at least 120; 200 or more returns an empty page with null totals (the limit is between 121 and 199, not pinned down).
 

@@ -784,6 +784,102 @@ def cash_events(zones: Zones, dates: pl.Series) -> pl.DataFrame:
     return out.with_columns(next_session(dates, out["data_com"]).alias("ex_date"))
 
 
+CASH_WORDS = "dividend|juros sobre|jscp|jcp|provento|rendimento|remunera"
+CASH_DOC_DAYS = 60  # an announcing filing up to this many days before the ex-date
+CASH_GAP_DAYS = 120  # Yahoo fills only where we hold no cash event of the line within this many days
+
+
+def yahoo_cash_events(zones: Zones, events: pl.DataFrame, fac: pl.DataFrame, dates: pl.Series) -> pl.DataFrame:
+    """Cash payouts B3's history lacks (Fras-le after 2002, B3's backend; ADR-0016 addendum): a Yahoo dividend with
+    no cash event of ours within 120 days, proven by a CVM IPE filing of the issuer (Aviso aos Acionistas, Fato
+    Relevante, Comunicado ao Mercado) whose subject names a payout, delivered up to 60 days before the ex-date. Yahoo
+    states amounts on today's split basis, so the raw amount is Yahoo's divided by the product of our later split
+    factors. Yahoo does not separate dividends from JCP: the type is OTHER_CASH. Status `confirmed` (two sources,
+    one official); Yahoo alone is never applied."""
+    y = _staging(zones, "yahoo_chart", "dividend")
+    docs = _staging(zones, "cvm_ipe", "document")
+    link = zones.core / "issuer_instrument" / "issuer_instrument.parquet"
+    issuer = zones.core / "issuer" / "issuer.parquet"
+    if y is None or docs is None or not link.exists() or not issuer.exists():
+        return pl.DataFrame()
+    ids = (
+        _ids(zones)
+        .filter(pl.col("scheme") == "TICKER")
+        .select("instrument_id", pl.col("value").alias("ticker"), "vt_from", "vt_to")
+    )
+    y = (
+        y.unique(["ticker", "ex_date", "amount"])
+        .join(ids, on="ticker")
+        .filter(pl.col("ex_date").is_between(pl.col("vt_from"), pl.col("vt_to") + pl.duration(days=10)))
+        .select("instrument_id", "ticker", "ex_date", "amount")
+    )
+    have = events.filter(pl.col("cash_per_share").is_not_null()).select("instrument_id", pl.col("ex_date").alias("_e"))
+    near = (
+        y.join(have, on="instrument_id")
+        # only where B3's history is silent around it: with B3 payouts nearby, a Yahoo-only date is Yahoo's error
+        # (ITUB4 2025-03-18, the bonus day), never a payout to add
+        .filter((pl.col("_e") - pl.col("ex_date")).dt.total_days().abs() <= CASH_GAP_DAYS)
+        .select("instrument_id", "ex_date")
+        .unique()
+    )
+    y = y.join(near, on=["instrument_id", "ex_date"], how="anti")
+    if not y.height:
+        return pl.DataFrame()
+    cnpj = (
+        pl.read_parquet(link)
+        .join(pl.read_parquet(issuer).select("issuer_id", "cnpj"), on="issuer_id")
+        .select("instrument_id", "cnpj")
+        .unique("instrument_id")
+    )
+    text = (pl.col("subject").fill_null("") + " " + pl.col("doc_type").fill_null("")).str.to_lowercase()
+    d = (
+        docs.filter(pl.col("category").is_in(IPE_CATEGORIES))
+        .select(
+            pl.col("cnpj").str.replace_all(r"\D", "").alias("cnpj"),
+            "delivered_on",
+            pl.col("protocol").alias("ipe_protocol"),
+            pl.col("link").alias("ipe_link"),
+            text.alias("_t"),
+        )
+        .filter(pl.col("_t").str.contains(CASH_WORDS))
+    )
+    proof = (
+        y.join(cnpj, on="instrument_id")
+        .join(d, on="cnpj")
+        .filter(
+            pl.col("delivered_on").is_between(pl.col("ex_date").dt.offset_by(f"-{CASH_DOC_DAYS}d"), pl.col("ex_date"))
+        )
+        .sort("delivered_on", descending=True)
+        .unique(["instrument_id", "ex_date", "amount"], keep="first")
+        .select(
+            "instrument_id", "ex_date", "amount", "ipe_protocol", "ipe_link",
+            pl.col("delivered_on").alias("ipe_delivered_on"),
+        )
+    )  # fmt: skip
+    if not proof.height:
+        return pl.DataFrame()
+    later = (
+        proof.select("instrument_id", "ex_date")
+        .unique()
+        .join(
+            fac.select("instrument_id", pl.col("ex_date").alias("_f"), "split_factor"), on="instrument_id", how="left"
+        )
+        .filter(pl.col("_f").is_null() | (pl.col("_f") > pl.col("ex_date")))
+        .group_by("instrument_id", "ex_date")
+        .agg(pl.col("split_factor").fill_null(1.0).log().sum().exp().alias("_k"))
+    )
+    out = proof.join(later, on=["instrument_id", "ex_date"], how="left").with_columns(pl.col("_k").fill_null(1.0))
+    prev = pl.Series(dates).sort()
+    data_com = [prev.filter(prev < e).max() for e in out["ex_date"].to_list()]
+    return out.with_columns(
+        pl.Series("data_com", data_com, dtype=pl.Date),
+        pl.lit("OTHER_CASH").alias("event_type"),
+        (pl.col("amount").cast(pl.Float64) / pl.col("_k")).round(8).cast(CASH).alias("cash_per_share"),
+        pl.lit("yahoo_chart,cvm_ipe").alias("sources"),
+        pl.lit("confirmed").alias("status"),
+    ).drop("amount", "_k")
+
+
 def share_classes(zones: Zones) -> pl.DataFrame:
     """(issuer root, share class) -> instrument and its trading span, from COTAHIST: the root is the first four
     letters of a modern ticker (XXXX3), the class the first word of ESPECI (ON, PN, PNA, UNT…)."""
@@ -986,6 +1082,11 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
     if implied.height:
         allev = assemble([*parts, fill(implied)])
     good, bad = EVENT.split(allev)
+    # pass 3: payouts B3's history lacks, from Yahoo proven by a CVM filing (needs the split factors of pass 2)
+    extra = yahoo_cash_events(zones, good, with_spinoffs(factors(good, prices), spin), dates)
+    if extra.height:
+        allev = assemble([*parts, *([fill(implied)] if implied.height else []), fill(extra)])
+        good, bad = EVENT.split(allev)
     write_parquet(good, zones.core / "corporate_event" / "corporate_event.parquet")
     q = zones.quarantine / "core" / "corporate_event.parquet"
     if bad.height:

@@ -21,3 +21,4 @@ matters, and the result against the independent figure.
 | 2026-11-07 | [Storage and price_daily](docs/evaluation/2026-11-07-storage-and-price-daily.md) | raw deltas, changed-row staging, compaction measured; price_daily 7.34 M sessions, identity, 172/173 closes equal Yahoo |
 | 2026-11-07 | [Corporate events](docs/evaluation/2026-11-07-corporate-events.md) | 35,056 events; golden stock and cash cases exact; split adjustment equals Yahoo on 7 large caps; total-return differences explained |
 | 2026-11-07 | [Fundamentals mapping](docs/evaluation/2026-11-07-fundamentals-mapping.md) | 15 metrics by account name across industrial and bank templates; 441-458 companies per metric (DFP 2024) |
+| 2026-11-08 | [Golden portfolio](docs/evaluation/2026-11-08-golden-portfolio.md) | §13.1 portfolio total +37.38 % vs +37.2 %, price +28.69 % vs +28.5 %; B3 cash names with "/" fixed (572 events) |

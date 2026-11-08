@@ -36,6 +36,7 @@ uv run fin compact-staging [sources]      # merge small staging files (the daily
 uv run fin catalog                        # rebuild data/catalog.duckdb (views; the daily job does it)
 uv run fin quality [checks]               # run the data-quality checks → data/quality/dq_finding (the daily job does it)
 uv run python scripts/check_golden_events.py  # golden corporate events vs core (exit 1 on a miss)
+uv run python scripts/check_golden_portfolio.py  # PLAN §13.1 portfolio vs the plan's estimate (exit 1 outside tolerance)
 uv run fin rebuild --from-raw              # rebuild staging/core/derived/quarantine from raw + manifest
 ```
 

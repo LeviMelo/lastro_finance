@@ -16,6 +16,7 @@ Checks:
   non-positive price (`error`: it breaks every return through it). The average (PREMED) is not checked: it lies
   outside high/low on 6,520 sessions (1989-91 and, from 2021, mostly BDRs), so it includes trades the high/low do
   not (docs/sources/b3_cotahist.md);
+- `cash_vs_yahoo`: every Yahoo dividend of a line we hold matched by a cash event of ours (completeness);
 - `fiagro_duplicate_filing`: a FIAGRO monthly filing listed twice; the later delivery wins;
 - `mirror_vs_anbima`: the pyield mirror's bond PUs and rates against our own ANBIMA files on the dates both hold;
 - `cotahist_vs_yahoo`: Yahoo's monthly close (split-adjusted) / our split-adjusted close, per line: a shift of more
@@ -532,6 +533,54 @@ def fiagro_duplicate_filing(zones: Zones) -> pl.DataFrame:
     )
 
 
+def cash_vs_yahoo(zones: Zones) -> pl.DataFrame:
+    """Completeness of cash events: every Yahoo dividend (tier U) of a line we hold should have a cash event of
+    ours within 5 days. Each gap is decided by rule: with payouts of ours within 120 days it is a Yahoo date (B3's
+    official record stands); without, Yahoo alone reports it and no CVM filing proves it, so it is not applied
+    (core/events.yahoo_cash_events adds the proven ones)."""
+    y = read_parquet_dir(zones.staging / "yahoo_chart" / "dividend")
+    ev = read_parquet_dir(zones.core / "corporate_event")
+    ids_path = zones.core / "instrument_identifier" / "instrument_identifier.parquet"
+    if y is None or ev is None or not ids_path.exists():
+        return _frame([])
+    ids = (
+        pl.read_parquet(ids_path)
+        .filter(pl.col("scheme") == "TICKER")
+        .select("instrument_id", pl.col("value").alias("ticker"), "vt_from", "vt_to")
+    )
+    y = (
+        y.unique(["ticker", "ex_date", "amount"])
+        .join(ids, on="ticker")
+        .filter(pl.col("ex_date").is_between(pl.col("vt_from"), pl.col("vt_to") + pl.duration(days=10)))
+        .with_row_index("_r")
+    )
+    cash = ev.filter(pl.col("cash_per_share").is_not_null()).select("instrument_id", pl.col("ex_date").alias("_e"))
+    m = (
+        y.join(cash, on="instrument_id", how="left")
+        .with_columns((pl.col("_e") - pl.col("ex_date")).dt.total_days().abs().alias("_d"))
+        .group_by("_r")
+        .agg(pl.col("_d").min().alias("_d"))
+    )
+    gaps = y.join(m, on="_r").filter(pl.col("_d").is_null() | (pl.col("_d") > 5))
+    near = pl.col("_d").fill_null(10**6) <= 120
+    return gaps.select(
+        pl.lit("cash_vs_yahoo").alias("check_id"),
+        pl.lit("info").alias("severity"),
+        pl.lit("instrument").alias("entity_kind"),
+        pl.format("{}:{}", "instrument_id", "ticker").alias("entity_id"),
+        pl.col("ex_date").alias("vt"),
+        pl.col("amount").cast(pl.String).alias("observed"),
+        pl.lit("a cash event of ours within 5 days").alias("expected"),
+        pl.lit("Yahoo reports a dividend we do not hold").alias("detail"),
+        pl.lit("staging yahoo_chart/dividend; core corporate_event").alias("evidence"),
+        pl.lit("acknowledged").alias("status"),
+        pl.when(near)
+        .then(pl.lit("rule: we hold this line's payouts within 120 days: a Yahoo date, B3's official record stands"))
+        .otherwise(pl.lit("rule: Yahoo alone (tier U) and no CVM filing proves it: not applied"))
+        .alias("resolution_note"),
+    )
+
+
 CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "vna_ntnb_vs_ipca": vna_ntnb_vs_ipca,
     "share_count_unit_mismatch": share_count_unit_mismatch,
@@ -541,6 +590,7 @@ CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "cotahist_vs_yahoo": cotahist_vs_yahoo,
     "mirror_vs_anbima": mirror_vs_anbima,
     "fiagro_duplicate_filing": fiagro_duplicate_filing,
+    "cash_vs_yahoo": cash_vs_yahoo,
 }
 
 

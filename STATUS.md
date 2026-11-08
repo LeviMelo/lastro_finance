@@ -26,6 +26,8 @@ Day one (2026-11-07).
     (archived from 2026-11-07).
 - **Data quality** (ADR-0022): `fin quality` runs 8 named checks into `dq_finding`: 370 findings, all decided by
   rule or review. Spin-offs are adjusted (22; ADR-0016).
+- **Golden portfolio** (PLAN §13.1): total return +37.38 % vs the plan's +37.2 %, price +28.69 % vs +28.5 %
+  (`scripts/check_golden_portfolio.py`; Stage D exit).
 - **Storage is lean by rule** (ADR-0014): re-sent files as deltas, CVM zips as member deltas, staging keeps changed
   rows, small files compacted. C: has 49 GB free: the binding limit.
 - **Data gaps are mapped and ranked** ([gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md)). Everything

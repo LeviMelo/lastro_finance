@@ -317,6 +317,7 @@ class B3CompanyEvents(Connector):
         self._roots: set[str] = set()
         self._last: dict[str, date] = {}
         self._force = False
+        self._explicit: set[str] = set()
 
     def _spec(self, endpoint: str, params: dict[str, Any], dataset: str, locator: str, min_bytes: int = 2) -> FetchSpec:
         return FetchSpec(
@@ -345,7 +346,8 @@ class B3CompanyEvents(Connector):
         return set(frame["root"].to_list())
 
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
-        self._roots = set(options.get("tickers") or []) or self.universe(zones)
+        self._explicit = set(options.get("tickers") or [])  # roots asked for by name are fetched now
+        self._roots = self._explicit or self.universe(zones)
         self._force = mode is Mode.BACKFILL
         held = held_rows(zones, self.source_id, "supplement")
         self._last = {}
@@ -357,6 +359,8 @@ class B3CompanyEvents(Connector):
         yield self._spec("GetInitialCompanies", {"pageNumber": 1, "pageSize": PAGE}, "companies", "page=1", 50)
 
     def _due(self, root: str) -> bool:
+        if root in self._explicit:
+            return True
         last = self._last.get(root)
         return (self._force and last is None) or (
             not self._force and (last is None or today_brt() - last >= timedelta(days=EVERY_DAYS))
@@ -393,7 +397,9 @@ class B3CompanyEvents(Connector):
         return []
 
     def _cash(self, root: str, name: str, page: int) -> FetchSpec:
-        params = {"pageNumber": page, "pageSize": PAGE, "tradingName": name}
+        # the endpoint finds nothing for a name with "/" ("AMBEV S/A": 0 records; "AMBEV SA": 40; measured
+        # 2026-11-08): the slash is dropped. Dots and hyphens work as written (SUZANO S.A., FRAS-LE).
+        params = {"pageNumber": page, "pageSize": PAGE, "tradingName": name.replace("/", "")}
         return self._spec("GetListedCashDividends", params, "cash", f"{root}|{name}|page={page}")
 
     def derive(self, zones: Zones, run: Any) -> None:

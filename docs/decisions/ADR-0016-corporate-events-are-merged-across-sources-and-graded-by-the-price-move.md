@@ -87,4 +87,12 @@ multiplied ITUB4's prices before 2011-11 by 100.
   (within about 10 sessions) / the parent's cum close, folded into `split_factor`. 22 spin-offs: PCAR3 2021-03-01
   f = 0.140, where Yahoo shows a shift of 7.55. The rest had no priced new line in time (Telebrás 1998).
 
+**Addendum (2026-11-08): payouts B3 lacks.** A Yahoo dividend is added as a cash event (`OTHER_CASH`, sources
+`yahoo_chart,cvm_ipe`) when all three hold:
+- we hold no cash event of the line within 120 days;
+- a CVM IPE filing of the issuer that names a payout was delivered up to 60 days before;
+- the amount, converted from Yahoo's split basis, comes from Yahoo.
+
+41 events were added, 34 of them Fras-le 2008-2026 (B3's history stops in 2002). Yahoo alone is never applied.
+
 **Not done.** Mergers and ISIN changes without a B3 event, as event legs (ADR-0019).
