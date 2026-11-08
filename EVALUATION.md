@@ -22,3 +22,4 @@ matters, and the result against the independent figure.
 | 2026-11-07 | [Corporate events](docs/evaluation/2026-11-07-corporate-events.md) | 35,056 events; golden stock and cash cases exact; split adjustment equals Yahoo on 7 large caps; total-return differences explained |
 | 2026-11-07 | [Fundamentals mapping](docs/evaluation/2026-11-07-fundamentals-mapping.md) | 15 metrics by account name across industrial and bank templates; 441-458 companies per metric (DFP 2024) |
 | 2026-11-08 | [Golden portfolio](docs/evaluation/2026-11-08-golden-portfolio.md) | §13.1 portfolio total +37.38 % vs +37.2 %, price +28.69 % vs +28.5 %; B3 cash names with "/" fixed (572 events) |
+| 2026-11-08 | [Exit criteria C, E, G, H](docs/evaluation/2026-11-08-exit-criteria.md) | calendar vs sessions exact; Selic and CDI compounding 323/323 months; LTN PU 93.06 % (Tesouro irregularities); balance identity 24,322/24,328 |

@@ -20,7 +20,7 @@ import xlrd
 from fin.config import Zones
 from fin.ingest.base import Connector, Mode, Parsed
 from fin.ingest.fetch import FetchSpec
-from fin.reference.calendar import build_calendar_days, extend_back
+from fin.reference.calendar import build_calendar_days, extend_back, with_sessions
 from fin.schema import Column, Contract, Rule
 from fin.store.manifest import Manifest
 from fin.store.runs import IngestRun
@@ -141,7 +141,20 @@ def build_calendar(zones: Zones, run: IngestRun | None, days: pl.DataFrame | Non
             .collect()["d"]
             .to_list()
         )
-    full = extend_back(days, pub)
+    sessions: list[date] = []
+    pd = zones.core / "price_daily"
+    if pd.exists():
+        sessions = (
+            pl.scan_parquet(pd / "*.parquet")
+            .filter(pl.col("market_segment") == "lote_padrao")
+            .select("trade_date")
+            .unique()
+            .collect()["trade_date"]
+            .to_list()
+        )
+    first = days["date"].min()
+    # before ANBIMA's file: a CDI publication day or a B3 session (BCB skipped days after the Plano Cruzado, 1986-03)
+    full = with_sessions(extend_back(days, sorted(set(pub) | {s for s in sessions if s < first})), sessions)  # type: ignore[operator]
     write_parquet(full, path)
     if run is not None:
         run.count("calendar_day", in_=days.height, out=full.height)

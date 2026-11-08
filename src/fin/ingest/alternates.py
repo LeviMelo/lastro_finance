@@ -190,6 +190,7 @@ class BcbSgs(SeriesConnector):
         12: date(1986, 3, 6),  # CDI % a.d.
         11: date(1986, 6, 4),  # Selic % a.d.
         4389: date(1986, 3, 6),  # CDI % a.a. base 252
+        4391: date(1986, 8, 1),  # CDI accumulated in the month, % a.m. (measured 2026-11-08; checks SGS 12)
         1178: date(1986, 6, 4),  # Selic % a.a. base 252
         432: date(1999, 3, 5),  # Copom target
         226: date(1991, 2, 1),  # TR, % per period (row = start date, dataFim = +1 month); start not verified

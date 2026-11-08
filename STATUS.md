@@ -28,6 +28,9 @@ Day one (2026-11-07).
   rule or review. Spin-offs are adjusted (22; ADR-0016).
 - **Golden portfolio** (PLAN §13.1): total return +37.38 % vs the plan's +37.2 %, price +28.69 % vs +28.5 %
   (`scripts/check_golden_portfolio.py`; Stage D exit).
+- **Exit criteria** (`scripts/check_exit_criteria.py`): C, E and H pass; G is measured at 93.06 % (Tesouro's own
+  irregularities; docs/evaluation/2026-11-08-exit-criteria.md). Stage F's look-through and CVM 175 bridge are
+  next.
 - **Storage is lean by rule** (ADR-0014): re-sent files as deltas, CVM zips as member deltas, staging keeps changed
   rows, small files compacted. C: has 49 GB free: the binding limit.
 - **Data gaps are mapped and ranked** ([gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md)). Everything

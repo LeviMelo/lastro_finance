@@ -14,3 +14,9 @@ every business day from 1986-03-06. Over 2001-2005 its dates equal ANBIMA's busi
 - `du_index` runs on continuously across the seam.
 
 **Measured.** 5,415 dates before 2001, 3,684 of them business days. The 2001-01-02 seam is continuous.
+
+**Addendum (same day).**
+- A B3 session before 2001 is a business day too: BCB skipped CDI publication on 1986-03-07, 11 and 13 (after the
+  Plano Cruzado) while B3 traded.
+- `is_b3_trading_day` is filled from observed standard-lot sessions between the first and the last session. 104
+  business days since 1995 had no session (OQ-1).

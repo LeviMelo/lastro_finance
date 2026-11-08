@@ -100,6 +100,18 @@ def build_calendar_days(holidays: pl.DataFrame, version: str) -> pl.DataFrame:
     return CALENDAR_DAY.conform(df)
 
 
+def with_sessions(days: pl.DataFrame, sessions: list[date]) -> pl.DataFrame:
+    """`is_b3_trading_day` from the sessions B3 held (COTAHIST standard lot): true or false between the first and the
+    last observed session, null outside (OQ-1)."""
+    if not sessions:
+        return days
+    lo, hi = min(sessions), max(sessions)
+    inside = pl.col("date").is_between(lo, hi)
+    return days.with_columns(
+        pl.when(inside).then(pl.col("date").is_in(sessions)).otherwise(None).alias("is_b3_trading_day")
+    )
+
+
 def extend_back(days: pl.DataFrame, publication: list[date]) -> pl.DataFrame:
     """Prepend the dates from the first publication day to the day before ANBIMA's first date; a business day is a
     publication day. `du_index` is recomputed over the whole range."""

@@ -16,6 +16,7 @@ Checks:
   non-positive price (`error`: it breaks every return through it). The average (PREMED) is not checked: it lies
   outside high/low on 6,520 sessions (1989-91 and, from 2021, mostly BDRs), so it includes trades the high/low do
   not (docs/sources/b3_cotahist.md);
+- `balance_identity`: total assets = liabilities + equity on every consolidated CVM filing;
 - `cash_vs_yahoo`: every Yahoo dividend of a line we hold matched by a cash event of ours (completeness);
 - `fiagro_duplicate_filing`: a FIAGRO monthly filing listed twice; the later delivery wins;
 - `mirror_vs_anbima`: the pyield mirror's bond PUs and rates against our own ANBIMA files on the dates both hold;
@@ -581,6 +582,43 @@ def cash_vs_yahoo(zones: Zones) -> pl.DataFrame:
     )
 
 
+def balance_identity(zones: Zones) -> pl.DataFrame:
+    """Total assets (BPA 1) = total liabilities and equity (BPP 2) on every consolidated CVM filing, within R$ 1,000.
+    A break is the company's own filing (one side filed as zero, or two totals): kept as filed, acknowledged."""
+    root = zones.staging / "cvm_dfp_itr" / "statement_line"
+    if not root.exists():
+        return _frame([])
+    lines = pl.scan_parquet(root / "**" / "*.parquet", hive_partitioning=False).filter(
+        (pl.col("consolidation") == "con") & (pl.col("period_order") == "ÚLTIMO")
+        & (((pl.col("statement") == "BPA") & (pl.col("account_code") == "1"))
+           | ((pl.col("statement") == "BPP") & (pl.col("account_code") == "2")))
+    )  # fmt: skip
+    scale = pl.when(pl.col("scale") == "MIL").then(1000).otherwise(1)
+    v = lines.select(
+        pl.col("cnpj").str.replace_all(r"\D", "").alias("cnpj"), "form", "reference_date", "version", "statement",
+        (pl.col("value").cast(pl.Float64) * scale).alias("v"), "company_name",
+    ).collect().unique(["cnpj", "form", "reference_date", "version", "statement"])  # fmt: skip
+    w = v.pivot("statement", index=["cnpj", "form", "reference_date", "version", "company_name"], values="v")
+    if "BPA" not in w.columns or "BPP" not in w.columns:
+        return _frame([])
+    bad = w.drop_nulls(["BPA", "BPP"]).filter((pl.col("BPA") - pl.col("BPP")).abs() > 1000)
+    return bad.select(
+        pl.lit("balance_identity").alias("check_id"),
+        pl.lit("warn").alias("severity"),
+        pl.lit("issuer").alias("entity_kind"),
+        pl.format("{}:{}:v{}", "cnpj", "form", "version").alias("entity_id"),
+        pl.col("reference_date").alias("vt"),
+        pl.format("assets {} liabilities+equity {}", "BPA", "BPP").alias("observed"),
+        pl.lit("equal within R$ 1,000").alias("expected"),
+        pl.format("{}: the filing's two totals differ", "company_name").alias("detail"),
+        pl.lit("staging cvm_dfp_itr/statement_line BPA 1, BPP 2").alias("evidence"),
+        pl.lit("acknowledged").alias("status"),
+        pl.lit("rule: the company's own filing (a side filed as zero, or two totals); kept as filed").alias(
+            "resolution_note"
+        ),
+    )
+
+
 CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "vna_ntnb_vs_ipca": vna_ntnb_vs_ipca,
     "share_count_unit_mismatch": share_count_unit_mismatch,
@@ -591,6 +629,7 @@ CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "mirror_vs_anbima": mirror_vs_anbima,
     "fiagro_duplicate_filing": fiagro_duplicate_filing,
     "cash_vs_yahoo": cash_vs_yahoo,
+    "balance_identity": balance_identity,
 }
 
 
