@@ -15,14 +15,15 @@ Day two (2026-11-08). The data layer (stages A–H) is built and measured; the d
   - measured: G, LTN PU from rate 93.06 % (the rest are Tesouro's own irregularities);
   - restatements: as-of rule unit-tested; real superseded versions are being recovered (ADR-0027).
 - **Golden checks:** 9 corporate-event cases exact; the §13.1 portfolio returns +37.38 % (plan +37.2 %).
-- **Data quality** (ADR-0022): `fin quality` runs 12 named checks into `dq_finding`, every finding decided by rule or
-  review. Completeness is measured: cash events against Yahoo (99.5 %), daily series gaps, CVM 175 quota breaks.
+- **Data quality** (ADR-0022): `fin quality` runs 14 named checks into `dq_finding` (1,437 findings, none open), every
+  finding decided by rule or review; sessions with an out-of-range open/close are kept as B3 prints them (6 COTAHIST
+  rows quarantined, of 25 M). Completeness is measured: cash events against Yahoo (99.5 %), daily series gaps, CVM 175 quota breaks.
 - **Storage** (ADR-0014): raw 8.9 GB, staging 5.1 GB, core 0.2 GB; C: has 43 GB free.
 
 ## What the data layer holds
 
 - **Exchange-traded:** COTAHIST prices 1986– (8,464 instruments, identity through ISIN and ticker changes, 260
-  links); corporate events 52,370 (every stock event decided; quote-basis changes, spin-offs, implied events,
+  links); corporate events 52,645 (every stock event decided; quote-basis changes, spin-offs, implied events,
   payouts proven by CVM filings; ADR-0016); adjusted prices on read; B3 Price Report from 2026-10-19.
 - **Companies:** CVM DFP/ITR 2010– (66.8 M lines) plus superseded versions from RAD (backfill running: XML era
   2021–, then the legacy layout 2010–21; ADR-0027); FRE share counts and treasury 2010–; FCA securities; IPE
@@ -36,7 +37,7 @@ Day two (2026-11-08). The data layer (stages A–H) is built and measured; the d
   Copom, SIDRA, Ipeadata, futures 2018– (mirror), ANBIMA ETTJ/VNA/projections, NEFIN factors, global rates, VIX,
   commodities, OECD, CFTC; calendar 1986– (ADR-0024).
 - **Ephemeral sources** are archived by `fin ingest daily` (run by hand on 2026-11-07 and 2026-11-08, 0 errors).
-- **Dossier** (ADR-0026): `fin export dossier` with holdings, valuation, performance, risk, sector exposure, events,
+- **Dossier** (ADR-0026): `fin export dossier` with holdings (stocks, FIIs, ETFs, Tesouro Direto), valuation, performance, risk, sector exposure, events,
   fundamentals and quality findings.
 
 ## Not done

@@ -13,7 +13,8 @@ Checks:
 - `stock_event_unproven`: a stock event no second source, filing or price move confirms (`candidate`, info), or
   whose ratio the price contradicts (`conflicting`, warn); neither adjusts anything;
 - `ohlc_inconsistent`: a standard-lot session whose high or low does not bound its open and close, or with a
-  non-positive price (`error`: it breaks every return through it). The average (PREMED) is not checked: it lies
+  non-positive price (`error`: it breaks every return through it); acknowledged by rule (kept as published).
+  The average (PREMED) is not checked: it lies
   outside high/low on 6,520 sessions (1989-91 and, from 2021, mostly BDRs), so it includes trades the high/low do
   not (docs/sources/b3_cotahist.md);
 - `fii_payout_suspect`: Fundos.NET payouts with a malformed ISIN or a payment before the data-com, kept;
@@ -273,6 +274,21 @@ def ohlc_inconsistent(zones: Zones) -> pl.DataFrame:
         pl.lit("low <= open, close <= high; prices > 0").alias("expected"),
         pl.format("{}: the high/low do not bound the session as COTAHIST states it", "ticker").alias("detail"),
         "raw_locator",
+        pl.lit("acknowledged").alias("status"),
+        pl.when(pl.min_horizontal("open", "high", "low", "close") <= 0)
+        .then(
+            pl.lit(
+                "rule: kept as COTAHIST states it (raw is immutable); a non-positive price is not a price, "
+                "consumers skip it"
+            )
+        )
+        .otherwise(
+            pl.lit(
+                "rule: kept as COTAHIST states it; returns use the close, which B3 prints; 351 of the "
+                "378 are 2005 spot lines with a ticker ending in B"
+            )
+        )
+        .alias("resolution_note"),
     ).rename({"instrument_id": "entity_id", "trade_date": "vt", "raw_locator": "evidence"})
 
 

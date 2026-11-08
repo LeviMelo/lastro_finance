@@ -1,4 +1,5 @@
 """Portfolio risk and exposure (PLAN §10 Stage K): measured on the portfolio's own buy-and-hold value path.
+Tesouro Direto lines follow the morning sell PU (coupons excluded).
 
 From `price_adjusted` (total-return closes, BRL of the day) the value of each line is quantity x close_adjusted
 rescaled so that it starts at the line's start value; the portfolio value is their sum on the sessions all
@@ -26,11 +27,17 @@ def value_path(con: duckdb.DuckDBPyConnection, holdings: pl.DataFrame, since: da
     """(trade_date, value_brl) of the buy-and-hold portfolio; `holdings` has instrument_id and quantity."""
     parts: list[pl.DataFrame] = []
     for r in holdings.filter(pl.col("instrument_id").is_not_null()).iter_rows(named=True):
-        cur = con.execute(
-            "SELECT trade_date, close, close_adjusted FROM price_adjusted WHERE instrument_id = ? "
-            "AND trade_date BETWEEN ? AND ? ORDER BY trade_date",
-            [r["instrument_id"], since, as_of],
-        )
+        if r.get("asset_class") == "tesouro_direto":  # the morning sell PU path (coupons excluded, as in performance)
+            sql = (
+                "SELECT base_date, CAST(sell_pu AS DOUBLE), CAST(sell_pu AS DOUBLE) FROM tesouro_price_daily "
+                "WHERE instrument_id = ? AND base_date BETWEEN ? AND ? AND sell_pu > 0 ORDER BY base_date"
+            )
+        else:
+            sql = (
+                "SELECT trade_date, close, close_adjusted FROM price_adjusted WHERE instrument_id = ? "
+                "AND trade_date BETWEEN ? AND ? ORDER BY trade_date"
+            )
+        cur = con.execute(sql, [r["instrument_id"], since, as_of])
         rows = cur.fetchall()
         if not rows:
             continue

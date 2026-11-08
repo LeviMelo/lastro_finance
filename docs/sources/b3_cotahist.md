@@ -73,7 +73,8 @@ What was confirmed: the record length, the header and trailer parse, and plausib
 - **FATCOT.** Also takes **100000** (2005, 49 rows) and **1000000** (2016–2017, 28 rows), and **0** (2007, 4 rows,
   quarantined). The rule accepts the powers of ten 1…10⁶.
 - **Out-of-range opens/closes.** 1,237 rows have an open or close outside [low, high] (most in 2005 and 2020;
-  e.g. `MVI 2` 1986-05-06: open 1199.99 > high 1199.90). 2 rows have low > high. They are quarantined, not dropped.
+  e.g. `MVI 2` 1986-05-06: open 1199.99 > high 1199.90). 2 rows have low > high. Since QUOTE v3 (2026-11-08) they are kept as published and listed by the
+  `ohlc_inconsistent` finding (standard lot); quarantining them lost real sessions.
 - **Sessions vs the ANBIMA calendar** (2001-01-01…2025-12-31). B3 traded on no day ANBIMA calls a holiday or
   weekend, but did not trade on 287 ANBIMA business days:
   - 24/12 and 31/12 (18 each);
