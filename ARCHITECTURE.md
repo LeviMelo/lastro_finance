@@ -53,6 +53,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `config.py` | the data home and its zones |
 | `catalog.py` | `catalog.duckdb`: views over the Parquet zones, `fundamental_fact` and `price_adjusted` on read (ADR-0017); macros `universe(d, cls)` and `valuation(d)` (ADR-0021) |
 | `cli.py` | `fin`: `ingest`, `status`, `verify-raw`, `reparse <sources>`, `compact-raw`, `compact-staging`, `catalog`, `quality`, `export dossier`, `rebuild --from-raw` |
+| `analytics/risk.py` | volatility, drawdown, beta to the Ibovespa, sector exposure of a portfolio's realised path |
 | `export/dossier.py` | `fin export dossier`: the PLAN §8 dossier (Markdown + Parquet) from a portfolio file (ADR-0026) |
 | `quality/findings.py` | named checks → `dq_finding`; review status from `quality/resolutions.toml` (ADR-0022) |
 | `schema.py` | `Contract`, `Column`, `Rule`: typed columns with unit and pt/en meaning; conform and quarantine split (ADR-0005) |
@@ -105,6 +106,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `core/equities.py` | COTAHIST → core `instrument`, `instrument_identifier`, `price_daily` (ADR-0015) |
 | `quality/` | data-quality checks and findings (ADR-0022) |
 | `export/` | exports for the external LLM: the dossier (ADR-0026) |
+| `analytics/` | portfolio analytics: risk and exposure (Stage K) |
 
 ## 4. Invariants as implemented
 

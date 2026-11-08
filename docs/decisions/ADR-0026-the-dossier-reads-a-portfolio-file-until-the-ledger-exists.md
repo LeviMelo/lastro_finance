@@ -21,3 +21,12 @@ owner's brokerage notes and B3 Área do Investidor exports, which are not in `in
 
 **Measured.** On `examples/portfolio_reference.toml` (the §13.1 portfolio, R$ 100,000 at the 2025-10-02 closes), the
 dossier gives total return +37.36 % and price return +28.68 % to 2026-10-16, as the golden check does.
+
+**Addendum (same day): risk and exposure** (`analytics/risk.py`). These are descriptive statistics of the realised
+buy-and-hold path, labeled as not being forecasts:
+- annualised volatility of daily log returns;
+- maximum drawdown with its dates;
+- beta to the Ibovespa;
+- weights by the issuers' CVM sector.
+
+On the sample: volatility 16.50 %, drawdown −15.50 % (2026-04-13 to 2026-08-14), beta 0.82.

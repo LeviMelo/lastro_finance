@@ -23,6 +23,7 @@ from typing import Any
 import duckdb
 import polars as pl
 
+from fin.analytics import risk
 from fin.config import Zones
 
 
@@ -116,7 +117,8 @@ def performance(con: duckdb.DuckDBPyConnection, h: pl.DataFrame, since: date, as
 
 
 def benchmark(con: duckdb.DuckDBPyConnection, since: date, as_of: date) -> dict[str, float | None]:
-    if not con.execute("SELECT count(*) FROM duckdb_views() WHERE view_name = 'series_observation'").fetchone()[0]:
+    has = con.execute("SELECT count(*) FROM duckdb_views() WHERE view_name = 'series_observation'").fetchone()
+    if not has or not has[0]:
         return {"ibovespa": None, "cdi": None}
 
     def level(sid: str, d: date) -> float | None:
@@ -212,8 +214,20 @@ def build(zones: Zones, portfolio_path: Path, as_of: date) -> Path:
     up = upcoming(con, h, as_of)
     fund = fundamentals(con, h, as_of)
     fnd = findings(con, h)
+    path = risk.value_path(con, h, since, as_of)
+    try:
+        ix_rows = con.execute(
+            "SELECT CAST(vt_reference AS DATE), value::DOUBLE FROM series_observation "
+            "WHERE series_id = 'ipeadata:GM366_IBVSP366' AND vt_reference BETWEEN ? AND ?",
+            [since.isoformat(), as_of.isoformat()],
+        ).fetchall()
+        ix = pl.DataFrame(ix_rows, schema=["trade_date", "level"], orient="row")
+    except duckdb.CatalogException:
+        ix = None
+    st = risk.stats(path, ix)
+    sec = risk.sector_exposure(con, h)
     for name, df in (("holdings", h), ("performance", perf), ("upcoming", up), ("fundamentals", fund),
-                     ("findings", fnd)):  # fmt: skip
+                     ("findings", fnd), ("value_path", path), ("sector_exposure", sec)):  # fmt: skip
         if df.height:
             df.write_parquet(out / f"{name}.parquet")
     w = perf.drop_nulls(["start_value_brl", "total_return"]) if perf.height else perf
@@ -254,6 +268,20 @@ def build(zones: Zones, portfolio_path: Path, as_of: date) -> Path:
     ]
     for r in perf.iter_rows(named=True):
         lines.append(f"| {r['ticker']} | {_pct(r['total_return'])} | {_pct(r['price_return'])} |")
+    vol, mdd, beta = st["volatility"], st["max_drawdown"], st["beta"]
+    lines += [
+        "",
+        f"## Risco e exposição (caminho realizado, {since.isoformat()} a {as_of.isoformat()};"
+        " estatísticas, não previsões)",
+        "",
+        f"- Volatilidade anualizada: {_pct(_f(vol)).lstrip('+')}",
+        f"- Queda máxima (drawdown): {_pct(_f(mdd))} (de {st['peak']} a {st['trough']})",
+        f"- Beta em relação ao Ibovespa: {'—' if beta is None else f'{beta:.2f}'.replace('.', ',')}",
+        "",
+        "| setor (CVM) | peso |",
+        "|---|---|",
+        *[f"| {r['sector']} | {_pct(r['weight']).lstrip('+')} |" for r in sec.iter_rows(named=True)],
+    ]
     lines += ["", "## Fundamentos (como conhecidos na data; ADR-0021)", ""]
     if fund.height:
         lines += ["| linha | emissor | valor de mercado | lucro 12m | P/L | P/VP |", "|---|---|---|---|---|---|"]
