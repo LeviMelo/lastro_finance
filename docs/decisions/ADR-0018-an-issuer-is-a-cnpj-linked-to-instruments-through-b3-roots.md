@@ -20,3 +20,8 @@ ITUB3/ITUB4 from 2009-05-20, the date of its post-merger ISINs.
 **Limits.**
 - Issuers outside B3's list (cancelled before it, or never listed in the spot market) have no link.
 - Fund issuers (FIIs) are not in CVM's company register; their identity is the fund's CNPJ in Fundos.NET.
+
+**Addendum (2026-11-08): funds.** FII and Fiagro funds are issuers too, keyed by their CNPJ.
+- The (CNPJ, quota ISIN) pairs come from CVM's FII monthly reports and Fundos.NET payout notices. Quotas join to
+  instruments by ISIN (method `fund_isin`).
+- 1,474 fund issuers, 712 quota lines linked; issuers total 4,006 and links 2,287.

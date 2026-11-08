@@ -128,7 +128,7 @@ LINK = Contract(
             nullable=False,
         ),
         Column("vt_to", pl.Date, "last such session", "até", "date", nullable=False),
-        Column("method", pl.String, "b3_root", "método", nullable=False),
+        Column("method", pl.String, "b3_root (company) or fund_isin (FII quota)", "método", nullable=False),
     ),
     key=("issuer_id", "instrument_id", "root"),
 )
@@ -136,6 +136,77 @@ LINK = Contract(
 
 def issuer_id(cnpj_digits: str) -> str:
     return "C" + hashlib.sha256(cnpj_digits.encode()).hexdigest()[:12]
+
+
+def fund_issuers(zones: Zones) -> tuple[pl.DataFrame, pl.DataFrame] | None:
+    """(issuer rows, issuer_instrument rows) for funds whose quotas trade: (CNPJ, quota ISIN) pairs from CVM's FII
+    monthly reports (`cvm_fii` monthly_general) and Fundos.NET payout notices, joined to instruments by ISIN
+    (method `fund_isin`, the root being the first four letters of the quota's ticker)."""
+    pairs: list[pl.DataFrame] = []
+    g = read_parquet_dir(zones.staging / "cvm_fii" / "monthly_general")
+    if g is not None:
+        pairs.append(
+            g.sort("reference_date").select(
+                pl.col("cnpj").str.replace_all(r"\D", "").alias("cnpj"), "isin", "fund_name", "segment"
+            )
+        )
+    d = read_parquet_dir(zones.staging / "b3_fundosnet" / "distribution")
+    if d is not None:
+        pairs.append(
+            d.select(
+                pl.col("fund_cnpj").str.replace_all(r"\D", "").alias("cnpj"),
+                "isin",
+                "fund_name",
+                pl.lit(None, dtype=pl.String).alias("segment"),
+            )
+        )
+    ids_path = zones.core / "instrument_identifier" / "instrument_identifier.parquet"
+    if not pairs or not ids_path.exists():
+        return None
+    p = pl.concat(pairs).filter(pl.col("isin").str.len_chars() == 12).drop_nulls(["cnpj", "isin"])
+    issuers = (
+        p.group_by("cnpj")
+        .agg(pl.col("fund_name").drop_nulls().last(), pl.col("segment").drop_nulls().last())
+        .select(
+            pl.col("cnpj").map_elements(issuer_id, return_dtype=pl.String).alias("issuer_id"),
+            "cnpj",
+            pl.lit("").alias("cd_cvm"),
+            pl.col("fund_name").alias("legal_name"),
+            pl.col("fund_name").alias("trade_name"),
+            pl.lit(None, dtype=pl.String).alias("status"),
+            pl.col("segment").alias("sector"),
+            pl.lit("Fundo (FII/Fiagro)").alias("category"),
+            pl.lit(None, dtype=pl.Date).alias("registered_on"),
+            pl.lit(None, dtype=pl.Date).alias("cancelled_on"),
+        )
+        .select(ISSUER.names)
+    )
+    ids = pl.read_parquet(ids_path)
+    isin = ids.filter(pl.col("scheme") == "ISIN").select("instrument_id", pl.col("value").alias("isin"))
+    tick = (
+        ids.filter(pl.col("scheme") == "TICKER")
+        .group_by("instrument_id")
+        .agg(pl.col("value").sort().last().str.slice(0, 4).alias("root"))
+    )
+    span = pl.read_parquet(zones.core / "instrument" / "instrument.parquet").select(
+        "instrument_id", pl.col("first_trade").alias("vt_from"), pl.col("last_trade").alias("vt_to")
+    )
+    link = (
+        p.select("cnpj", "isin")
+        .unique()
+        .join(isin, on="isin")
+        .join(tick, on="instrument_id", how="left")
+        .join(span, on="instrument_id")
+        .select(
+            pl.col("cnpj").map_elements(issuer_id, return_dtype=pl.String).alias("issuer_id"),
+            "instrument_id",
+            pl.col("root").fill_null(""),
+            "vt_from",
+            "vt_to",
+            pl.lit("fund_isin").alias("method"),
+        )
+    )
+    return issuers, link
 
 
 def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
@@ -159,6 +230,9 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
         .with_columns(pl.col("cnpj").map_elements(issuer_id, return_dtype=pl.String).alias("issuer_id"))
         .select(ISSUER.names)
     )
+    funds = fund_issuers(zones)
+    if funds is not None:  # FII/Fiagro funds: CVM's monthly reports and Fundos.NET give CNPJ and quota ISIN
+        issuers = pl.concat([issuers, funds[0].filter(~pl.col("cnpj").is_in(issuers["cnpj"].to_list()))])
     out: dict[str, int] = {}
     good, bad = ISSUER.split(issuers)
     write_parquet(good, zones.core / "issuer" / "issuer.parquet")
@@ -188,6 +262,8 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
             )
             .select(LINK.names)
         )
+        if funds is not None:
+            link = pl.concat([link, funds[1]], how="vertical_relaxed").unique(["issuer_id", "instrument_id", "root"])
         good, bad = LINK.split(link)
         write_parquet(good.sort("issuer_id", "vt_from"), zones.core / "issuer_instrument" / "issuer_instrument.parquet")
         out["issuer_instrument"], out["issuer_instrument:quarantined"] = good.height, bad.height

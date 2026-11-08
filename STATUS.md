@@ -19,7 +19,7 @@ Day one (2026-11-07).
     `tesouro_price_daily` (150 bonds, 2004–);
   - the query layer: `data/catalog.duckdb`, views only, incl. `fundamental_fact` and `price_adjusted` (ADR-0017);
   - staging `expectation`: Focus market expectations 2000– (3.6 M statistics);
-  - core `issuer` (2,532 CNPJs) linked to 1,575 instruments (ADR-0018); `universe(date, class)` in the catalog;
+  - core `issuer` (4,006 CNPJs: companies and FII/Fiagro funds) linked to 2,287 instruments (ADR-0018); `universe(date, class)` in the catalog;
   - `valuation(date)` in the catalog: market cap, P/L, P/VP as known on a date, 2010– (270 issuers on 2026-11-06,
     148 on 2015-06-30; share counts from DFP/ITR 2020– and FRE 2010–; ADR-0021);
   - staging: Tesouro Direto 2004–, FII distributions, CVM statements 2010– (66.8 M lines), intraday 5-minute bars
@@ -65,5 +65,4 @@ Day one (2026-11-07).
 
 1. CDA yearly archives 2005-2022 (members up to 640 MB): parse in batches.
 2. FIAGRO reports (another layout); the titulos `.xls` twin and B3 `PR` zips; CVM FCA.
-3. FII issuers linked to their quotas (Fundos.NET CNPJ → ISIN); the mirror-vs-ANBIMA overlap check; calendar
-   1986-2000 (OQ-22).
+3. The mirror-vs-ANBIMA overlap check; calendar 1986-2000 (OQ-22).
