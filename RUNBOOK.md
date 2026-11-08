@@ -26,6 +26,7 @@ uv run fin ingest b3_instruments --mode backfill                     # every B3 
 uv run fin ingest b3_pesquisapregao --mode backfill --families TS    # curves 2001-; PR (2018-, 10-15 GB) is OQ-20
 uv run fin ingest pyield_data bcb_sgs --mode backfill               # mirror (bonds 2020-, futures 2018-); SGS 1986-
 uv run fin ingest snd_debentures b3_fundosnet --mode backfill       # trades 1993-11-; FII notices 2016-11- (~10 h)
+uv run fin ingest cvm_rad_versions                       # superseded DFP/ITR versions from RAD (XML + legacy layout, ~10 s each, resumable; ADR-0027); run alone
 uv run fin ingest yahoo_chart --mode snapshot [--tickers ITUB4,SLCE3]  # tier U; default: last year's traded tickers
 uv run fin ingest <context sources> --mode backfill  # the catalogue in src/fin/reference/context_series.toml
 uv run fin status                          # freshness per source, raw size, orphan objects, blockers, last runs

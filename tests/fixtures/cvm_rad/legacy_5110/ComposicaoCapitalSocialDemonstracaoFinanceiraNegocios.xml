@@ -1,0 +1,170 @@
+<?xml version="1.0"?>
+<ArrayOfComposicaoCapitalSocialDemonstracaoFinanceira xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <ComposicaoCapitalSocialDemonstracaoFinanceira>
+    <PeriodoDemonstracaoFinanceira>
+      <FormularioDemonstracaoFinanceira>
+        <Documento>
+          <Documentos />
+          <VersaoLiteral>
+            <NumeroVersaoLiteral>0</NumeroVersaoLiteral>
+            <IndicadorVersaoLiteralAtivo>false</IndicadorVersaoLiteralAtivo>
+          </VersaoLiteral>
+          <VersaoExecutavelSistema>
+            <NumeroVersaoExecutavelSistema />
+            <NumeroVersaoBancoDadosSistema />
+            <DataInicioValidadeVersao>0001-01-01T00:00:00</DataInicioValidadeVersao>
+            <DataFimValidadeVersao>0001-01-01T00:00:00</DataFimValidadeVersao>
+          </VersaoExecutavelSistema>
+          <CompanhiaAberta>
+            <NumeroSequencialRegistroCvm>0</NumeroSequencialRegistroCvm>
+            <CodigoTipoParticipante>0</CodigoTipoParticipante>
+            <CodigoCvm />
+            <IndicadorSociedadeAnonimaAtiva>false</IndicadorSociedadeAnonimaAtiva>
+            <NomeRazaoSocialCompanhiaAberta />
+            <NumeroCnpjCompanhiaAberta />
+            <CodigoCategoriaEmissor>0</CodigoCategoriaEmissor>
+            <CodigoSituacaoRegistroCvm>0</CodigoSituacaoRegistroCvm>
+            <CodigoSituacaoCompanhiaAberta>0</CodigoSituacaoCompanhiaAberta>
+            <NumeroMesEncerramentoExercicioSocial>0</NumeroMesEncerramentoExercicioSocial>
+            <NumeroAnoEncerramentoExercicioSocial>0</NumeroAnoEncerramentoExercicioSocial>
+            <TipoEmpresa>0</TipoEmpresa>
+            <DataRegistroCvm>0001-01-01T00:00:00</DataRegistroCvm>
+            <DataInicioRazaoSocial>0001-01-01T00:00:00</DataInicioRazaoSocial>
+            <DataConstituicaoEmpresa>0001-01-01T00:00:00</DataConstituicaoEmpresa>
+            <DataInicioSituacaoCompanhiaAberta>0001-01-01T00:00:00</DataInicioSituacaoCompanhiaAberta>
+            <DataInicioSituacaoRegistroCvm>0001-01-01T00:00:00</DataInicioSituacaoRegistroCvm>
+            <CodigoSetorAtividadeEmpresa>0</CodigoSetorAtividadeEmpresa>
+            <CodigoEspecieControleAcionario>0</CodigoEspecieControleAcionario>
+            <DataUltimaAlteracaoControleAcionario>0001-01-01T00:00:00</DataUltimaAlteracaoControleAcionario>
+            <DataRegistroAtualCategoriaEmissorCvm>0001-01-01T00:00:00</DataRegistroAtualCategoriaEmissorCvm>
+          </CompanhiaAberta>
+          <NumeroSequencialDocumento>0</NumeroSequencialDocumento>
+          <CodigoTipoDocumento>0</CodigoTipoDocumento>
+          <DataReferenciaDocumento>0001-01-01T00:00:00</DataReferenciaDocumento>
+          <NumeroVersaoDocumento>0</NumeroVersaoDocumento>
+          <IndicadorPendenciaDocumento>false</IndicadorPendenciaDocumento>
+          <IndicadorArquivoValido>false</IndicadorArquivoValido>
+          <CodigoMoeda>0</CodigoMoeda>
+          <CodigoEscalaMoeda>0</CodigoEscalaMoeda>
+          <CodigoEscalaQuantidade>0</CodigoEscalaQuantidade>
+          <DataGeracaoArquivo>0001-01-01T00:00:00</DataGeracaoArquivo>
+          <CodigoTipoApresentacao>0</CodigoTipoApresentacao>
+          <CodigoTipoEntregaDocumento>0</CodigoTipoEntregaDocumento>
+          <DataEntrega>0001-01-01T00:00:00</DataEntrega>
+          <DocumentoRelacionado xsi:nil="true" />
+          <NumeroVersaoGrupoQuadroCampo>0</NumeroVersaoGrupoQuadroCampo>
+          <MotivosReapresentacaoDocumento />
+          <ControlesDominio />
+          <DetalhesDominio />
+          <SituacaoArquivo>
+            <CodigoSituacaoArquivo>0</CodigoSituacaoArquivo>
+            <IndicadorExibicaoArquivoSite>false</IndicadorExibicaoArquivoSite>
+            <Instituicao>
+              <RegistroCvm>
+                <NumeroSequencialRegistroCvm>0</NumeroSequencialRegistroCvm>
+                <CodigoTipoParticipante>0</CodigoTipoParticipante>
+                <CodigoCvm />
+                <IndicadorSociedadeAnonimaAtiva>false</IndicadorSociedadeAnonimaAtiva>
+              </RegistroCvm>
+              <CodigoInstituicao>0</CodigoInstituicao>
+              <IndicadorGerenciamentoAtivo>false</IndicadorGerenciamentoAtivo>
+            </Instituicao>
+            <TextoLogRecebimentoAutomatico />
+          </SituacaoArquivo>
+          <HistoricosAcao />
+          <TipoAnalise>false</TipoAnalise>
+        </Documento>
+        <CodigoTipoDemonstrativo>0</CodigoTipoDemonstrativo>
+        <CodigoTipoRelatorioRevisaoEspecial>0</CodigoTipoRelatorioRevisaoEspecial>
+        <CodigoTipoCriterioElaboracao>0</CodigoTipoCriterioElaboracao>
+      </FormularioDemonstracaoFinanceira>
+      <NumeroIdentificacaoPeriodo>1</NumeroIdentificacaoPeriodo>
+      <DataInicioPeriodo>0001-01-01T00:00:00</DataInicioPeriodo>
+      <DataFimPeriodo>0001-01-01T00:00:00</DataFimPeriodo>
+      <NumeroTrimestre>0</NumeroTrimestre>
+    </PeriodoDemonstracaoFinanceira>
+    <FormularioDemonstracaoFinanceira>
+      <Documento>
+        <Documentos />
+        <VersaoLiteral>
+          <NumeroVersaoLiteral>0</NumeroVersaoLiteral>
+          <IndicadorVersaoLiteralAtivo>false</IndicadorVersaoLiteralAtivo>
+        </VersaoLiteral>
+        <VersaoExecutavelSistema>
+          <NumeroVersaoExecutavelSistema />
+          <NumeroVersaoBancoDadosSistema />
+          <DataInicioValidadeVersao>0001-01-01T00:00:00</DataInicioValidadeVersao>
+          <DataFimValidadeVersao>0001-01-01T00:00:00</DataFimValidadeVersao>
+        </VersaoExecutavelSistema>
+        <CompanhiaAberta>
+          <NumeroSequencialRegistroCvm>0</NumeroSequencialRegistroCvm>
+          <CodigoTipoParticipante>0</CodigoTipoParticipante>
+          <CodigoCvm />
+          <IndicadorSociedadeAnonimaAtiva>false</IndicadorSociedadeAnonimaAtiva>
+          <NomeRazaoSocialCompanhiaAberta />
+          <NumeroCnpjCompanhiaAberta />
+          <CodigoCategoriaEmissor>0</CodigoCategoriaEmissor>
+          <CodigoSituacaoRegistroCvm>0</CodigoSituacaoRegistroCvm>
+          <CodigoSituacaoCompanhiaAberta>0</CodigoSituacaoCompanhiaAberta>
+          <NumeroMesEncerramentoExercicioSocial>0</NumeroMesEncerramentoExercicioSocial>
+          <NumeroAnoEncerramentoExercicioSocial>0</NumeroAnoEncerramentoExercicioSocial>
+          <TipoEmpresa>0</TipoEmpresa>
+          <DataRegistroCvm>0001-01-01T00:00:00</DataRegistroCvm>
+          <DataInicioRazaoSocial>0001-01-01T00:00:00</DataInicioRazaoSocial>
+          <DataConstituicaoEmpresa>0001-01-01T00:00:00</DataConstituicaoEmpresa>
+          <DataInicioSituacaoCompanhiaAberta>0001-01-01T00:00:00</DataInicioSituacaoCompanhiaAberta>
+          <DataInicioSituacaoRegistroCvm>0001-01-01T00:00:00</DataInicioSituacaoRegistroCvm>
+          <CodigoSetorAtividadeEmpresa>0</CodigoSetorAtividadeEmpresa>
+          <CodigoEspecieControleAcionario>0</CodigoEspecieControleAcionario>
+          <DataUltimaAlteracaoControleAcionario>0001-01-01T00:00:00</DataUltimaAlteracaoControleAcionario>
+          <DataRegistroAtualCategoriaEmissorCvm>0001-01-01T00:00:00</DataRegistroAtualCategoriaEmissorCvm>
+        </CompanhiaAberta>
+        <NumeroSequencialDocumento>3</NumeroSequencialDocumento>
+        <CodigoTipoDocumento>0</CodigoTipoDocumento>
+        <DataReferenciaDocumento>0001-01-01T00:00:00</DataReferenciaDocumento>
+        <NumeroVersaoDocumento>0</NumeroVersaoDocumento>
+        <IndicadorPendenciaDocumento>false</IndicadorPendenciaDocumento>
+        <IndicadorArquivoValido>false</IndicadorArquivoValido>
+        <CodigoMoeda>0</CodigoMoeda>
+        <CodigoEscalaMoeda>0</CodigoEscalaMoeda>
+        <CodigoEscalaQuantidade>0</CodigoEscalaQuantidade>
+        <DataGeracaoArquivo>0001-01-01T00:00:00</DataGeracaoArquivo>
+        <CodigoTipoApresentacao>0</CodigoTipoApresentacao>
+        <CodigoTipoEntregaDocumento>0</CodigoTipoEntregaDocumento>
+        <DataEntrega>0001-01-01T00:00:00</DataEntrega>
+        <DocumentoRelacionado xsi:nil="true" />
+        <NumeroVersaoGrupoQuadroCampo>0</NumeroVersaoGrupoQuadroCampo>
+        <MotivosReapresentacaoDocumento />
+        <ControlesDominio />
+        <DetalhesDominio />
+        <SituacaoArquivo>
+          <CodigoSituacaoArquivo>0</CodigoSituacaoArquivo>
+          <IndicadorExibicaoArquivoSite>false</IndicadorExibicaoArquivoSite>
+          <Instituicao>
+            <RegistroCvm>
+              <NumeroSequencialRegistroCvm>0</NumeroSequencialRegistroCvm>
+              <CodigoTipoParticipante>0</CodigoTipoParticipante>
+              <CodigoCvm />
+              <IndicadorSociedadeAnonimaAtiva>false</IndicadorSociedadeAnonimaAtiva>
+            </RegistroCvm>
+            <CodigoInstituicao>0</CodigoInstituicao>
+            <IndicadorGerenciamentoAtivo>false</IndicadorGerenciamentoAtivo>
+          </Instituicao>
+          <TextoLogRecebimentoAutomatico />
+        </SituacaoArquivo>
+        <HistoricosAcao />
+        <TipoAnalise>false</TipoAnalise>
+      </Documento>
+      <CodigoTipoDemonstrativo>0</CodigoTipoDemonstrativo>
+      <CodigoTipoRelatorioRevisaoEspecial>0</CodigoTipoRelatorioRevisaoEspecial>
+      <CodigoTipoCriterioElaboracao>0</CodigoTipoCriterioElaboracao>
+    </FormularioDemonstracaoFinanceira>
+    <NumeroIdentificacaoComposicaoCapitalSocial>1</NumeroIdentificacaoComposicaoCapitalSocial>
+    <QuantidadeAcaoOrdinariaCapitalIntegralizado>1743889</QuantidadeAcaoOrdinariaCapitalIntegralizado>
+    <QuantidadeAcaoPreferencialCapitalIntegralizado>1360472</QuantidadeAcaoPreferencialCapitalIntegralizado>
+    <QuantidadeTotalAcaoCapitalIntegralizado>3104361</QuantidadeTotalAcaoCapitalIntegralizado>
+    <QuantidadeAcaoOrdinariaTesouraria>524</QuantidadeAcaoOrdinariaTesouraria>
+    <QuantidadeAcaoPreferencialTesouraria>608</QuantidadeAcaoPreferencialTesouraria>
+    <QuantidadeTotalAcaoTesouraria>1132</QuantidadeTotalAcaoTesouraria>
+  </ComposicaoCapitalSocialDemonstracaoFinanceira>
+</ArrayOfComposicaoCapitalSocialDemonstracaoFinanceira>

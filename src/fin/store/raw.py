@@ -31,7 +31,8 @@ import zstandard
 _EXT = re.compile(r"^[a-z0-9]{1,12}$")
 _SHA = re.compile(r"^[0-9a-f]{64}$")
 _CHUNK = 1 << 20
-COMPRESSIBLE = frozenset({"csv", "txt", "json", "xml", "html", "tsv"})
+# szip: a zip written uncompressed (ZIP_STORED) to hold several members verbatim, so zstd compresses them (cvm_rad)
+COMPRESSIBLE = frozenset({"csv", "txt", "json", "xml", "html", "tsv", "szip"})
 COMPRESS_FROM = 64 * 1024
 _LEVEL = 9
 DELTA_FROM = 16 * 1024  # smaller objects are not worth a chain

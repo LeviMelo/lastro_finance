@@ -31,7 +31,7 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `cvm_fca` | CVM | P | 2010– (tickers from 2018) | parsed | [note](docs/sources/cvm_fca.md) |
 | `cvm_fre` | CVM | P | 2010– | parsed | [note](docs/sources/cvm_fre.md) |
 | `cvm_dfp_itr` | CVM | P | DFP 2010–, ITR 2011– | recon | [note](docs/sources/cvm_dfp_itr.md) |
-| `cvm_rad_versions` | CVM | P | superseded DFP/ITR versions, statements XML from 2021-10 (older: legacy layout, not parsed) | parsed | [note](docs/sources/cvm_rad_versions.md) |
+| `cvm_rad_versions` | CVM | P | superseded DFP/ITR versions: statements XML from 2021-10, legacy entity dumps before (both parsed) | parsed | [note](docs/sources/cvm_rad_versions.md) |
 | `cvm_ipe` | CVM | P | 2003– | parsed | [note](docs/sources/cvm_ipe.md) |
 | `cvm_vlmo` | CVM | P | 2018– | recon | [note](docs/sources/cvm_vlmo.md) |
 | `cvm_fi_inf_diario` | CVM | P | 2000– (real size from 2004) | recon | [note](docs/sources/cvm_fi_inf_diario.md) |

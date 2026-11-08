@@ -25,5 +25,17 @@
 
 **Limits.**
 - Only versions from doc id 108951 (2021-10-07) are in the XML layout: 1,953 of 7,558.
-- The earlier 5,605 come as a nested `.dfp`/`.itr` zip of entity dumps. Those are marked held, so they are never
-  re-downloaded, and they wait for a legacy parser.
+- The earlier 5,605 come as a nested `.dfp`/`.itr` zip of entity dumps (read since the addendum below).
+
+**Addendum, 2026-11-08: the legacy layout is kept and parsed.**
+- **Kept:** four members of the nested zip (`Documento`, `PeriodoDemonstracaoFinanceira`,
+  `ComposicaoCapitalSocialDemonstracaoFinanceiraNegocios`, `InfoFinaDFin`) byte for byte, in a stored zip (`szip`, which
+  the raw store compresses): 10 to 30 KB (mean 21) under zstd on 23 filings (0.27 % of the download). The dropped part is
+  the PDF and annexes, the notes, and a 30 to 80 MB verbose duplicate of `InfoFinaDFin`; the record names every member
+  of both zips with size and CRC, as for the XML era.
+- **Verified:** 23 filings from 2010 to 2021 (41,491 open-data lines): key, value and account name match on all of them;
+  the only differences are `fixed_account` on 1.0 % of the lines and one DMPL block that open data lacks
+  (docs/sources/cvm_rad_versions.md §7). The DMPL columns are labelled by position, as open data does.
+- **Re-fetch:** the connector is version 2. A legacy marker stored by version 1 (JSON, written before this reader) is
+  not held, so `fin ingest cvm_rad_versions` fetches those 5,605 documents once more; everything else held stays held.
+  A legacy zip without the four members is stored as a `legacy-unread` marker, held and counted as not-data.
