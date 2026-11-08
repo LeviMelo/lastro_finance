@@ -104,3 +104,20 @@ def test_valuation_point_in_time(zones: Zones) -> None:
     # (1,100 - 100) x 11/10 x 10; 300 + 500 - 200; 5,000 - 1,000
     assert abs(cap - 11000) < 1e-6 and (ttm, book) == (600, 4000)
     assert abs(pe - 11000 / 600) < 1e-9 and abs(pb - 2.75) < 1e-12
+
+
+def test_restated_statement_is_used_only_from_its_delivery(zones: Zones) -> None:
+    """A version 2 of the 2024 DFP (net income restated from 500 to 800) received on 2025-09-20: on 2025-09-15 the
+    trailing earnings use version 1 (300 + 500 - 200), on 2025-09-25 the restatement (300 + 800 - 200)."""
+    test_valuation_point_in_time(zones)
+    s = zones.staging
+    v2 = _line("dfp", "2024-12-31", "DRE", NI, "2024-01-01", "2024-12-31", "800") | {"version": 2}
+    write_parquet(pl.DataFrame([v2]), s / "cvm_dfp_itr" / "statement_line" / "b.parquet")
+    doc = {"form": ["dfp"], "cnpj": [CNPJ], "reference_date": [date(2024, 12, 31)], "version": [2],
+           "received_on": [date(2025, 9, 20)]}  # fmt: skip
+    write_parquet(pl.DataFrame(doc), s / "cvm_dfp_itr" / "document" / "b.parquet")
+    build(zones)
+    con = duckdb.connect(str(zones.catalog), read_only=True)
+    q = "select earnings_ttm from valuation(?)"
+    assert con.execute(q, [date(2025, 9, 15)]).fetchone()[0] == 600
+    assert con.execute(q, [date(2025, 9, 25)]).fetchone()[0] == 900

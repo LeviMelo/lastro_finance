@@ -8,7 +8,10 @@ and exits 1 when one fails. Run after `fin catalog`: `uv run python scripts/chec
 - G: Tesouro LTN unit prices recomputed from the published rate, 1000 / (1 + r)^(du/252) truncated to centavos with
   du from our calendar (settlement D+0 or D+1), equal the published PU on at least 97 % of prices;
 - H: the balance identity, total assets (BPA 1) = total liabilities and equity (BPP 2), holds on every consolidated
-  DFP/ITR filing.
+  DFP/ITR filing, breaks being recorded findings; a point-in-time query returns, for every restated filing, the
+  original total between the two deliveries and the restated one after;
+- F: look-through: a sample fund's CDA holdings sum to its NAV within 0.01 %, and CDA's net assets equal the daily
+  report's (measured across all funds).
 """
 
 import sys
@@ -106,4 +109,56 @@ h = con.execute(
 rec = con.execute("SELECT count(*) FROM dq_finding WHERE check_id = 'balance_identity'").fetchone()[0]
 report("H total assets = liabilities + equity (breaks recorded as findings)", h[1] == rec,
        f"{h[0] - h[1]} of {h[0]} filings hold; {h[1]} breaks, {rec} recorded (the companies' own filings)")  # fmt: skip
+
+# H: point in time across restatements: total assets of filings whose version 2 changed it
+pit = con.execute(
+    """
+    WITH t AS (SELECT issuer_cnpj, form, reference_date, version, received_on, value_brl v FROM fundamental_fact
+               WHERE statement = 'BPA' AND consolidation = 'con' AND account_code = '1' AND period_order = 'ÚLTIMO'),
+    r AS (SELECT a.issuer_cnpj, a.form, a.reference_date, a.v v1, b.v v2, a.received_on r1, b.received_on r2
+          FROM t a JOIN t b USING (issuer_cnpj, form, reference_date)
+          WHERE a.version = 1 AND b.version = 2 AND a.v <> b.v AND b.received_on > a.received_on),
+    q AS (  -- the query a user runs: the latest version received on or before the date
+        SELECT r.*, (SELECT t.v FROM t WHERE t.issuer_cnpj = r.issuer_cnpj AND t.form = r.form
+                       AND t.reference_date = r.reference_date AND t.received_on <= r.r2 - 1
+                     ORDER BY t.received_on DESC, t.version DESC LIMIT 1) before_v,
+                    (SELECT t.v FROM t WHERE t.issuer_cnpj = r.issuer_cnpj AND t.form = r.form
+                       AND t.reference_date = r.reference_date AND t.received_on <= r.r2
+                     ORDER BY t.received_on DESC, t.version DESC LIMIT 1) after_v
+        FROM r)
+    SELECT count(*), count(*) FILTER (WHERE before_v = v1 AND after_v = v2) FROM q
+    """
+).fetchone()
+if pit[0]:
+    report("H point-in-time fundamentals across restatements", pit[0] == pit[1],
+           f"{pit[1]} of {pit[0]} restated filings give the original before and the restatement after")  # fmt: skip
+else:  # CVM's zips keep only the latest version: earlier ones exist only from our archive's start (2026-11-07)
+    print(
+        "MEAS H point-in-time across restatements: no filing held in two versions yet (CVM keeps only the latest;"
+        " archived from 2026-11-07); the as-of rule is unit-tested (tests/unit/test_valuation.py)"
+    )
+
+# F: look-through
+s = str(zones().staging).replace("\\", "/")
+fund = "07.593.972/0001-86"  # the largest fund in the daily report (R$ 291 bn, 2026-06-30)
+mv, na = con.execute(
+    f"""
+    SELECT (SELECT sum(market_value_brl) FROM read_parquet('{s}/cvm_fi_cda/position/**/*.parquet',
+              hive_partitioning = false) WHERE cnpj = '{fund}' AND reference_date = '2026-06-30'),
+           (SELECT max(net_assets_brl) FROM read_parquet('{s}/cvm_fi_inf_diario/daily/**/*.parquet',
+              hive_partitioning = false) WHERE cnpj = '{fund}' AND reference_date = '2026-06-30')
+    """
+).fetchone()
+gap = abs(float(mv) / float(na) - 1)
+report("F look-through: sample fund holdings = NAV", gap <= 1e-4, f"{fund} 2026-06: {mv} vs {na} ({100 * gap:.4f} %)")
+agg = con.execute(
+    f"""
+    WITH pl AS (SELECT cnpj, max(net_assets_brl) na FROM read_parquet('{s}/cvm_fi_cda/net_assets/**/*.parquet',
+                  hive_partitioning = false) WHERE reference_date = '2026-06-30' GROUP BY 1),
+    nav AS (SELECT cnpj, max(net_assets_brl) nav FROM read_parquet('{s}/cvm_fi_inf_diario/daily/**/*.parquet',
+              hive_partitioning = false) WHERE reference_date = '2026-06-30' GROUP BY 1)
+    SELECT count(*), count(*) FILTER (WHERE abs(na - nav) <= 0.01 * abs(nav)) FROM pl JOIN nav USING (cnpj)
+    """
+).fetchone()
+print(f"MEAS F CDA net assets = daily report's, 2026-06: {agg[1]} of {agg[0]} funds within 1 %")
 sys.exit(1 if failed else 0)
