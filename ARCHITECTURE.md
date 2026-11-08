@@ -50,7 +50,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 |---|---|
 | `__init__.py` | version |
 | `config.py` | the data home and its zones |
-| `catalog.py` | `catalog.duckdb`: views over the Parquet zones, `fundamental_fact` and `price_adjusted` on read (ADR-0017) |
+| `catalog.py` | `catalog.duckdb`: views over the Parquet zones, `fundamental_fact` and `price_adjusted` on read (ADR-0017); macros `universe(d, cls)` and `valuation(d)` (ADR-0021) |
 | `cli.py` | `fin`: `ingest`, `status`, `verify-raw`, `reparse <sources>`, `compact-raw`, `compact-staging`, `catalog`, `rebuild --from-raw` |
 | `schema.py` | `Contract`, `Column`, `Rule`: typed columns with unit and pt/en meaning; conform and quarantine split (ADR-0005) |
 | `store/` | L1 and the operational tables |
@@ -87,7 +87,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `core/` | core tables built from staging |
 | `core/events.py` | corporate events (B3, Yahoo, Fundos.NET) merged and graded by the price move; derived adjustment factors; `adjusted_close` (ADR-0016) |
 | `core/shares.py` | `share_count`: CVM share counts in units, unit inferred per filing (ADR-0020) |
-| `core/links.py` | `instrument_link`: ticker continuity across ISIN changes, B3 cross-asset events (ADR-0019) |
+| `core/links.py` | `instrument_link`: ticker and name continuity across ISIN changes, B3 cross-asset events (ADR-0019) |
 | `core/issuers.py` | CVM register → staging `company` (no contact data) → core `issuer`, `issuer_instrument` (ADR-0018) |
 | `core/tesouro.py` | Tesouro Direto → core `tesouro_bond`, `tesouro_price_daily` (versioned) |
 | `core/equities.py` | COTAHIST → core `instrument`, `instrument_identifier`, `price_daily` (ADR-0015) |

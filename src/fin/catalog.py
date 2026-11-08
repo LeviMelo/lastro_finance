@@ -12,7 +12,8 @@ Views:
 - `price_adjusted`: standard-lot closes with split and cash adjustment to today's basis (derived on read);
 - `fii_distribution`: FII/Fiagro distributions with their delivery minute;
 - `intraday_bar`: Yahoo 5-minute bars (tier U);
-- macro `universe(date, asset_class)`: instruments trading in the 30 days up to a date, delisted later or not.
+- macro `universe(date, asset_class)`: instruments trading in the 30 days up to a date, delisted later or not;
+- macro `valuation(date)`: per issuer, market cap and P/L, P/VP as known on that date (ADR-0021).
 """
 
 from __future__ import annotations
@@ -87,6 +88,8 @@ def views(z: Zones) -> dict[str, str]:
                             THEN 'equity'
                         WHEN statement = 'BPP' AND account_name = 'Patrimônio Líquido Atribuído ao Controlador'
                             THEN 'equity_controlling'
+                        WHEN statement = 'BPP' AND account_name IN ('Participação dos Acionistas Não Controladores',
+                            'Patrimônio Líquido Atribuído aos Não Controladores') THEN 'noncontrolling_interest'
                         WHEN statement = 'DRE' AND account_code = '3.01' THEN 'revenue'
                         WHEN statement = 'DRE' AND account_name ILIKE 'Resultado Bruto%' THEN 'gross_profit'
                         WHEN statement = 'DRE'
@@ -151,6 +154,92 @@ def views(z: Zones) -> dict[str, str]:
     return out
 
 
+# Point-in-time valuation (ADR-0021). Everything is as known on `d`: the latest share count and statements CVM had
+# received by then, the last standard-lot close in the 30 days up to `d`. Market cap = outstanding common (paid in -
+# treasury) x the close of the most traded ON line + outstanding preferred x the close of the most traded PN line, in
+# BRL of the day; null when a class with shares outstanding has no traded line. Earnings are trailing twelve months of
+# `net_income_controlling` (consolidated): the annual figure, or the latest year-to-date + the previous annual - the
+# year-to-date a year before. Book value is the latest consolidated equity attributable to the controlling
+# shareholders (as filed by banks; equity - non-controlling interest otherwise).
+VALUATION = """
+CREATE OR REPLACE MACRO valuation(d) AS TABLE
+WITH sc AS (
+    SELECT issuer_cnpj, reference_date AS shares_reference_date, unit,
+           common - coalesce(common_treasury, 0) AS common_out,
+           preferred - coalesce(preferred_treasury, 0) AS preferred_out
+    FROM share_count
+    WHERE unit IS NOT NULL AND received_on <= CAST(d AS DATE)
+    QUALIFY row_number() OVER (PARTITION BY issuer_cnpj ORDER BY reference_date DESC, version DESC, form) = 1
+), lines AS (
+    SELECT s.cnpj AS issuer_cnpj, ii.instrument_id,
+           CASE WHEN i.especi LIKE 'ON%' THEN 'ON' WHEN i.especi LIKE 'PN%' THEN 'PN' END AS cls
+    FROM issuer s
+    JOIN issuer_instrument ii USING (issuer_id)
+    JOIN instrument i USING (instrument_id)
+    WHERE ii.vt_from <= CAST(d AS DATE) AND ii.vt_to >= CAST(d AS DATE) - INTERVAL 30 DAY
+), px0 AS (
+    SELECT l.issuer_cnpj, l.cls, p.instrument_id, arg_max(p.ticker, p.trade_date) AS ticker,
+           CAST(arg_max(p.close, p.trade_date) AS DOUBLE)
+             * arg_max(p.brl_num, p.trade_date) / arg_max(p.brl_den, p.trade_date) AS close_brl,
+           max(p.trade_date) AS price_date, sum(CAST(p.volume AS DOUBLE)) AS vol
+    FROM lines l JOIN price_daily p USING (instrument_id)
+    WHERE l.cls IS NOT NULL AND p.market_segment = 'lote_padrao'
+      AND p.trade_date BETWEEN CAST(d AS DATE) - INTERVAL 30 DAY AND CAST(d AS DATE)
+    GROUP BY l.issuer_cnpj, l.cls, p.instrument_id
+), px AS (
+    FROM px0 QUALIFY row_number() OVER (PARTITION BY issuer_cnpj, cls ORDER BY vol DESC) = 1
+), cap AS (
+    SELECT sc.*, o.ticker AS on_ticker, o.close_brl AS on_close, p.ticker AS pn_ticker, p.close_brl AS pn_close,
+           least(o.price_date, p.price_date) AS price_date,
+           CASE WHEN (sc.common_out > 0 AND o.close_brl IS NULL) OR (sc.preferred_out > 0 AND p.close_brl IS NULL)
+                THEN NULL
+                ELSE coalesce(sc.common_out * o.close_brl, 0) + coalesce(sc.preferred_out * p.close_brl, 0)
+           END AS market_cap_brl
+    FROM sc LEFT JOIN (FROM px WHERE cls = 'ON') o USING (issuer_cnpj)
+            LEFT JOIN (FROM px WHERE cls = 'PN') p USING (issuer_cnpj)
+    WHERE o.close_brl IS NOT NULL OR p.close_brl IS NOT NULL
+), m AS (
+    SELECT issuer_cnpj, form, reference_date, metric, period_start, period_end, CAST(value_brl AS DOUBLE) AS v
+    FROM fundamental_metric
+    WHERE consolidation = 'con' AND received_on <= CAST(d AS DATE)
+      AND metric IN ('net_income_controlling', 'equity_controlling', 'equity', 'noncontrolling_interest')
+    QUALIFY row_number() OVER (
+        PARTITION BY issuer_cnpj, metric, period_start, period_end ORDER BY received_on DESC, version DESC) = 1
+), ytd AS (  -- year-to-date (or annual) earnings, one per period end
+    SELECT issuer_cnpj, period_end, v, date_diff('month', period_start, period_end) >= 11 AS annual
+    FROM m WHERE metric = 'net_income_controlling' AND month(period_start) = 1 AND day(period_start) = 1
+), last_ytd AS (
+    FROM ytd QUALIFY row_number() OVER (PARTITION BY issuer_cnpj ORDER BY period_end DESC) = 1
+), ttm AS (
+    SELECT l.issuer_cnpj, l.period_end AS earnings_period_end,
+           CASE WHEN l.annual THEN l.v ELSE l.v + a.v - b.v END AS earnings_ttm
+    FROM last_ytd l
+    LEFT JOIN ytd a ON a.issuer_cnpj = l.issuer_cnpj AND a.annual
+         AND a.period_end = make_date(year(l.period_end) - 1, 12, 31)
+    LEFT JOIN ytd b ON b.issuer_cnpj = l.issuer_cnpj AND b.period_end = l.period_end - INTERVAL 1 YEAR
+), bs AS (  -- the latest balance sheet: controlling equity as filed, else equity - non-controlling interest
+    SELECT issuer_cnpj, period_end AS book_date,
+           coalesce(max(v) FILTER (WHERE metric = 'equity_controlling'),
+                    max(v) FILTER (WHERE metric = 'equity') - coalesce(max(v) FILTER (
+                        WHERE metric = 'noncontrolling_interest'), 0)) AS book_value
+    FROM m WHERE metric IN ('equity_controlling', 'equity', 'noncontrolling_interest')
+    GROUP BY issuer_cnpj, period_end
+), book AS (
+    FROM bs QUALIFY row_number() OVER (PARTITION BY issuer_cnpj ORDER BY book_date DESC) = 1
+)
+SELECT CAST(d AS DATE) AS as_of, i.issuer_id, cap.issuer_cnpj, coalesce(i.trade_name, i.legal_name) AS issuer_name,
+       cap.on_ticker, cap.on_close,
+       cap.pn_ticker, cap.pn_close, cap.price_date, cap.common_out, cap.preferred_out, cap.shares_reference_date,
+       cap.market_cap_brl, ttm.earnings_ttm, ttm.earnings_period_end, book.book_value, book.book_date,
+       cap.market_cap_brl / nullif(ttm.earnings_ttm, 0) AS price_earnings,
+       cap.market_cap_brl / nullif(book.book_value, 0) AS price_book
+FROM cap
+JOIN issuer i ON i.cnpj = cap.issuer_cnpj
+LEFT JOIN ttm USING (issuer_cnpj)
+LEFT JOIN book USING (issuer_cnpj)
+"""
+
+
 def build(z: Zones) -> list[str]:
     """(Re)create every view whose files exist. Returns the names created."""
     made: list[str] = []
@@ -179,6 +268,9 @@ def build(z: Zones) -> list[str]:
                 """
             )
             made.append("universe()")
+        if {"share_count", "issuer", "issuer_instrument", "fundamental_metric"} <= set(made):
+            con.execute(VALUATION)
+            made.append("valuation()")
     finally:
         con.close()
     tmp.replace(z.catalog)

@@ -23,5 +23,11 @@ issued are of another class.
 **Measured (2026-11-07).** 170 links: 55 spin-offs, 47 ticker continuities, 35 bonuses in another class,
 26 incorporations, 7 others. The golden cases are unchanged (`scripts/check_golden_events.py`: all OK).
 
-**Not done.** Mergers that change ticker and ISIN at once without a B3 event (Itaú Holding ITAU4 to ITUB4,
-2009) need the CVM IPE filings.
+**Addendum (2026-11-07): `name_continuity`.** Some lines change ticker and ISIN at once with no B3 event. Rule:
+- instrument A trades for the last time;
+- a new instrument B, under another ticker, first trades within 5 sessions;
+- both have the same COTAHIST NOMRES and the same share class (first word of ESPECI) on those two sessions;
+- the match is one to one.
+
+This gives 98 more links, among them Itaú Holding ITAU4 → ITUB4 on 2009-05-20 (price ratio 0.981), ELM 4 → WEGE4
+and TRNA11 → TAEE11. Total: 267 links.

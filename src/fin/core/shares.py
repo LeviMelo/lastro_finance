@@ -23,7 +23,7 @@ from fin.store.tables import read_parquet_dir, write_parquet
 
 SHARE_COUNT = Contract(
     table="core.share_count",
-    version=1,
+    version=2,
     description="Shares paid in and in treasury per filing, converted to units by the inferred filing unit.",
     provenance=False,
     columns=(
@@ -31,11 +31,16 @@ SHARE_COUNT = Contract(
         Column("form", pl.String, "dfp or itr", "formulário", nullable=False),
         Column("reference_date", pl.Date, "period of the filing", "data de referência", "date", nullable=False),
         Column("version", pl.Int16, "filing version", "versão", "count", nullable=False),
+        Column(
+            "received_on", pl.Date, "CVM delivery date of the version (knowledge date)", "data de recebimento", "date"
+        ),
         Column("unit", pl.Int32, "inferred: 1 (units) or 1000 (thousands); null when unknown", "unidade", "shares"),
         Column("common", pl.Int64, "common shares paid in, units", "ações ordinárias", "shares"),
         Column("preferred", pl.Int64, "preferred shares paid in, units", "ações preferenciais", "shares"),
         Column("total", pl.Int64, "total shares paid in, units", "total de ações", "shares"),
         Column("treasury", pl.Int64, "total shares in treasury, units", "ações em tesouraria", "shares"),
+        Column("common_treasury", pl.Int64, "common shares in treasury, units", "ON em tesouraria", "shares"),
+        Column("preferred_treasury", pl.Int64, "preferred shares in treasury, units", "PN em tesouraria", "shares"),
         Column(
             "total_as_filed",
             pl.Int64,
@@ -117,6 +122,12 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
         .group_by("issuer_cnpj")
         .agg(pl.col("anchor_b3_total").first())
     )
+    docs = read_parquet_dir(zones.staging / "cvm_dfp_itr" / "document")
+    if docs is not None:
+        recv = docs.group_by("form", "cnpj", "reference_date", "version").agg(pl.col("received_on").min())
+        sc = sc.join(recv, on=["form", "cnpj", "reference_date", "version"], how="left")
+    else:
+        sc = sc.with_columns(pl.lit(None, dtype=pl.Date).alias("received_on"))
     sc = sc.join(anchor, on="issuer_cnpj", how="left").sort("issuer_cnpj", "form", "reference_date", "version")
     parts: list[pl.DataFrame] = []
     for _, g in sc.group_by("issuer_cnpj", "form", maintain_order=True):
@@ -129,11 +140,14 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
         "form",
         "reference_date",
         "version",
+        "received_on",
         "unit",
         (pl.col("common_paid_in") * u).alias("common"),
         (pl.col("preferred_paid_in") * u).alias("preferred"),
         (pl.col("total_paid_in") * u).alias("total"),
         (pl.col("total_treasury") * u).alias("treasury"),
+        (pl.col("common_treasury") * u).alias("common_treasury"),
+        (pl.col("preferred_treasury") * u).alias("preferred_treasury"),
         pl.col("total_paid_in").fill_null(0).alias("total_as_filed"),
         "anchor_b3_total",
     )

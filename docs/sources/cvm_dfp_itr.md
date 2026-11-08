@@ -53,3 +53,5 @@ Persistent yearly files, regenerated weekly for the last years (Last-Modified of
   Ourofino 2023) are quarantined. **The unit of the counts is not stated**, and companies use both: against B3's current
   counts, 201 of 340 issuers file units, 93 thousands, some switch (Bradesco: thousands to 2023, units from 2024).
   The unit is inferred per filing (ADR-0020, core `share_count`).
+- `composicao_capital` exists from 2020 only: the 2019 DFP zip has statements, index and `parecer`, but no
+  share counts (checked 2026-11-07). Valuation therefore starts in 2020 (ADR-0021).

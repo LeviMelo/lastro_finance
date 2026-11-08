@@ -45,3 +45,33 @@ def test_ticker_continuity(zones: Zones) -> None:
     out = links.ticker_continuity(zones)
     assert out.select("from_instrument_id", "to_instrument_id").rows() == [("IA", "IB")]
     assert abs(out["price_ratio"][0] - 10 / 10.1) < 1e-12
+
+
+def test_name_continuity(zones: Zones) -> None:
+    rows = [
+        ("IA", "ITAU4", date(2009, 5, 18), "29.9"),
+        ("IA", "ITAU4", date(2009, 5, 19), "29.45"),
+        ("IB", "ITUB4", date(2009, 5, 20), "30.03"),  # new ticker and ISIN, same NOMRES and class: linked
+        ("IC", "AAAA3", date(2009, 5, 19), "5"),
+        ("ID", "BBBB3", date(2009, 5, 20), "5"),  # another name: not linked
+    ]
+    write_parquet(_price(rows), zones.core / "price_daily" / "year=2009.parquet")
+    names = {
+        "ITAU4": ("ITAUUNIBANCO", "PN      N1"),
+        "ITUB4": ("ITAUUNIBANCO", "PN      N1"),
+        "AAAA3": ("ALFA", "ON"),
+        "BBBB3": ("BETA", "ON"),
+    }
+    q = pl.DataFrame(
+        {
+            "ticker": [r[1] for r in rows],
+            "trade_date": [r[2] for r in rows],
+            "tpmerc": pl.Series([10] * len(rows), dtype=pl.Int16),
+            "short_name": [names[r[1]][0] for r in rows],
+            "especi": [names[r[1]][1] for r in rows],
+        }
+    )
+    write_parquet(q, zones.staging / "b3_cotahist" / "quote" / "year=2009" / "x.parquet")
+    out = links.name_continuity(zones)
+    assert out.select("from_instrument_id", "to_instrument_id", "ticker").rows() == [("IA", "IB", "ITUB4")]
+    assert abs(out["price_ratio"][0] - 29.45 / 30.03) < 1e-12

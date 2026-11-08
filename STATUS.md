@@ -19,6 +19,8 @@ Day one (2026-11-07).
   - the query layer: `data/catalog.duckdb`, views only, incl. `fundamental_fact` and `price_adjusted` (ADR-0017);
   - staging `expectation`: Focus market expectations 2000– (3.6 M statistics);
   - core `issuer` (2,532 CNPJs) linked to 1,575 instruments (ADR-0018); `universe(date, class)` in the catalog;
+  - `valuation(date)` in the catalog: market cap, P/L, P/VP as known on a date, 2020– (253 issuers on 2026-11-06;
+    ADR-0021);
   - staging: Tesouro Direto 2004–, FII distributions, CVM statements 2010– (66.8 M lines), intraday 5-minute bars
     (archived from 2026-11-07).
 - **Storage is lean by rule** (ADR-0014): re-sent files as deltas, CVM zips as member deltas, staging keeps changed
@@ -54,18 +56,18 @@ Day one (2026-11-07).
   - free FRED and Tiingo tokens (OQ-23);
   - paid sources (OQ-10); PLAN §12 OQ-11 and OQ-14 to OQ-16.
 - **Engineering:**
-  - parsers for the other archived payloads (ADR-0007): CFTC, Focus, Copom, CEPEA, ANP, ANBIMA IMA;
-    then the B3 snapshots, CVM FCA/FRE/IPE and the ANBIMA files;
-  - fundamentals: `fundamental_fact` from `statement_line` (scale applied, accounts mapped per sector);
-  - the mirror-vs-ANBIMA overlap check; calendar 1986–2000 (OQ-22);
-  - universes (point in time), identity links across ISIN changes (needs events), ESPECI table for asset classes.
+  - parsers for the remaining archived payloads: B3 snapshots, CVM FCA/FRE, ANBIMA daily files;
+  - the mirror-vs-ANBIMA overlap check; calendar 1986–2000 (OQ-22); an ESPECI table for asset classes.
 
 ## Next
 
 1. **Events:** 828 stock events are proven by a CVM IPE filing (ADR-0016). Next: the remaining 100 candidates.
-2. **Mergers without a B3 event** (ITAU4 → ITUB4, 2009) from CVM IPE; FII issuers from Fundos.NET. Links from ticker
-   continuity and B3 cross-asset events exist (`instrument_link`, 170; ADR-0019).
-3. **Fundamentals:** 15 standard metrics exist (`fundamental_metric`); share counts have a per-filing unit
-   (`share_count`, ADR-0020); next are insurers' templates and valuation ratios joined to prices via `issuer_instrument`.
+2. **Links:** 267 in `instrument_link`: ticker and name continuity, B3 cross-asset events (ADR-0019). ITAU4 → ITUB4
+   (2009) is linked. Next: FII issuers from Fundos.NET.
+3. **Fundamentals:** 16 standard metrics exist (`fundamental_metric`). `share_count` has a per-filing unit
+   (ADR-0020) and `valuation(d)` gives market cap, P/L and P/VP (ADR-0021). Next:
+   - share counts before 2020 from FRE;
+   - apply bonuses after the share-count filing;
+   - insurers' templates.
 4. **Context:** every archived context source is parsed (Focus, Copom, CEPEA, ANP, ANBIMA IMA, CFTC included).
    The IMA history before 2026-10-29 remains a gap.
