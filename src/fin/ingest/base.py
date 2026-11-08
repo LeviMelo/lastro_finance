@@ -163,6 +163,11 @@ def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode
                 errors += 1
                 run.error(f"{spec.source_id}/{spec.dataset_id}", str(e), url=spec.url, status=e.status)
                 continue
+            except (ValueError, KeyError, OSError) as e:  # an extract that cannot read the payload (a new layout):
+                # nothing is stored for it, the run records it and goes on; the next run asks for it again
+                errors += 1
+                run.error(f"{spec.source_id}/{spec.dataset_id}", f"{type(e).__name__}: {e}", url=spec.url)
+                continue
             if out is None:
                 continue
             blob = raw.read(out.row.raw_sha256)

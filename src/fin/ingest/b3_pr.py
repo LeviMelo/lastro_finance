@@ -216,16 +216,20 @@ def snapshots(blob: bytes) -> list[tuple[str, bytes]]:
         if not members:
             raise NotData("B3 PR: empty archive")
         return members
+
+    def walk(data: bytes, depth: int) -> list[tuple[str, bytes]]:
+        # zip -> zip -> XML as a rule; 2023-07-19 nests one level more (zip -> zip -> zips -> XML)
+        if depth > 4:
+            raise LayoutError("B3 PR: zips nested more than 4 deep")
+        z = zipfile.ZipFile(io.BytesIO(data))
+        found: list[tuple[str, bytes]] = []
+        for name in z.namelist():
+            inner = z.read(name)
+            found += walk(inner, depth + 1) if inner[:2] == b"PK" else [(name, inner)]
+        return found
+
     try:
-        outer = zipfile.ZipFile(io.BytesIO(blob))
-        members: list[tuple[str, bytes]] = []
-        for name in outer.namelist():
-            data = outer.read(name)
-            if data[:2] == b"PK":
-                inner = zipfile.ZipFile(io.BytesIO(data))
-                members += [(n, inner.read(n)) for n in inner.namelist()]
-            else:
-                members.append((name, data))
+        members = walk(blob, 0)
     except zipfile.BadZipFile as e:
         raise NotData(f"B3 PR: not a zip ({e})") from e
     if not members:

@@ -31,14 +31,15 @@ Day two (2026-11-08). The data layer (stages A–H) is built and measured; the d
 
 - **Exchange-traded:**
   - COTAHIST prices 1986– (8,469 instruments, identity through ISIN and ticker changes);
-  - corporate events 52,652 (every stock event decided; ADR-0016), adjusted prices on read;
+  - corporate events 52,972 (every stock event decided; regroupings on lines Yahoo lacks proven by CVM filings or
+    exact ratios; ADR-0016), adjusted prices on read;
   - B3 Price Report 2018– (backfill running, kept as tar+zstd at ~3 MB a day, ADR-0031): settlements, open interest,
     options and the fixed-income ETFs COTAHIST omits;
   - B3's listed funds (daily).
 - **Companies:**
-  - issuers linked to their shares through B3 roots, FCA trading codes by date and the ISIN issuer code: 948 of 1,204
-    share and unit lines trading since 2010 (ADR-0018);
-  - CVM DFP/ITR 2010– plus superseded versions from RAD (backfill running, ~12 h);
+  - issuers linked to their shares through B3 roots, FCA codes, the ISIN issuer code, B3's ISIN registry and name
+    history: 1,177 of 1,204 share and unit lines trading since 2010; unlinked volume ~0 from 2013 (ADR-0018);
+  - CVM DFP/ITR 2010– plus superseded versions from RAD (backfill running at ~650/h, ~6 h left);
   - FRE share counts and treasury, FCA, IPE 2003–;
   - insider trades by role group (VLMO 2018–, 419,707 lines);
   - valuation by date.
@@ -60,6 +61,8 @@ Day two (2026-11-08). The data layer (stages A–H) is built and measured; the d
   - crypto daily klines (Binance, tier S);
   - NEFIN, global rates, commodities, OECD, CFTC;
   - calendar 1986– (ADR-0024).
+- **Model panels** (ADR-0032): `fin export panel`, monthly point-in-time equity (85,932 rows, 2010–) and macro
+  panels with a column dictionary; fundamentals from 2011 (CVM's first statements).
 - **Dossier** (ADR-0026): holdings (stocks, FIIs, ETFs incl. fixed-income, Tesouro Direto), valuation,
   performance, risk with ETF look-through, events, fundamentals, quality findings.
 
@@ -79,7 +82,8 @@ Day two (2026-11-08). The data layer (stages A–H) is built and measured; the d
 
 ## Next (engineering)
 
-1. RAD and PR backfills to completion; then `fin reparse cvm_rad_versions`, the H check and the PR-based fixed-income
+1. RAD and PR backfills to completion (PR resumed after a nested-zip layout on 2023-07-19); then `fin reparse cvm_rad_versions`, the H check and the PR-based fixed-income
    ETF links on full history.
 2. Index composition history from the ETF portfolios (gap matrix row 10).
-3. OQ-17 (B3 trade file vs COTAHIST), OQ-19 re-probe on a weekday.
+3. The 57 panel month-returns still flagged `ret_suspect` (TELB4 2011 ratio, KROT3 2012 unit conversion…).
+4. OQ-17 (B3 trade file vs COTAHIST), OQ-19 re-probe on a weekday.
