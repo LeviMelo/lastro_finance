@@ -145,3 +145,41 @@ def test_quadro_indicadores() -> None:
 def test_quadro_without_timestamp_is_not_data() -> None:
     with pytest.raises(NotData):
         ap.parse_indicators(b"<html><body>manutencao</body></html>", _row("quadro_indicadores"))
+
+
+def _ettj_file(*parts: str) -> dict[str, pl.DataFrame]:
+    frames = ap.parse_ettj((FIX.joinpath(*parts)).read_bytes(), _row("curva_zero_mensal"))
+    return {k: _clean(v, ap.ETTJ_CONTRACTS[k]) for k, v in frames.items()}
+
+
+def test_susep_english_copy_equals_anbima_pt_file_of_the_same_day() -> None:
+    """SUSEP's month-end copy (English labels, `1,008.5` numbers) parses to ANBIMA's own PT file of 2026-10-30."""
+    en, pt = _ettj_file("susep_ettj", "CurvaZero_202610.txt"), _ettj_file("anbima_ettj", "CurvaZero_30102026.txt")
+    assert en.keys() == pt.keys()
+    for k in en:
+        cols = [c for c in en[k].columns if c not in ("raw_sha256", "ingest_run_id", "raw_locator")]
+        assert en[k].select(cols).equals(pt[k].select(cols)), k
+    assert en["parameter"]["ref_date"].unique().to_list() == [date(2026, 10, 30)]
+    assert en["vertex"].filter(pl.col("business_days") == 1008).height == 1  # `1,008` is thousands
+
+
+def test_susep_first_month_2015_12() -> None:
+    f = _ettj_file("susep_ettj", "CurvaZero_201512.txt")
+    assert f["parameter"]["ref_date"].unique().to_list() == [date(2015, 12, 31)]
+    assert f["parameter"].filter(pl.col("curve") == "PREFIXADOS").row(0, named=True)["beta1"] == Decimal(
+        "0.184887270885752"
+    )
+    assert f["vertex"].height > 60 and f["bond_error"].height > 20
+
+
+def test_susep_bond_maturity_order_is_read_from_the_dates() -> None:
+    """Of 131 SUSEP files one (2025-12-30) writes maturities dd/mm/yyyy, the others mm/dd/yyyy; none may be guessed."""
+    dec = _ettj_file("susep_ettj", "CurvaZero_202512.txt")["bond_error"]
+    assert dec.filter(pl.col("bond_type") == "NTN-B")["maturity_date"].dt.day().unique().to_list() == [15]
+    assert dec.filter(pl.col("bond_type") == "LTN")["maturity_date"].dt.day().unique().to_list() == [1]
+    oct26 = _ettj_file("susep_ettj", "CurvaZero_202610.txt")["bond_error"]
+    assert oct26.filter(pl.col("bond_type") == "NTN-B")["maturity_date"].dt.day().unique().to_list() == [15]
+    blob = (FIX / "susep_ettj" / "CurvaZero_202610.txt").read_bytes()
+    only_ltn = b"\r\n".join(ln for ln in blob.split(b"\r\n") if not ln.startswith((b"4@NTN", b"4@LFT")))
+    with pytest.raises(ap.LayoutError, match="do not settle"):
+        ap.parse_ettj(only_ltn, _row("curva_zero_mensal"))

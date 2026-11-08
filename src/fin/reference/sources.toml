@@ -145,7 +145,7 @@ institution = "CVM"
 access = "HTTP yearly zips"
 tier = "P"
 ephemeral = false
-status = "recon"
+status = "parsed"
 recon = "docs/sources/cvm_vlmo.md"
 
 [cvm_fi_cadastro]
@@ -210,6 +210,15 @@ tier = "P"
 ephemeral = true
 status = "parsed"
 recon = "docs/sources/anbima_ettj.md"
+
+[susep_ettj]
+name = "ETTJ de fim de mês (cópia SUSEP do arquivo CurvaZero da ANBIMA)"
+institution = "SUSEP (arquivo da ANBIMA)"
+access = "HTTP file per month, gov.br/susep (.txt, English layout)"
+tier = "S"
+ephemeral = false
+status = "parsed"
+recon = "docs/sources/susep_ettj.md"
 
 [anbima_vna]
 name = "Valor nominal atualizado (VNA)"
@@ -346,6 +355,24 @@ ephemeral = false
 status = "parsed"
 recon = "docs/sources/b3_fundosnet.md"
 
+[b3_fundosnet_daily]
+name = "Fundos.NET: informes diários de ETFs (valor da cota e PL)"
+institution = "B3"
+access = "JSON listing + XML per document, no login"
+tier = "P"
+ephemeral = false
+status = "parsed"
+recon = "docs/sources/b3_fundosnet_daily.md"
+
+[b3_fundosnet_cda]
+name = "Fundos.NET: composição da carteira (CDA) de ETFs"
+institution = "B3"
+access = "JSON listing + XML per document, no login"
+tier = "P"
+ephemeral = false
+status = "parsed"
+recon = "docs/sources/b3_fundosnet_cda.md"
+
 [pyield_data]
 name = "pyield-data (espelho de ANBIMA títulos públicos e B3 futuros)"
 institution = "third party (github.com/crdcj/pyield-data)"
@@ -385,7 +412,7 @@ recon = "docs/sources/context_br.md"
 [anbima_ima]
 name = "IMA: índices de mercado ANBIMA (carteiras de títulos públicos)"
 institution = "ANBIMA"
-access = "XML file, latest day only"
+access = "XML latest day (with portfolio) + POST ima-sh-down.asp Quadro Resumo, any day since 2001-12-04"
 tier = "P"
 ephemeral = true
 status = "parsed"

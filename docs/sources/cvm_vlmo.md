@@ -32,7 +32,19 @@ CNPJ, CVM_CODE. The security is described only in free text; there is no ticker.
 ## 6. Ephemerality
 Persistent.
 
-## 7. Open questions
-- The value domains.
-- The decimal separator.
-- Whether the _con member keeps only the latest version.
+## 7. Parsed (2026-11-08)
+`CvmVlmo` → staging `document` and `movement` (`src/fin/ingest/cvm_vlmo.py`), measured on 2018 and 2025:
+- Both members are cp1252 with dot decimals. Quantities are signed integers up to 12 digits (2,416 negative in
+  2025); prices and volumes carry 10 decimals.
+- Every version is kept in both members: 382 of 5,397 company-months of 2025 have more than one.
+- 2018: 415 filings and 3,616 lines (from 2018-12). 2025: 5,833 filings and 63,195 lines. Nothing quarantined.
+- Domains (2025):
+  - Tipo_Empresa: Companhia, Controladora, Controlada;
+  - Tipo_Cargo: five role groups, plus 262 empty;
+  - Tipo_Operacao: Crédito, Débito;
+  - Tipo_Movimentacao: Saldo Inicial (36,795), then à vista sales and purchases, loans, grants and others.
+- **Not parsed (personal data):** `Motivo_Reapresentacao` names people (e.g. "do Conselheiro …", "cônjuge da
+  Diretoria …"), and `Descricao_Movimentacao` can too ("POSSE DE CÔNJUGE <name> NO CONSELHO FISCAL").
+
+## 8. Open questions
+- None after parsing. The 2018 file holds only 2018-12 (measured); 2018-01…11 are not served.

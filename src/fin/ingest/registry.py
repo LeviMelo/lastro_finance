@@ -8,6 +8,9 @@ from fin.ingest.alternates import (
     CvmFca,
     CvmFre,
     CvmIpe,
+    CvmVlmo,
+    FundosNetCda,
+    FundosNetInformeDiario,
     FundosNetRendimentos,
     IbgeSidra,
     Ipeadata,
@@ -41,6 +44,7 @@ from fin.ingest.snapshots import (
     CvmCiaCadastro,
     CvmFiCadastro,
     NefinFactors,
+    SusepEttj,
     TesouroPrecoTaxa,
 )
 from fin.ingest.snd_pu import SndPuHistorico
@@ -52,6 +56,7 @@ CONNECTORS: dict[str, type[Connector]] = {
         AnbimaCalendar,
         AnbimaTitulosPublicos,
         AnbimaEttj,
+        SusepEttj,
         AnbimaVna,
         AnbimaDebentures,
         AnbimaIndicadores,
@@ -71,10 +76,13 @@ CONNECTORS: dict[str, type[Connector]] = {
         CvmFca,
         CvmFre,
         CvmIpe,
+        CvmVlmo,
         CvmFii,
         CvmFiInfDiario,
         CvmFiCda,
         CvmRadVersions,
+        FundosNetCda,
+        FundosNetInformeDiario,
         FundosNetRendimentos,
         IbgeSidra,
         Ipeadata,
@@ -97,6 +105,7 @@ DAILY: tuple[str, ...] = (
     "anbima_calendar",
     "anbima_titulos_publicos",
     "anbima_ettj",
+    "susep_ettj",  # month-end copies of ANBIMA's ETTJ since 2015-12 (the last 3 months asked daily)
     "anbima_vna",
     "anbima_debentures",
     "anbima_projecoes",
@@ -114,6 +123,8 @@ DAILY: tuple[str, ...] = (
     # gap-closing routes (docs/evaluation/2026-11-07-data-gap-matrix.md); pyield_data and yahoo_chart run on demand
     "snd_debentures",  # terms snapshot daily, agenda weekly: neither keeps history
     "b3_fundosnet",
+    "b3_fundosnet_daily",  # ETF daily NAV (not in CVM open data since 2018-09)
+    "b3_fundosnet_cda",  # ETF monthly portfolios (not in CVM open data)
     "bcb_sgs",
     "bcb_ptax",
     "ipeadata",
@@ -124,6 +135,7 @@ DAILY: tuple[str, ...] = (
     "cvm_fca",
     "cvm_fre",
     "cvm_ipe",
+    "cvm_vlmo",
     "cvm_fii",
     "cvm_fi_inf_diario",
     "cvm_fi_cda",

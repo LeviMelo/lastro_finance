@@ -31,6 +31,7 @@ from fin.config import Zones
 from fin.ingest.fetch import Fetcher, FetchSpec
 from fin.ingest.http import FetchError, PoliteClient
 from fin.schema import Contract
+from fin.store.manifest import Manifest
 from fin.store.raw import RawStore
 from fin.store.runs import IngestRun
 from fin.store.tables import write_parquet
@@ -63,6 +64,7 @@ class Connector(ABC):
     min_interval: ClassVar[float] = 0.2  # seconds between request starts per host; adaptive (ingest/http.py)
     concurrency: ClassVar[int] = 1  # requests in flight at once (ADR-0023)
     stateless: ClassVar[bool] = False  # the server remembers the first query of a session: drop cookies per request
+    cookies: ClassVar[bool] = True  # False: never store a cookie (concurrent requests then never share a session)
     timeout: ClassVar[float] = 120.0  # seconds to wait for a response (a source that builds files on demand needs more)
     dedup_staging: ClassVar[bool] = False  # its files are re-sent whole: keep only rows that changed (ADR-0014)
     whole_datasets: ClassVar[frozenset[str]] = frozenset()  # exempt: identical rows there are distinct facts
@@ -137,6 +139,7 @@ def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode
         min_interval=connector.min_interval,
         timeout=connector.timeout,
         stateless=connector.stateless,
+        cookies=connector.cookies,
     )
     fetcher = Fetcher(run, raw, client, connector.version)
     errors = 0
@@ -165,7 +168,7 @@ def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode
             for mrow, new in out.members:
                 if new:
                     member = asdict(mrow)
-                    prev = _previous(connector, raw, run.manifest.cached(), member) if connector.dedup_staging else None
+                    prev = _previous(connector, raw, run.manifest, member) if connector.dedup_staging else None
                     _load_isolated(connector, zones, run, raw.read(mrow.raw_sha256), member, prev)
             if not out.new_object:
                 continue  # already archived and parsed when first seen; a rebuild re-parses it from raw
@@ -178,7 +181,7 @@ def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode
                 "request": out.row.request,
                 "notes": out.row.notes,
             }
-            prev = _previous(connector, raw, run.manifest.cached(), row) if connector.dedup_staging else None
+            prev = _previous(connector, raw, run.manifest, row) if connector.dedup_staging else None
             _load_isolated(connector, zones, run, blob, row, prev)
         if pool is not None:
             pool.shutdown(wait=True, cancel_futures=True)
@@ -215,31 +218,25 @@ def reparse(connector: Connector, zones: Zones, run: IngestRun, manifest: pl.Dat
 
 
 def _previous(
-    connector: Connector, raw: RawStore, manifest: pl.DataFrame, row: dict[str, Any]
+    connector: Connector, raw: RawStore, manifest: Manifest, row: dict[str, Any]
 ) -> tuple[bytes, dict[str, Any]] | None:
     """The version stored just before `row` for the same source, dataset and locator."""
-    m = manifest.filter(
-        (pl.col("source_id") == connector.source_id)
-        & (pl.col("dataset_id") == row["dataset_id"])
-        & (pl.col("http_status") == 200)
-        & (pl.col("raw_sha256") != row["raw_sha256"])
-        & (pl.col("fetched_at") < row["fetched_at"])
-        & (pl.col("notes").is_null() if row.get("notes") is None else pl.col("notes") == row["notes"])
-    )
-    if m.is_empty() and "|" in (row.get("notes") or ""):
+    rows = [
+        r
+        for r in manifest.versions(connector.source_id, row["dataset_id"], row.get("notes"))
+        if r["raw_sha256"] != row["raw_sha256"] and r["fetched_at"] < row["fetched_at"]
+    ]
+    if not rows and "|" in (row.get("notes") or ""):
         # the first unpacked member of a zip that used to be archived whole: compare with that zip (ADR-0014)
         container = str(row["notes"]).split("|", 1)[0]
-        m = manifest.filter(
-            (pl.col("source_id") == connector.source_id)
-            & (pl.col("dataset_id") == row["dataset_id"])
-            & (pl.col("http_status") == 200)
-            & (pl.col("notes") == container)
-            & (pl.col("raw_ext") == "zip")
-            & (pl.col("fetched_at") < row["fetched_at"])
-        )
-    if m.is_empty():
+        rows = [
+            r
+            for r in manifest.versions(connector.source_id, row["dataset_id"], container)
+            if r["raw_ext"] == "zip" and r["fetched_at"] < row["fetched_at"]
+        ]
+    if not rows:
         return None
-    prev = m.sort("fetched_at").row(-1, named=True)
+    prev = rows[-1]
     return raw.read(prev["raw_sha256"]), prev
 
 

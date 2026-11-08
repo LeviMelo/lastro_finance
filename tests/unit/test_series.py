@@ -419,3 +419,17 @@ def test_ima_connector_asks_for_the_history_with_a_fresh_session(
     assert s.data and s.data["Dt_Ref"] == "06/11/2026"
     back = [s for s in conn.discover(Mode.BACKFILL, Zones(tmp_path)) if s.dataset_id == "ima_sh_txt"]
     assert back[-1].reference_date == date(2001, 12, 4) and len(back) > 6000
+
+
+def test_susep_ettj_asks_one_url_per_month_not_held(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from fin.config import Zones
+    from fin.ingest import snapshots
+    from fin.ingest.base import Mode
+
+    monkeypatch.setattr(snapshots, "today_brt", lambda: date(2026, 11, 8))
+    conn = snapshots.SusepEttj()
+    back = list(conn.discover(Mode.BACKFILL, Zones(tmp_path)))
+    assert len(back) == 132 and back[-1].locator == "201512" and back[0].locator == "202611"  # 2015-12 .. 2026-11
+    assert back[-1].url.endswith("/arquivos-ettj/2015/curvazero_201512.txt/@@download/file")
+    assert 404 in back[0].absent_status  # a month not published yet is absent, not an error
+    assert [s.locator for s in conn.discover(Mode.INCREMENTAL, Zones(tmp_path))] == ["202611", "202610", "202609"]

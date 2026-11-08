@@ -16,6 +16,7 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `anbima_calendar` | ANBIMA | P | 2001–2099 | parsed | [note](docs/sources/anbima_calendar.md) |
 | `anbima_titulos_publicos` | ANBIMA | P | **ephemeral: 6 business days** | archiving since 2026-10-29 | [note](docs/sources/anbima_titulos_publicos.md) |
 | `anbima_ettj` | ANBIMA | P | **ephemeral: 6 business days** | archiving since 2026-10-29 | [note](docs/sources/anbima_ettj.md) |
+| `susep_ettj` | SUSEP (ANBIMA file) | S | month-end 2015-12–, one file per month | parsed | [note](docs/sources/susep_ettj.md) |
 | `anbima_vna` | ANBIMA | P | **ephemeral: 6 business days** | archiving since 2026-10-29 | [note](docs/sources/anbima_vna.md) |
 | `anbima_debentures` | ANBIMA | P | **ephemeral: 6 business days** | archiving since 2026-10-29 | [note](docs/sources/anbima_debentures.md) |
 | `anbima_projecoes` | ANBIMA | P | **ephemeral: latest values only** | archiving since 2026-11-07 | [note](docs/sources/anbima_projecoes.md) |
@@ -34,7 +35,7 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `cvm_dfp_itr` | CVM | P | DFP 2010–, ITR 2011– | recon | [note](docs/sources/cvm_dfp_itr.md) |
 | `cvm_rad_versions` | CVM | P | superseded DFP/ITR versions: statements XML from 2021-10, legacy entity dumps before (both parsed) | parsed | [note](docs/sources/cvm_rad_versions.md) |
 | `cvm_ipe` | CVM | P | 2003– | parsed | [note](docs/sources/cvm_ipe.md) |
-| `cvm_vlmo` | CVM | P | 2018– | recon | [note](docs/sources/cvm_vlmo.md) |
+| `cvm_vlmo` | CVM | P | insider trades and holdings by role group 2018– | parsed | [note](docs/sources/cvm_vlmo.md) |
 | `cvm_fi_inf_diario` | CVM | P | 2000– (real size from 2004) | recon | [note](docs/sources/cvm_fi_inf_diario.md) |
 | `cvm_fi_cda` | CVM | P | 2005– | recon | [note](docs/sources/cvm_fi_cda.md) |
 | `cvm_fii` | CVM | P | FII 2016–, FIAGRO 2025-05– | parsed | [note](docs/sources/cvm_fii.md) |
@@ -50,11 +51,13 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `snd_pu_historico` | SND | P | PU of every debenture since issue (dead ones included) | archiving; backfilled | [note](docs/sources/snd_pu_historico.md) |
 | `tesouro_vna` | Tesouro Nacional | P | VNA NTN-B / NTN-C monthly 2000– | archiving | [note](docs/sources/tesouro_vna.md) |
 | `b3_fundosnet` | B3 | P | FII/Fiagro distribution notices 2016-11– | archiving | [note](docs/sources/b3_fundosnet.md) |
+| `b3_fundosnet_daily` | B3 | P | ETF daily NAV per quota and net assets 2018-06– | archiving | [note](docs/sources/b3_fundosnet_daily.md) |
+| `b3_fundosnet_cda` | B3 | P | ETF monthly portfolios 2018-09– | archiving | [note](docs/sources/b3_fundosnet_cda.md) |
 | `ipeadata` | IPEA (FGV) | S | IGP-M 1989–, IGP-DI 1944– | archiving | [note](docs/sources/ipeadata.md) |
 | `pyield_data` | third-party mirror | S | ANBIMA bond rates 2020–, B3 futures 2018– | archiving (on demand) | [note](docs/sources/pyield_data.md) |
 | `b3_index_levels` | B3 | P | daily closes of 23 indices, IBOV 1968– | archiving | [note](docs/sources/context_br.md) |
 | `bcb_copom` | BCB | P | every Copom meeting 1996– | archiving | [note](docs/sources/context_br.md) |
-| `anbima_ima` | ANBIMA | P | **ephemeral: latest day only** | archiving | [note](docs/sources/context_br.md) |
+| `anbima_ima` | ANBIMA | P | index figures daily since 2001-12-04; **portfolio ephemeral: latest day only** | archiving; figures backfilled | [note](docs/sources/context_br.md) |
 | `cepea` | CEPEA/ESALQ | S | agricultural indicators 1996– | archiving | [note](docs/sources/context_br.md) |
 | `anp` | ANP | P | fuel prices monthly 2013– | archiving | [note](docs/sources/context_br.md) |
 | `us_treasury` | US Treasury | P | par curve 1990–, real 2003– | archiving | [note](docs/sources/context_global.md) |

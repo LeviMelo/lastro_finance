@@ -13,7 +13,7 @@ Verdict codes:
 | 1 | ANBIMA government-bond rates before 2026-10-29 | `pyield_data` mirror, 2020-01-02 →, equal to our ANBIMA files on overlap; Wayback ~85 days 2012–18; Tesouro morning rates 2004 → as proxy (NTN-B, LFT within a few bp; prefixados 10–30 bp off) | C-S 2020 →; P before | wired (mirror backfilled) |
 | 2 | ANBIMA debenture rates before 2026-10-29 | SND trade statistics 1993-11 → (realised trades, not indicative rates); Wayback 81 daily files 2013–19 | P | wired (SND backfill running) |
 | 3 | Debenture terms and schedules | SND terms of 10,069 debentures since 1981, dead included; agenda future-only | C (terms), P (past events) | wired daily / weekly |
-| 4 | CRI/CRA rates, ETTJ, IMA, ANBIMA projections history | none free. Substitutes: B3 TS curves 2000 → (held) for ETTJ; BCB Focus for projections | O | paid: ANBIMA Feed, price not published |
+| 4 | CRI/CRA rates, ETTJ, IMA, ANBIMA projections history | IMA index figures daily 2001-12-04 → (ANBIMA `ima-sh-down.asp`, backfilled; portfolio history none); ETTJ month-end 2015-12 → (`susep_ettj`, SUSEP copy of ANBIMA's file); no free daily ETTJ, CRI/CRA or projections (Wayback ~47 days 2012-19, replay 429). Substitutes: B3 TS curves 2000 → for ETTJ; BCB Focus for projections | P (IMA figures), S (ETTJ month-end), O (rest) | IMA wired; paid: ANBIMA Feed |
 | 5 | IGP-M / IGP-DI index numbers | Ipeadata 1989-06 → / 1944 →, equal to ANBIMA's latest | C-S | wired daily |
 | 6 | VNA NTN-B / NTN-C | Tesouro monthly tables 2000 →, recomputed exactly from IPCA / IGP-M | C | wired daily |
 | 7 | B3 futures settlements and open interest 2018 → | PR files (OQ-20, disk) or `pyield_data` b3_futures (10 MB, 9 contracts) | C-S | wired (mirror) |

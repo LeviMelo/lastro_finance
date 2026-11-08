@@ -18,6 +18,7 @@ import random
 import threading
 import time
 from collections.abc import Callable, Mapping
+from http.cookiejar import CookieJar, DefaultCookiePolicy
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -50,6 +51,7 @@ class PoliteClient:
         backoff_cap: float = 120.0,
         timeout: float = 120.0,
         stateless: bool = False,
+        cookies: bool = True,
         transport: httpx.BaseTransport | None = None,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
@@ -64,8 +66,12 @@ class PoliteClient:
         self._clock = clock
         self.stateless = stateless
         self._last: dict[str, float] = {}
+        # cookies=False: a jar that accepts none, so concurrent requests never share a server session (ASP.NET
+        # serialises the requests of one session: RAD ran 4 workers at the pace of 1, measured 2026-11-08)
+        jar = None if cookies else CookieJar(policy=DefaultCookiePolicy(allowed_domains=[]))
         self._client = httpx.Client(
             headers={"User-Agent": user_agent},
+            cookies=jar,
             timeout=timeout,
             follow_redirects=True,
             transport=transport,

@@ -219,6 +219,35 @@ def fii_fundamentals(con: duckdb.DuckDBPyConnection, h: pl.DataFrame, as_of: dat
     )
 
 
+def etf_fundamentals(con: duckdb.DuckDBPyConnection, h: pl.DataFrame, as_of: date) -> pl.DataFrame:
+    """Per ETF line: the latest NAV per quota delivered by `as_of` (Fundos.NET daily report, verified link) and the
+    premium of that day's close over it."""
+    ids = h.filter(pl.col("instrument_id").is_not_null())["instrument_id"].to_list()
+    if not ids:
+        return pl.DataFrame()
+    return _q(
+        con,
+        """
+        WITH n AS (
+            SELECT l.instrument_id, e.fund_cnpj, e.reference_date, e.quota_value_brl, e.net_assets_brl
+            FROM etf_link l JOIN etf_daily e USING (fund_cnpj)
+            WHERE l.verified AND l.instrument_id IN (SELECT unnest(?)) AND e.reference_date <= ?
+              AND CAST(e.delivered_at AT TIME ZONE 'America/Sao_Paulo' AS DATE) <= ? AND e.quota_value_brl > 0
+            QUALIFY row_number() OVER (PARTITION BY l.instrument_id
+                                       ORDER BY e.reference_date DESC, e.delivered_at DESC) = 1
+        )
+        SELECT p.ticker, n.fund_cnpj, n.reference_date AS nav_reference_date,
+               CAST(n.quota_value_brl AS DOUBLE) AS nav_per_quota, CAST(n.net_assets_brl AS DOUBLE) AS net_assets_brl,
+               CAST(p.close AS DOUBLE) AS close_brl, CAST(p.close AS DOUBLE) / CAST(n.quota_value_brl AS DOUBLE) - 1
+                   AS premium
+        FROM n JOIN price_daily p ON p.instrument_id = n.instrument_id AND p.trade_date = n.reference_date
+             AND p.market_segment = 'lote_padrao'
+        ORDER BY 1
+        """,
+        [ids, as_of, as_of],
+    )
+
+
 def findings(con: duckdb.DuckDBPyConnection, h: pl.DataFrame) -> pl.DataFrame:
     ids = h.filter(pl.col("instrument_id").is_not_null())["instrument_id"].to_list()
     if not ids:
@@ -265,6 +294,7 @@ def build(zones: Zones, portfolio_path: Path, as_of: date) -> Path:
     fund = fundamentals(con, h, as_of)
     fnd = findings(con, h)
     fii = fii_fundamentals(con, h, as_of)
+    etf = etf_fundamentals(con, h, as_of)
     path = risk.value_path(con, h, since, as_of)
     try:
         ix_rows = con.execute(
@@ -278,7 +308,7 @@ def build(zones: Zones, portfolio_path: Path, as_of: date) -> Path:
     st = risk.stats(path, ix)
     sec = risk.sector_exposure(con, h)
     for name, df in (("holdings", h), ("performance", perf), ("upcoming", up), ("fundamentals", fund),
-                     ("findings", fnd), ("value_path", path), ("sector_exposure", sec)):  # fmt: skip
+                     ("findings", fnd), ("value_path", path), ("sector_exposure", sec), ("etf", etf)):  # fmt: skip
         if df.height:
             df.write_parquet(out / f"{name}.parquet")
     w = perf.drop_nulls(["start_value_brl", "total_return"]) if perf.height else perf
@@ -345,6 +375,7 @@ def build(zones: Zones, portfolio_path: Path, as_of: date) -> Path:
     issuers = {tk[:4] for tk in covered}
     for tk in h["ticker"].to_list():
         fii_covered = set(fii["ticker"].to_list()) if fii.height else set()
+        fii_covered |= set(etf["ticker"].to_list()) if etf.height else set()
         if tk not in covered and tk[:4] not in issuers and not TESOURO.match(tk) and tk not in fii_covered:
             lines.append(f"| {tk} | — | sem dados na data | — | — | — |")
     if fii.height:
@@ -360,6 +391,18 @@ def build(zones: Zones, portfolio_path: Path, as_of: date) -> Path:
             pvp = f"{r['price_to_nav']:.3f}".replace(".", ",")
             lines.append(f"| {r['ticker']} | {r['fund_name']} | {_brl(r['close_brl'])} | {_brl(r['nav_per_quota'])} "
                          f"({r['nav_reference_date']}) | {pvp} | {dy} |")  # fmt: skip
+    if etf.height:
+        lines += [
+            "",
+            "### ETFs (informe diário do fundo no Fundos.NET entregue até a data)",
+            "",
+            "| cota | CNPJ | fechamento | valor da cota (ref.) | ágio/deságio | PL |",
+            "|---|---|---|---|---|---|",
+        ]
+        for r in etf.iter_rows(named=True):
+            nav = f"{_brl(r['nav_per_quota'])} ({r['nav_reference_date']})"
+            lines.append(f"| {r['ticker']} | {r['fund_cnpj']} | {_brl(r['close_brl'])} | {nav} | "
+                         f"{_pct(r['premium'])} | {_brl(r['net_assets_brl'])} |")  # fmt: skip
     lines += ["", "## Próximos eventos", ""]
     if up.height:
         lines += [

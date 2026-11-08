@@ -9,8 +9,8 @@
 | E: Selic SGS 11 compounded = SGS 4390 | 323 of 323 months (2000-) |
 | E: CDI SGS 12 compounded = SGS 4391 | 323 of 323 months (SGS 4391 added) |
 | G: LTN PU from rate | 52,652 of 56,580 prices (93.06 %) |
-| H: assets = liabilities + equity | 24,322 of 24,328 filings; the 6 breaks are the companies' own filings (check `balance_identity`) |
-| H: point in time across restatements | as-of rule unit-tested; on real data no filing is held in two versions yet |
+| H: assets = liabilities + equity | 24,813 of 24,819 filings; the 6 breaks are the companies' own filings (check `balance_identity`) |
+| H: point in time across restatements | 21 of 21 restated filings (total assets changed, superseded version from RAD) give the original before the re-filing and the restatement after |
 | F: look-through, sample fund | 07.593.972/0001-86, 2026-06: holdings R$ 291,170,747,079 vs NAV 291,169,931,166 (0.0003 %) |
 | F: CDA net assets = daily report | 24,868 of 25,256 funds within 1 % (2026-06) |
 
@@ -23,8 +23,11 @@ settled D+1 to 2017; from 2024 sales settle D+0 and purchases D+1; 2018-2023 is 
 So G is measured, not passed: the published prices stand.
 
 **H, restatements.** CVM's zips keep only the latest version of each filing: 6,137 filings show version 2 to 9, and
-their earlier versions are gone from open data. From the archive's start (2026-11-07) every version is kept. The
-as-of rule (the latest version received by the date) is covered by `test_restated_statement_is_used_only_from_its_delivery`.
+their earlier versions are gone from open data. From the archive's start (2026-11-07) every version is kept, and the
+superseded ones are recovered from RAD (ADR-0027). Re-run 2026-11-08 with the RAD backfill in progress: 3,410 filings
+held in two or more versions, 21 of them with a changed consolidated total assets and a later delivery; for all 21 the
+as-of query returns version 1 the day before the re-filing and version 2 from it. The rule is also unit-tested
+(`test_restated_statement_is_used_only_from_its_delivery`).
 
 **F, look-through.** Across funds, holdings sum to within 5 % of net assets for 90.6 % (median ratio 1.0013); the rest
 hold receivables, payables, derivatives or confidential positions that CDA does not list.

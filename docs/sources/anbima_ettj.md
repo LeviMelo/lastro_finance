@@ -37,6 +37,11 @@ Curve = group (PREFIXADOS / IPCA); bond errors keyed by Titulo + SELIC code + Ve
 ## 6. Ephemerality
 **EPHEMERAL (6 business days).** Archive daily (txt via CZ-down.asp, 3 KB). Long-history routes tried: see anbima_titulos_publicos §8 (ANBIMA Data needs a token; Feed is paid). Internet Archive: no systematic daily files; CDX lists `CZ.asp?Dt_Ref=23/10/2026` and `=26/10/2026` captures (Oct 2026), `xml/CurvaZero_PREF.xml` snapshots (2019, 2026-05, 2026-10) and a `CZ-down.asp?...Dt_Ref=30/01/2025&saida=csv` capture of 2026-10-01 (content not fetched; replay was rate-blocked). Own substitute: fit Svensson from B3 DI curves / Tesouro Transparente rates (L4).
 
+## 6b. History routes measured 2026-11-08
+- **Month-end 2015-12 → today: SUSEP republishes ANBIMA's English CurvaZero file for each month's last business day**, 131 files archived (`susep_ettj`, docs/sources/susep_ettj.md); equal to our own file on 2026-10-30. This is the only public ETTJ history found.
+- No `-sh` ("série histórica") form exists for ETTJ as it does for the IMA: `CZ-sh.asp`, `est-termo-sh.asp`, `CZ-historico.asp` → 404; `CZ.asp` on-screen POST for 2022-09-15 answers a page without a table. pyettj's `get_ettj_anbima` points at the same `CZ.asp`, and works only inside the window.
+- ANBIMA Data dataset pages (`data.anbima.com.br/datasets/<slug>`) show a 5-day public sample; their "Download" asks first for name, e-mail, role, company and purpose (a registration form: **not filled**, personal data).
+
 ## 7. Open questions
 - Publication time; xls/xml/csv layouts; exact 6th-day boundary (`Dt_Ref_Ver` says 20261029).
 

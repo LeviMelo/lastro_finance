@@ -98,6 +98,9 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/copom.py` | BCB Copom decision history → staging `decision` |
 | `ingest/focus.py` | BCB Focus expectations (8 tables) → staging `expectation` |
 | `ingest/fundosnet.py` | Fundos.NET notices → staging `distribution` (per Provento and kind, exact BRL per quota) and `listing` (delivery minute = knowledge time, version) |
+| `ingest/cvm_vlmo.py` | CVM VLMO → staging `document` (filing index, delivery date) and `movement` (insider positions and trades by role group; free text not parsed) |
+| `ingest/fundosnet_cda.py` | Fundos.NET ETF monthly portfolios (CDA XML, two layouts) → staging `position`, `net_assets`, `listing` |
+| `ingest/fundosnet_daily.py` | Fundos.NET ETF daily reports → staging `daily` (NAV per quota, net assets, flows, holders; exact decimals) and `listing` |
 | `ingest/b3_events.py` | B3 listed-companies backend: issuers, cash history, stock events, subscriptions; Yahoo chart events (tier U) |
 | `ingest/intraday.py` | Yahoo 5-minute bars for the most traded shares and FIIs, Ibovespa and USD/BRL (tier U) |
 | `ingest/cvm_fi_cad.py` | CVM fund register: legacy `cad_fi` and `cad_fi_hist` (long form), CVM 175 `registro_fundo_classe` → staging `fund`, `fund_history`, `registered_fund`, `registered_class`, `registered_subclass` (no directors, no person managers) |

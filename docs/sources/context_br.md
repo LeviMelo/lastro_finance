@@ -140,7 +140,7 @@ Cross-check: IPEADATA `GM366_IBVSP366` (Ibovespa close, daily, source BM&FBovesp
 ### 8b. Other index/curve context
 | series | source | code / URL | first | freq | lag | unit | verified |
 |---|---|---|---|---|---|---|---|
-| IMA family (IMA-B, IMA-B 5, IMA-B 5+, IMA-S, IMA-Geral, IMA-Geral ex-C, IRF-M, IRF-M 1, IRF-M 1+): index level, daily/monthly/YTD/12m/24m var, duration, yield | ANBIMA free XML (latest day only) | `https://www.anbima.com.br/informacoes/ima/arqs/ima_completo.xml` (88,673 B, ISO-8859-1, attribute `T_Num_Indice` per `FAMILIA`) | none (snapshot) | daily | 06/11/2026 on 11-07 | index (Dec-2000 = 1000, per ANBIMA convention n/v) | Y IMA-B 12,005.950907 (var dia 0,4376); IMA-B 5+ 13,024.470749; IMA-S 9,109.224019; IRF-M 23,445.456968. EPHEMERAL: no history route found; the `ima-sh.asp` page is a 2016 notice. Archive daily; IMA-S history can be rebuilt from CDI (SGS 12) and IMA-B/IRF-M only from the day archiving starts (history route N, not verified) |
+| IMA family (IMA-B, IMA-B 5, IMA-B 5+, IMA-S, IMA-Geral, IMA-Geral ex-C, IRF-M, IRF-M 1, IRF-M 1+): index level, daily/monthly/YTD/12m/24m var, duration, yield | ANBIMA free XML (latest day only) | `https://www.anbima.com.br/informacoes/ima/arqs/ima_completo.xml` (88,673 B, ISO-8859-1, attribute `T_Num_Indice` per `FAMILIA`) | none (snapshot) | daily | 06/11/2026 on 11-07 | index (Dec-2000 = 1000, per ANBIMA convention n/v) | Y IMA-B 12,005.950907 (var dia 0,4376); IMA-B 5+ 13,024.470749; IMA-S 9,109.224019; IRF-M 23,445.456968. Figures: history route found 2026-11-08 (below). Portfolio (`CARTEIRA`) stays EPHEMERAL: latest day in the XML, 6 business days in `ima-carteira-down.asp`; archive daily |
 | DI x pré curve (B3 TS), 22 curve ids (PRE, DIC, DIM, TR, DOL, ...) | B3 referenceRatesProxy | repo note b3_reference_rates.md (re-verified: `GetList` id PRE, 282 vertices, date 2026-11-06) | 2000-01-14 via pesquisapregao TS files | daily | same day | % a.a. (252 d) | Y PRE 1d = 13.65 ; 4y (1008 d) PRE = 14.90 |
 | DI1 futures curve | pyield mirror 2018+ / B3 TS 2000+ | repo notes | | | | | not re-probed (known) |
 | Implied inflation (breakeven) | derived: (1+PRE)/(1+DIC)-1 at the same 252-day vertex, PRE = "DI x pré", DIC = "DI x IPCA" | two `GetList` calls (pageSize <= 100; pageSize 400 returned an empty result) | 2000 (TS files) | daily | same day | % a.a. | Y 2026-11-06 at 1008 d: PRE 14.90, DIC 7.62 -> breakeven 6.77 %. Caution: at the 1-day vertex DIC = 13.65 = PRE (not a real rate), short real vertices (5-9 d: 4.44-7.17) are noise; use vertices >= 6 months only |
@@ -193,5 +193,30 @@ CEPEA/ESALQ (USP): data licence printed on every indicator page = CC BY-NC 4.0 (
 - **ANP** monthly Brazil fuel prices 2013-01→: 7 products × 12 statistics, the unit on each row (`R$/l`, `R$/13kg`,
   `R$/m³`); `-` = no figure.
 - **ANBIMA IMA** (today only): 9 families × 11 index figures into `series_observation`, and each family's portfolio
-  into `ima_component` (weights sum to 100 ± 0.02). Duration and PMR units are ANBIMA's (business days)
-  *(not verified)*. IMA history before 2026-10-29 is still a gap (gap matrix #7).
+  into `ima_component` (weights sum to 100 ± 0.02). Duration is in business days (the txt header says `d.u.`); PMR
+  *(not verified)*. The XML's `T_Pi_Qi` (`market_value`) is **R$ mil**, not BRL (the txt header says R$ mil and carries the
+  same integer: IMA-B 1.819.059.200 = R$ 1.8 tn); fixed 2026-11-08. `IMA-B 5+` and `IRF-M 1+` had the same series id as
+  `IMA-B 5` and `IRF-M 1` (slug dropped the `+`): now `ima_b_5_mais`, `irf_m_1_mais`.
+
+## ANBIMA IMA history (measured 2026-11-08)
+- **The "Série histórica" form is public and serves any past day.** `https://www.anbima.com.br/informacoes/ima/ima-sh.asp`
+  (the old IMA notice page; the `ima/` index answers 403) posts to `ima-sh-down.asp`: `Idioma=PT&saida=txt|xls|csv|xml&Dt_Ref=dd/mm/yyyy`
+  (+ `escolha=2&Dt_Ref_Ver=…`, Referer `ima-sh.asp`; the `Dt_Ref_Ver=20261029` of the form is not enforced). One day's "Quadro Resumo" =
+  one row per index: index number, daily/month/year/12m/24m change, weight, duration (d.u.), market value (R$ mil), trades,
+  traded quantity and value, PMR, convexity, yield, redemption yield. **First day 2001-12-04** (2001-12-03 and earlier,
+  weekends and holidays: HTTP 200 with a 134-byte "Não há dados disponíveis" stub). 0.99–1.9 KB a day.
+- **Layout over time** (100 samples, quarterly 2001-12 → 2026-09, fresh session each): the header line is byte-identical
+  throughout; the set of indices changes: 2001-12: IRF-M, IMA-C 5, IMA-C 5+, IMA-C, IMA-S, IMA-GERAL; 2003-12: + IMA-B 5, 5+, B;
+  2010-06: + IRF-M 1, IRF-M 1+, IMA-GERAL ex-C; by 2011-03 IMA-C 5/5+ are gone; by 2021-06 IMA-C is gone (9 indices). Early
+  years have `--` for the change, duration, yield and trading columns (only index, daily change, weight, market value filled
+  in 2001-12); trading statistics and convexity are `--` on many days of every era (`--` = no value).
+- **A session trap:** the ASP server answers every request of one session (cookie `ASPSESSIONID`) with the **first** date asked: 100
+  sampled dates came back as 2001-12-04 until cookies were dropped (my first sample was wrong for that reason). The connector sets `stateless` (cookies cleared after each
+  request) and the parser refuses a file whose date is not the date asked.
+- **Portfolio history is not served:** `ima-carteira-down.asp` (`Consulta=Carteira|Totais|Ambos`, `Indice=ima-b…`) answers 6
+  business days (2026-10-29 → 11-06 measured; 2026-10-28 and older: a 88-byte empty stub). Per-index "Totais" before that window: same stub.
+  The old `arqs/ima_ate310305.exe` (series until 2005-03-31): 404. Wayback and ANBIMA Data (login/form) remain the only other leads.
+- **ANBIMA Data** `https://data.anbima.com.br/indices/consulta/ima/resultados-diarios/<index>` is listed (web search) with an XLS "Histórico" per index
+  *(not verified; its data API answers 401 without a token)*.
+- **Backfilled 2026-11-08:** 6,251 days 2001-12-04 → 2026-11-06 (10.1 MB of txt; 0 errors, 0 quarantined), 652,961 core rows; indices per day: 6 (449 days), 9 (3,070), 10 (2,532), 12 (211). IMA-B starts 2003-09-16.
+- **Equality with the XML on 2026-11-06** (test): every figure identical except PMR (txt rounds to whole days) and yield (4 decimals).

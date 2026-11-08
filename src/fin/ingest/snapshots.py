@@ -207,6 +207,45 @@ class AnbimaEttj(_AnbimaWindow):
             )
 
 
+class SusepEttj(Connector):
+    """SUSEP republishes ANBIMA's English CurvaZero file of each month's last business day, 2015-12 onwards
+    (docs/sources/susep_ettj.md): the only public ETTJ history found, month-end only. One file per month, URL by
+    pattern; a month not yet published answers 404. Backfill asks every month not held, a normal run the last 3."""
+
+    source_id: ClassVar[str] = "susep_ettj"
+    version: ClassVar[str] = "1"
+    user_agent: ClassVar[str | None] = BROWSER_UA
+    BASE = "https://www.gov.br/susep/pt-br/arquivos/arquivos-ettj"
+    FIRST_MONTH = (2015, 12)
+    contracts: ClassVar[dict[str, Contract]] = anbima_parsers.ETTJ_CONTRACTS
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return anbima_parsers.parse_ettj_payload(blob, row)
+
+    def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
+        today = today_brt()
+        months = [(y, m) for y in range(self.FIRST_MONTH[0], today.year + 1) for m in range(1, 13)]
+        months = [ym for ym in months if self.FIRST_MONTH <= ym <= (today.year, today.month)]
+        if mode is not Mode.BACKFILL:
+            months = months[-3:]
+        held = held_rows(zones, self.source_id, "curva_zero_mensal")
+        have = set(held["notes"].to_list()) if held.height else set()
+        for y, m in reversed(months):
+            if f"{y}{m:02d}" in have:
+                continue
+            yield FetchSpec(
+                self.source_id,
+                "curva_zero_mensal",
+                f"{self.BASE}/{y}/curvazero_{y}{m:02d}.txt/@@download/file",
+                "txt",
+                reference_date=date(y, m, 1),  # the file's own date is its month's last business day
+                conditional=False,
+                min_bytes=500,
+                absent_status=frozenset({404}),
+                locator=f"{y}{m:02d}",
+            )
+
+
 class AnbimaVna(_AnbimaWindow):
     source_id: ClassVar[str] = "anbima_vna"
     version: ClassVar[str] = "1"

@@ -18,6 +18,9 @@ Not parsed (HTML table; xls not fetched) *(not verified)*.
 ## 6. Ephemerality
 **EPHEMERAL, single snapshot.** The Quadro is the only free source of the IGP-M **number index** (FGV) found so far (BCB SGS has IGP-M % only): archive at least on every IGP-M release, with the xls. Free long-history proxy for expected inflation: BCB Focus (bcb_focus), not identical to ANBIMA's committee.
 
+## 6b. History routes measured 2026-11-08
+The "Quadro Indicadores" page has no date form (`default.asp` posts nothing historical; `arqs/indicadores.xls` and `Estimativa_SELIC_ANBIMA.pdf` are latest only). Internet Archive CDX lists 47 daily captures of `anbima.com.br/indicadores/indicadores.asp` (2012-12-15 → 2019-09-17: 1 in 2012, 1 in 2013, 3 in 2014, 5 in 2015, 5 in 2016, 9 in 2017, 14 in 2018, 9 in 2019; the xls: 5 in 2014-17) and 7 of the current path (2018-2026). Replay with `id_` returned real pages (2017-07-21: IPCA jun/17 index 4.832,27, projection jul/17 0,10) but **HTTP 429 after ~5 requests at 1.5 s**: not archived; a sparse best-effort backfill (about 47 days of IPCA/IGP-M projections) needs a slower, resumable fetch and a parser for the 2012-19 layouts *(not done)*.
+
 ## 7. Open questions
 - Fetch and parse `Indicadores.xls`; whether ANBIMA Data exposes projection history (token needed).
 

@@ -48,13 +48,13 @@ def _text(blob: bytes) -> list[str]:
     return [ln for ln in blob.decode("latin-1").replace("\r\n", "\n").split("\n")]
 
 
-def _num(text: str | None, scale: int = 24) -> Decimal | None:
+def _num(text: str | None, scale: int = 24, us: bool = False) -> Decimal | None:
     """`1.243,905` -> 1243.905; `7,17E-02` -> 0.0717 exactly; '', `--`, `N/D` -> None. More than `scale`
-    decimals is refused (a cast would round silently)."""
+    decimals is refused (a cast would round silently). `us`: the English layout, `1,243.905`."""
     if text is None or text.strip() in NULLS:
         return None
     try:
-        d = Decimal(text.strip().replace(".", "").replace(",", "."))
+        d = Decimal(text.strip().replace(",", "") if us else text.strip().replace(".", "").replace(",", "."))
     except InvalidOperation as e:
         raise LayoutError(f"not a number: {text!r}") from e
     exp = d.as_tuple().exponent
@@ -65,6 +65,11 @@ def _num(text: str | None, scale: int = 24) -> Decimal | None:
 
 def _dmy(text: str) -> date:
     d, m, y = text.strip().split("/")
+    return date(int(y), int(m), int(d))
+
+
+def _mdy(text: str) -> date:
+    m, d, y = text.strip().split("/")
     return date(int(y), int(m), int(d))
 
 
@@ -130,7 +135,7 @@ CIRCULAR_VERTEX = Contract(
     columns=(
         Column("ref_date", pl.Date, "Data de Referencia", "data de referência", "date", nullable=False),
         Column("business_days", pl.Int32, "vertex in business days", "vértice", "business days (252/yr)", False),
-        Column("rate_pct", RATE, "Taxa (%a.a.)", "taxa", "% a.a.", False),
+        Column("rate_pct", RATE, "Taxa (%a.a.)", "taxa", "% a.a.", True),  # empty at 2,520 du in half of 2015-26
     ),
     key=("ref_date", "business_days", "raw_sha256"),
 )
@@ -155,9 +160,35 @@ ETTJ_CONTRACTS = {
 }
 
 
+def _maturities_are_mdy(lines: list[str]) -> bool:
+    """The English file writes bond maturities `mm/dd/yyyy` (2015-12..2025-11) or `dd/mm/yyyy` (2025-12 on). NTN-B
+    matures on the 15th, so a file with one is decided by it; a file that cannot be decided is refused."""
+    first_gt, second_gt = False, False
+    for ln in lines:
+        f = ln.rstrip().split("@")
+        if f[0] == "4" and len(f) == 5 and f[3].count("/") == 2:
+            a, b, _ = f[3].split("/")
+            first_gt |= int(a) > 12
+            second_gt |= int(b) > 12
+    if first_gt == second_gt:
+        raise LayoutError("English ETTJ file: bond maturities do not settle dd/mm or mm/dd (no day above 12, or both)")
+    return second_gt
+
+
+def _vertex(text: str) -> int:
+    """A business-day vertex: `252`, `6.804` (pt-BR) or `6,804` (English) -> 6804; 0 for a label (not a vertex)."""
+    t = text.replace(".", "").replace(",", "")
+    return int(t) if t.isdigit() else 0
+
+
 def parse_ettj(blob: bytes, row: dict[str, Any]) -> dict[str, pl.DataFrame]:
-    """`CurvaZero_ddmmyyyy.txt`: line = `<record type>@field@...` (docs/sources/anbima_ettj.md §3)."""
+    """`CurvaZero_ddmmyyyy.txt`: line = `<record type>@field@...` (docs/sources/anbima_ettj.md §3). The English file
+    (`Idioma=US`, republished monthly by SUSEP: docs/sources/susep_ettj.md) has the same records, `1,008.5` numbers,
+    English labels and bond maturities as mm/dd/yyyy or dd/mm/yyyy (the order changes between files, read from the
+    dates themselves, `_maturities_are_mdy`; the reference date line stays dd/mm/yyyy). Recognised by `1@Group`."""
     lines = _text(blob)
+    us = any(ln.startswith("1@Group@") for ln in lines)
+    mdy = us and _maturities_are_mdy(lines)
     ref: date | None = None
     out: dict[str, list[dict[str, Any]]] = {k: [] for k in ETTJ_CONTRACTS}
     for i, ln in enumerate(lines):
@@ -165,10 +196,10 @@ def parse_ettj(blob: bytes, row: dict[str, Any]) -> dict[str, pl.DataFrame]:
         loc = f"line={i + 1}"
         if f[0] == "0" and len(f) == 3 and f[1].startswith("Data de Refer"):
             ref = _dmy(f[2])
-        elif f[0] == "1" and f[1] not in ("Grupo",):
+        elif f[0] == "1" and f[1] not in ("Grupo", "Group"):
             if len(f) != 8 or ref is None:
                 raise LayoutError(f"{loc}: expected a date line then 7 fields, got {ln!r}")
-            b = [_num(x) for x in f[2:]]
+            b = [_num(x, us=us) for x in f[2:]]
             out["parameter"].append(
                 dict(
                     zip(
@@ -179,31 +210,31 @@ def parse_ettj(blob: bytes, row: dict[str, Any]) -> dict[str, pl.DataFrame]:
                 )
                 | {"raw_locator": loc}
             )
-        elif f[0] == "2" and f[1].replace(".", "").isdigit():
+        elif f[0] == "2" and _vertex(f[1]):
             if ref is None or len(f) != 5:
                 raise LayoutError(f"{loc}: unexpected vertex line {ln!r}")
             out["vertex"].append(
                 {
                     "ref_date": ref,
-                    "business_days": int(f[1].replace(".", "")),
-                    "ettj_ipca_pct": _num(f[2], 12),
-                    "ettj_pref_pct": _num(f[3], 12),
-                    "implied_inflation_pct": _num(f[4], 12),
+                    "business_days": _vertex(f[1]),
+                    "ettj_ipca_pct": _num(f[2], 12, us),
+                    "ettj_pref_pct": _num(f[3], 12, us),
+                    "implied_inflation_pct": _num(f[4], 12, us),
                     "raw_locator": loc,
                 }
             )
-        elif f[0] == "3" and f[1].replace(".", "").isdigit():
+        elif f[0] == "3" and _vertex(f[1]):
             if ref is None or len(f) != 3:
                 raise LayoutError(f"{loc}: unexpected circular vertex line {ln!r}")
             out["circular_vertex"].append(
                 {
                     "ref_date": ref,
-                    "business_days": int(f[1].replace(".", "")),
-                    "rate_pct": _num(f[2], 12),
+                    "business_days": _vertex(f[1]),
+                    "rate_pct": _num(f[2], 12, us),
                     "raw_locator": loc,
                 }
             )
-        elif f[0] == "4" and f[1] != "Titulo" and len(f) > 2:
+        elif f[0] == "4" and f[1] not in ("Titulo", "Bond") and len(f) > 2:
             if ref is None or len(f) != 5:
                 raise LayoutError(f"{loc}: unexpected bond error line {ln!r}")
             out["bond_error"].append(
@@ -211,8 +242,8 @@ def parse_ettj(blob: bytes, row: dict[str, Any]) -> dict[str, pl.DataFrame]:
                     "ref_date": ref,
                     "bond_type": f[1],
                     "selic_code": f[2],
-                    "maturity_date": _dmy(f[3]),
-                    "error_pct": _num(f[4], 12),
+                    "maturity_date": _mdy(f[3]) if mdy else _dmy(f[3]),
+                    "error_pct": _num(f[4], 12, us),
                     "raw_locator": loc,
                 }
             )

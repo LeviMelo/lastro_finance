@@ -107,7 +107,7 @@ LISTING = Contract(
 CONTRACTS = {"distribution": DISTRIBUTION, "listing": LISTING}
 
 
-def _doc_id(row: dict[str, Any]) -> int:
+def doc_id_of(row: dict[str, Any]) -> int:
     req = json.loads(row["request"])
     return int((req.get("params") or {})["id"])
 
@@ -138,7 +138,7 @@ def parse_distribution(blob: bytes, row: dict[str, Any]) -> pl.DataFrame:
         kinds = [c.tag for c in root if c.tag != "DadosGerais"]
         raise NotData(f"Fundos.NET notice without InformeRendimentos (holds {kinds})")
     g = root.find("DadosGerais")
-    doc_id = _doc_id(row)
+    doc_id = doc_id_of(row)
     common = {
         "doc_id": doc_id,
         "fund_name": _text(g, "NomeFundo"),
@@ -220,6 +220,6 @@ def parse_listing(blob: bytes, row: dict[str, Any]) -> pl.DataFrame:
 def parse_payload(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
     ds = str(row["dataset_id"])
     if ds == "informe_rendimentos":
-        yield Parsed("distribution", f"id_block={_doc_id(row) // 100_000}", parse_distribution(blob, row))
+        yield Parsed("distribution", f"id_block={doc_id_of(row) // 100_000}", parse_distribution(blob, row))
     elif ds == "listagem":
         yield Parsed("listing", "all", parse_listing(blob, row))

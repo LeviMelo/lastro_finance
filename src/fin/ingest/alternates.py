@@ -15,7 +15,20 @@ from typing import Any, ClassVar
 import polars as pl
 
 from fin.config import Zones
-from fin.ingest import b3_events, cvm_fca, cvm_fre, cvm_ipe, cvm_statements, fundosnet, pyield, series, snd
+from fin.ingest import (
+    b3_events,
+    cvm_fca,
+    cvm_fre,
+    cvm_ipe,
+    cvm_statements,
+    cvm_vlmo,
+    fundosnet,
+    fundosnet_cda,
+    fundosnet_daily,
+    pyield,
+    series,
+    snd,
+)
 from fin.ingest.base import Connector, Mode, Parsed
 from fin.ingest.context import ContextConnector, catalogue
 from fin.ingest.fetch import FetchSpec
@@ -362,12 +375,17 @@ class FundosNetRendimentos(Connector):
     PAGE = 200  # 500 is refused with a 302 (measured 2026-11-07)
     concurrency: ClassVar[int] = 8  # one small XML per notice; latency, not bandwidth, bounds it (ADR-0023)
     min_interval: ClassVar[float] = 0.05
+    CATEGORY: ClassVar[int] = 14
+    TYPE: ClassVar[int] = 41
+    DOCUMENT: ClassVar[str] = "informe_rendimentos"
+    FUND_TYPES: ClassVar[tuple[int | None, ...]] = (None,)  # Fundos.NET `tipoFundo` filters, each paged on its own
 
     def __init__(self) -> None:
         self._held_ids: set[int] = set()
         self._backfill = False
 
-    def _listing(self, offset: int) -> FetchSpec:
+    def _listing(self, offset: int, fund_type: int | None = None) -> FetchSpec:
+        extra = {} if fund_type is None else {"tipoFundo": fund_type}
         return FetchSpec(
             self.source_id,
             "listagem",
@@ -378,18 +396,19 @@ class FundosNetRendimentos(Connector):
                 "s": offset,
                 "l": self.PAGE,
                 "o[0][dataEntrega]": "desc",
-                "idCategoriaDocumento": 14,
-                "idTipoDocumento": 41,
+                "idCategoriaDocumento": self.CATEGORY,
+                "idTipoDocumento": self.TYPE,
+                **extra,
             },
             reference_date=today_brt(),
             conditional=False,
-            locator=f"offset={offset}",
+            locator=f"offset={offset}" if fund_type is None else f"tipoFundo={fund_type};offset={offset}",
         )
 
     def _document(self, doc_id: int) -> FetchSpec:
         return FetchSpec(
             self.source_id,
-            "informe_rendimentos",
+            self.DOCUMENT,
             f"{self.BASE}/downloadDocumento",
             "xml",
             params={"id": doc_id},
@@ -399,10 +418,11 @@ class FundosNetRendimentos(Connector):
         )
 
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
-        held = _held(zones, self.source_id, "informe_rendimentos")
+        held = _held(zones, self.source_id, self.DOCUMENT)
         self._held_ids = {int(n.removeprefix("id=")) for n in held["notes"].to_list()} if held.height else set()
         self._backfill = mode is Mode.BACKFILL
-        yield self._listing(0)
+        for t in self.FUND_TYPES:
+            yield self._listing(0, t)
 
     def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
         return fundosnet.parse_payload(blob, row)
@@ -423,8 +443,41 @@ class FundosNetRendimentos(Connector):
         offset = int((spec.params or {})["s"]) + self.PAGE
         more = offset < int(page.get("recordsFiltered") or 0)
         if more and (self._backfill or (ids and len(new) == len(ids))):
-            out.append(self._listing(offset))
+            t = (spec.params or {}).get("tipoFundo")
+            out.append(self._listing(offset, None if t is None else int(t)))
         return out
+
+
+class FundosNetInformeDiario(FundosNetRendimentos):
+    """B3 Fundos.NET 'Informe Diário' (category 6, type 64): every ETF's daily NAV per quota, net assets and flows
+    since 2018-06-29, which CVM's open data stopped carrying in 2018-09 (docs/sources/b3_fundosnet_daily.md)."""
+
+    source_id: ClassVar[str] = "b3_fundosnet_daily"
+    contracts: ClassVar[dict[str, Any]] = fundosnet_daily.CONTRACTS
+    CATEGORY: ClassVar[int] = 6
+    TYPE: ClassVar[int] = 64
+    DOCUMENT: ClassVar[str] = "informe_diario"
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return fundosnet_daily.parse_payload(blob, row)
+
+    def derive(self, zones: Zones, run: Any) -> None:
+        return None
+
+
+class FundosNetCda(FundosNetInformeDiario):
+    """B3 Fundos.NET 'Composição da Carteira (CDA)' (category 6, type 63) of ETFs: the monthly portfolio, which CVM's
+    open-data CDA does not carry for ETFs (docs/sources/b3_fundosnet_cda.md). Type 63 also holds FIDC portfolios,
+    so the listing is filtered by fund type: 3 (ETF) and 4 (ETF RF)."""
+
+    source_id: ClassVar[str] = "b3_fundosnet_cda"
+    contracts: ClassVar[dict[str, Any]] = fundosnet_cda.CONTRACTS
+    TYPE: ClassVar[int] = 63
+    DOCUMENT: ClassVar[str] = "carteira"
+    FUND_TYPES: ClassVar[tuple[int | None, ...]] = (3, 4)
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return fundosnet_cda.parse_payload(blob, row)
 
 
 class YahooChart(Connector):
@@ -570,6 +623,20 @@ class CvmFre(_CvmCompanyDocs):
 
     def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
         return cvm_fre.parse_payload(blob, row)
+
+
+class CvmVlmo(_CvmCompanyDocs):
+    """Parsed to staging `document` and `movement` (`ingest/cvm_vlmo.py`): insider trades and holdings by role
+    group, 2018-."""
+
+    source_id: ClassVar[str] = "cvm_vlmo"
+    version: ClassVar[str] = "1"
+    KINDS: ClassVar[dict[str, int]] = {"VLMO": 2018}
+    contracts: ClassVar[dict[str, Any]] = cvm_vlmo.CONTRACTS
+    dedup_staging: ClassVar[bool] = True
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return cvm_vlmo.parse_payload(blob, row)
 
 
 class CvmIpe(_CvmCompanyDocs):

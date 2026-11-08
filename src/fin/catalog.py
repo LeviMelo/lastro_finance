@@ -12,6 +12,8 @@ Views:
   (`received_on`, knowledge date) and `issuer_cnpj` as 14 digits;
 - `price_adjusted`: standard-lot closes with split and cash adjustment to today's basis (derived on read);
 - `fii_distribution`: FII/Fiagro distributions with their delivery minute;
+- `insider_movement`: CVM VLMO insider positions and trades by role group, with delivery date and latest flag;
+- `etf_daily` / `etf_nav`: ETF daily reports (every version / the latest per date) and `etf_link` to the instrument;
 - debentures (ADR-0028): `debenture`, `debenture_terms`, `debenture_pu` (SND accrued PU), `debenture_secondary_price`;
 - `intraday_bar`: Yahoo 5-minute bars (tier U);
 - macro `universe(date, asset_class)`: instruments trading in the 30 days up to a date, delisted later or not;
@@ -159,6 +161,50 @@ def views(z: Zones) -> dict[str, str]:
                 FROM {_rp(s / "b3_fundosnet" / "listing" / "**" / "*.parquet")} GROUP BY doc_id
             ) l USING (doc_id)
         """,
+        # ETF daily reports: Fundos.NET (2018-, every delivered version with its delivery minute = knowledge time and
+        # the B3 trading name of the listing) and, before, CVM's INF_DIARIO rows of FIIM funds (2004-2018); `etf_nav`
+        # keeps one per fund and date: Fundos.NET's latest delivered version first
+        "etf_daily": f"""
+            WITH fnet AS (
+                SELECT d.*, 'fundosnet' AS source, l.delivered_at, l.version, l.trading_name
+                FROM {_rp(s / "b3_fundosnet_daily" / "daily" / "**" / "*.parquet")} d
+                LEFT JOIN (
+                    SELECT doc_id, min(delivered_at) AS delivered_at, any_value(version) AS version,
+                           any_value(trading_name) AS trading_name
+                    FROM {_rp(s / "b3_fundosnet_daily" / "listing" / "**" / "*.parquet")} GROUP BY doc_id
+                ) l USING (doc_id)
+            ), fiim AS (  -- ETFs are CVM type FIIM; the register keeps cancelled funds too (no survivorship)
+                SELECT regexp_replace(cnpj, '[^0-9]', '', 'g') AS fund_cnpj
+                FROM {_rp(s / "cvm_fi_cadastro" / "fund" / "**" / "*.parquet")} WHERE fund_type = 'FIIM'
+                UNION SELECT regexp_replace(cnpj, '[^0-9]', '', 'g')
+                FROM {_rp(s / "cvm_fi_cadastro" / "registered_class" / "**" / "*.parquet")}
+                WHERE class_type LIKE '%FIIM'
+                UNION SELECT DISTINCT fund_cnpj FROM fnet
+            ), fiim_cvm AS (  -- INF_DIARIO writes the CNPJ formatted (10.406.511/0001-61): join on that, no regexp
+                SELECT DISTINCT fund_cnpj, substr(fund_cnpj, 1, 2) || '.' || substr(fund_cnpj, 3, 3) || '.'
+                       || substr(fund_cnpj, 6, 3) || '/' || substr(fund_cnpj, 9, 4) || '-' || substr(fund_cnpj, 13, 2)
+                       AS cnpj
+                FROM fiim
+            )
+            SELECT * FROM fnet
+            UNION ALL BY NAME
+            SELECT f.fund_cnpj, c.reference_date, c.quota_value_brl, c.net_assets_brl, c.portfolio_value_brl,
+                   c.subscriptions_brl, c.redemptions_brl, c.holders, 'cvm_inf_diario' AS source, c.raw_sha256,
+                   c.raw_locator, c.ingest_run_id
+            FROM {_rp(s / "cvm_fi_inf_diario" / "daily" / "**" / "*.parquet")} c JOIN fiim_cvm f USING (cnpj)
+        """,
+        # insider positions and trades by role group (CVM VLMO), each version with its delivery date (knowledge date)
+        # and whether it is the latest version of that company-month
+        "insider_movement": f"""
+            SELECT m.*, d.delivered_on, d.presentation,
+                   m.version = max(m.version) OVER (PARTITION BY m.company_cnpj, m.reference_month) AS is_latest
+            FROM {_rp(s / "cvm_vlmo" / "movement" / "**" / "*.parquet")} m
+            LEFT JOIN (
+                SELECT company_cnpj, reference_month, version, min(delivered_on) AS delivered_on,
+                       any_value(presentation) AS presentation
+                FROM {_rp(s / "cvm_vlmo" / "document" / "**" / "*.parquet")} GROUP BY ALL
+            ) d USING (company_cnpj, reference_month, version)
+        """,
         # debentures (ADR-0028): terms, SND's accrued daily PU (ticker key; one row per ticker and date) and the
         # secondary-market trade summary; `debenture_id` joins them to core `debenture`
         "debenture": _scan(c / "debenture" / "*.parquet"),
@@ -287,6 +333,39 @@ LEFT JOIN book USING (issuer_cnpj)
 """
 
 
+# ETF NAV and the ETF <-> instrument link. The daily report names the fund by CNPJ; the listing shows its B3 trading
+# name, which is COTAHIST's NOMRES (short_name) of the ETF quota (CODBDI 14): BOVA11 is "ISHARES BOVA" on both. A
+# link is `verified` when the median of close / NAV per quota over their common days lies within 10 %; any other is
+# a candidate the quality check `etf_link` reports (reconcile, don't trust). Crypto and foreign ETFs sit 2-5 % off
+# their NAV (struck at another hour: QR DEFI 0.978, CRIPTO20 0.947 on 2026-08..11); a wrong ticker is off by far more.
+ETF_LINK_TOLERANCE = 0.10
+ETF_SQL = f"""
+CREATE OR REPLACE VIEW etf_nav AS
+SELECT * FROM etf_daily
+QUALIFY row_number() OVER (
+    PARTITION BY fund_cnpj, reference_date
+    ORDER BY source = 'fundosnet' DESC, delivered_at DESC NULLS LAST, doc_id DESC) = 1;
+CREATE OR REPLACE VIEW etf_link AS
+WITH names AS (
+    SELECT fund_cnpj, trading_name, min(reference_date) AS first_date, max(reference_date) AS last_date
+    FROM etf_nav WHERE trading_name IS NOT NULL GROUP BY ALL
+), pairs AS (
+    SELECT n.*, i.instrument_id, i.primary_value AS isin
+    FROM names n JOIN instrument i ON i.short_name = n.trading_name AND i.codbdi = '14'
+), ratio AS (
+    SELECT p.fund_cnpj, p.instrument_id, count(*) AS common_days,
+           median(CAST(d.close AS DOUBLE) / CAST(e.quota_value_brl AS DOUBLE)) AS median_ratio
+    FROM pairs p
+    JOIN price_daily d ON d.instrument_id = p.instrument_id AND d.market_segment = 'lote_padrao'
+    JOIN etf_nav e ON e.fund_cnpj = p.fund_cnpj AND e.reference_date = d.trade_date AND e.quota_value_brl > 0
+    GROUP BY ALL
+)
+SELECT p.*, r.common_days, r.median_ratio,
+       coalesce(abs(r.median_ratio - 1) <= {ETF_LINK_TOLERANCE}, false) AS verified
+FROM pairs p LEFT JOIN ratio r USING (fund_cnpj, instrument_id);
+"""
+
+
 def fii_valuation_sql(s: Path) -> str:
     """`fii_valuation(d)`: per FII quota line, as known on `d` (ADR-0021 addendum). NAV per quota from the latest CVM
     monthly report delivered by `d` (`cvm_fii`, matched by the quota ISIN it states); the last standard-lot close in
@@ -329,7 +408,9 @@ FROM nav JOIN px USING (isin) LEFT JOIN dy USING (isin)
 def build(z: Zones) -> list[str]:
     """(Re)create every view whose files exist. Returns the names created."""
     made: list[str] = []
-    tmp = z.catalog.with_suffix(".duckdb.tmp")
+    # not `catalog.duckdb.tmp`: that is DuckDB's own spill directory for `catalog.duckdb` (a killed query leaves it,
+    # 38 GB on 2026-11-08; delete it when no query runs)
+    tmp = z.catalog.with_name("catalog.building.duckdb")
     tmp.unlink(missing_ok=True)
     con = duckdb.connect(str(tmp))
     try:
@@ -357,6 +438,9 @@ def build(z: Zones) -> list[str]:
         if {"share_count", "issuer", "issuer_instrument", "fundamental_metric", "adjustment_factor"} <= set(made):
             con.execute(VALUATION)
             made.append("valuation()")
+        if {"etf_daily", "instrument", "price_daily"} <= set(made):
+            con.execute(ETF_SQL)
+            made += ["etf_nav", "etf_link"]
         if {"instrument_identifier", "price_daily", "fii_distribution"} <= set(made) and (
             z.staging / "cvm_fii" / "monthly_summary"
         ).exists():

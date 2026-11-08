@@ -12,6 +12,7 @@ Checks:
   on either line within 10 days;
 - `stock_event_unproven`: a stock event no second source, filing or price move confirms (`candidate`, info), or
   whose ratio the price contradicts (`conflicting`, warn); neither adjusts anything;
+- `etf_link`: an ETF report matched by trading name to a quota whose closes do not track its NAV (not linked);
 - `ohlc_inconsistent`: a standard-lot session whose high or low does not bound its open and close, or with a
   non-positive price (`error`: it breaks every return through it); acknowledged by rule (kept as published).
   The average (PREMED) is not checked: it lies
@@ -797,6 +798,40 @@ def fii_payout_suspect(zones: Zones) -> pl.DataFrame:
     )
 
 
+def etf_link(zones: Zones) -> pl.DataFrame:
+    """ETF reports whose B3 trading name matches an ETF quota whose closes do not track the NAV (median of close /
+    NAV per quota off by more than 10 %, or no common day): the link stays a candidate and values nothing."""
+    import duckdb
+
+    if not zones.catalog.exists():
+        return _frame([])
+    con = duckdb.connect(str(zones.catalog), read_only=True)
+    try:
+        cur = con.execute(
+            "SELECT fund_cnpj, trading_name, instrument_id, isin, first_date, last_date, common_days, median_ratio "
+            "FROM etf_link WHERE NOT verified"
+        )
+        df = pl.DataFrame(cur.fetchall(), schema=[d[0] for d in cur.description or []], orient="row")
+    except duckdb.CatalogException:
+        return _frame([])
+    finally:
+        con.close()
+    if not df.height:
+        return _frame([])
+    return df.select(
+        pl.lit("etf_link").alias("check_id"),
+        # no common day: the quota has not traded while the fund reported (info); off the NAV: a wrong match (warn)
+        pl.when(pl.col("common_days").is_null()).then(pl.lit("info")).otherwise(pl.lit("warn")).alias("severity"),
+        pl.lit("instrument").alias("entity_kind"),
+        pl.format("{}>{}", "fund_cnpj", "instrument_id").alias("entity_id"),
+        pl.col("last_date").alias("vt"),
+        pl.format("median close/NAV {} over {} days", pl.col("median_ratio").round(4), "common_days").alias("observed"),
+        pl.lit("within 10 % of 1").alias("expected"),
+        pl.format("{} ({}) named like {}: not linked", "fund_cnpj", "trading_name", "isin").alias("detail"),
+        pl.format("etf_link {} {}..{}", "fund_cnpj", "first_date", "last_date").alias("evidence"),
+    )
+
+
 CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "vna_ntnb_vs_ipca": vna_ntnb_vs_ipca,
     "share_count_unit_mismatch": share_count_unit_mismatch,
@@ -812,6 +847,7 @@ CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "series_gap": series_gap,
     "quarantine": quarantine,
     "fii_payout_suspect": fii_payout_suspect,
+    "etf_link": etf_link,
 }
 
 

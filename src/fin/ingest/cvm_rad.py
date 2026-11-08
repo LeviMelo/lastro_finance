@@ -727,6 +727,7 @@ class CvmRadVersions(Connector):
     contracts: ClassVar[dict[str, Contract]] = {"statement_line": STATEMENT_LINE, "share_capital": SHARE_CAPITAL}
     min_interval: ClassVar[float] = 0.25
     concurrency: ClassVar[int] = 4
+    cookies: ClassVar[bool] = False  # RAD's ASP.NET session serialises requests: 4 workers ran at the pace of 1
     timeout: ClassVar[float] = 600.0  # RAD builds each zip on request: some take minutes (3 timeouts at 120 s)
     dedup_staging: ClassVar[bool] = False
 

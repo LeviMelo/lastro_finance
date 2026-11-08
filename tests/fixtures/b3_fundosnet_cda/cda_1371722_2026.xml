@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="windows-1252"?>
+<DOC_ARQ xmlns="urn:cda">
+    <CAB_INFORM>
+        <COD_DOC>3</COD_DOC>
+        <VERSAO>3.0</VERSAO>
+        <DT_COMPT>09/2026</DT_COMPT>
+        <DT_GERAC_ARQ>07/11/2026</DT_GERAC_ARQ>
+    </CAB_INFORM>
+    <LISTA_INFORM>
+        <INFORM>
+            <CNPJ_FDO>54326875000107</CNPJ_FDO>
+            <VL_PL>0,00</VL_PL>
+            <LISTA_ATIV>
+                <COTAS>
+                    <CNPJ_FDO>36771728000164</CNPJ_FDO>
+                    <APLIC>
+                        <EMPR_LIGADA>S</EMPR_LIGADA>
+                        <QTDE_DIAS_CONFID>0</QTDE_DIAS_CONFID>
+                        <NEGOC>
+                            <QTDE_VENDAS_NEGOC></QTDE_VENDAS_NEGOC>
+                            <VL_VENDAS_NEGOC></VL_VENDAS_NEGOC>
+                            <QTDE_AQUIS_NEGOC></QTDE_AQUIS_NEGOC>
+                            <VL_AQUIS_NEGOC></VL_AQUIS_NEGOC>
+                        </NEGOC>
+                        <POS_FIM>
+                            <QTDE_POS_FIM>0</QTDE_POS_FIM>
+                            <MERC_POS_FIM>0,00</MERC_POS_FIM>
+                        </POS_FIM>
+                    </APLIC>
+                </COTAS>
+            </LISTA_ATIV>
+        </INFORM>
+    </LISTA_INFORM>
+</DOC_ARQ>

@@ -33,6 +33,9 @@ LFT;210100;20.201,049997;13,65
 ## 6. Ephemerality
 **EPHEMERAL (6 business days).** Archive daily. Free history alternative: recompute from the IPCA index (SIDRA) and LFT from Selic (SGS 11/1178), then validate against the archived files. Wayback has only page captures of `/informacoes/vna/` (default.asp, vna.asp, metodologia_projecoes.asp), no data files.
 
+## 6b. History routes measured 2026-11-08
+No history form: `vna-sh.asp` → 404; `vna-down.asp` for 2020/2025 dates → the 45-byte stub (still); `metodologia_projecoes.asp` has no data. The free substitute stands: `tesouro_vna` (Tesouro monthly tables 2000-) and our recomputation from IPCA/IGP-M. The IMA "Série histórica" form is the only ANBIMA free product found that serves old dates (docs/sources/context_br.md).
+
 ## 7. Open questions
 - csv/xls/xml layouts; time of day; any free published VNA before 2026-10 for validating our computation.
 
