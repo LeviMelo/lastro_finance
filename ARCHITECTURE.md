@@ -54,7 +54,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 |---|---|
 | `__init__.py` | version |
 | `config.py` | the data home and its zones |
-| `catalog.py` | `catalog.duckdb`: views over the Parquet zones, `fundamental_fact` and `price_adjusted` on read (ADR-0017); macros `universe(d, cls)` and `valuation(d)` (ADR-0021) |
+| `catalog.py` | `catalog.duckdb`: views over the Parquet zones, `fundamental_fact` and `price_adjusted` on read (ADR-0017); macros `universe(d, cls)`, `valuation(d)` and `fii_valuation(d)` (ADR-0021) |
 | `cli.py` | `fin`: `ingest`, `status`, `verify-raw`, `reparse <sources>`, `compact-raw`, `compact-staging`, `catalog`, `quality`, `export dossier`, `rebuild --from-raw` |
 | `analytics/risk.py` | volatility, drawdown, beta to the Ibovespa, sector exposure of a portfolio's realised path |
 | `export/dossier.py` | `fin export dossier`: the PLAN §8 dossier (Markdown + Parquet) from a portfolio file (ADR-0026) |

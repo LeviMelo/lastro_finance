@@ -210,6 +210,15 @@ def fundamentals(con: duckdb.DuckDBPyConnection, h: pl.DataFrame, as_of: date) -
     )
 
 
+def fii_fundamentals(con: duckdb.DuckDBPyConnection, h: pl.DataFrame, as_of: date) -> pl.DataFrame:
+    return _q(
+        con,
+        "SELECT ticker, fund_name, close_brl, nav_per_quota, nav_reference_date, price_to_nav, dividend_yield_12m "
+        "FROM fii_valuation(?) WHERE ticker IN (SELECT unnest(?))",
+        [as_of, h["ticker"].to_list()],
+    )
+
+
 def findings(con: duckdb.DuckDBPyConnection, h: pl.DataFrame) -> pl.DataFrame:
     ids = h.filter(pl.col("instrument_id").is_not_null())["instrument_id"].to_list()
     if not ids:
@@ -255,6 +264,7 @@ def build(zones: Zones, portfolio_path: Path, as_of: date) -> Path:
     up = upcoming(con, h, as_of)
     fund = fundamentals(con, h, as_of)
     fnd = findings(con, h)
+    fii = fii_fundamentals(con, h, as_of)
     path = risk.value_path(con, h, since, as_of)
     try:
         ix_rows = con.execute(
@@ -334,8 +344,22 @@ def build(zones: Zones, portfolio_path: Path, as_of: date) -> Path:
     covered = set(fund["line"].to_list()) if fund.height else set()
     issuers = {tk[:4] for tk in covered}
     for tk in h["ticker"].to_list():
-        if tk not in covered and tk[:4] not in issuers and not TESOURO.match(tk):
+        fii_covered = set(fii["ticker"].to_list()) if fii.height else set()
+        if tk not in covered and tk[:4] not in issuers and not TESOURO.match(tk) and tk not in fii_covered:
             lines.append(f"| {tk} | — | sem dados na data | — | — | — |")
+    if fii.height:
+        lines += [
+            "",
+            "### FIIs (relatório mensal CVM entregue até a data; rendimentos de 12 meses)",
+            "",
+            "| cota | fundo | preço | VP por cota (ref.) | P/VP | DY 12m |",
+            "|---|---|---|---|---|---|",
+        ]
+        for r in fii.iter_rows(named=True):
+            dy = _pct(_f(r["dividend_yield_12m"])).lstrip("+")
+            pvp = f"{r['price_to_nav']:.3f}".replace(".", ",")
+            lines.append(f"| {r['ticker']} | {r['fund_name']} | {_brl(r['close_brl'])} | {_brl(r['nav_per_quota'])} "
+                         f"({r['nav_reference_date']}) | {pvp} | {dy} |")  # fmt: skip
     lines += ["", "## Próximos eventos", ""]
     if up.height:
         lines += [

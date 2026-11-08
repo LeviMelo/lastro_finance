@@ -33,3 +33,11 @@ them daily would copy what the zones already hold (ADR-0014, ADR-0017).
 - Before 2020, treasury now comes from the FRE's own "Ações Tesouraria" row (`posicao_acionaria`; 10,416 of 10,428
   documents). Itaú 2015-06-30: R$ 205.1 bn becomes 202.95 bn.
 - A PN price stands for all preferred classes (PNA, PNB).
+
+**Addendum (2026-11-08): FIIs.** `fii_valuation(d)` gives each FII quota line's price-to-NAV and trailing dividend
+yield, as known on `d`:
+- NAV per quota comes from the latest CVM monthly report delivered by `d`, matched by the quota ISIN it states;
+- income per quota comes from Fundos.NET notices delivered by `d`, with a data-com in the 12 months to `d`.
+
+On 2026-10-16 it covers 338 FIIs: median P/VP 0.84, median DY 13.1 %; HGLG11 0.945 and 9.3 %. On 2019-06-28 it
+covers 132.

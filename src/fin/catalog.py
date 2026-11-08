@@ -15,7 +15,8 @@ Views:
 - debentures (ADR-0028): `debenture`, `debenture_terms`, `debenture_pu` (SND accrued PU), `debenture_secondary_price`;
 - `intraday_bar`: Yahoo 5-minute bars (tier U);
 - macro `universe(date, asset_class)`: instruments trading in the 30 days up to a date, delisted later or not;
-- macro `valuation(date)`: per issuer, market cap and P/L, P/VP as known on that date (ADR-0021).
+- macro `valuation(date)`: per issuer, market cap and P/L, P/VP as known on that date (ADR-0021);
+- macro `fii_valuation(date)`: per FII quota, price to NAV and trailing dividend yield as known on that date.
 """
 
 from __future__ import annotations
@@ -286,6 +287,45 @@ LEFT JOIN book USING (issuer_cnpj)
 """
 
 
+def fii_valuation_sql(s: Path) -> str:
+    """`fii_valuation(d)`: per FII quota line, as known on `d` (ADR-0021 addendum). NAV per quota from the latest CVM
+    monthly report delivered by `d` (`cvm_fii`, matched by the quota ISIN it states); the last standard-lot close in
+    the 30 days to `d`; P/VP = close / NAV per quota; trailing dividend yield = income per quota with a data-com in
+    the 12 months to `d` (Fundos.NET notices delivered by `d`) / close."""
+    summ = _rp(s / "cvm_fii" / "monthly_summary" / "**" / "*.parquet")
+    gen = _rp(s / "cvm_fii" / "monthly_general" / "**" / "*.parquet")
+    return f"""
+CREATE OR REPLACE MACRO fii_valuation(d) AS TABLE
+WITH nav AS (
+    SELECT g.isin, g.fund_name, s.reference_date AS nav_reference_date, g.delivered_on,
+           CAST(s.nav_per_quota_brl AS DOUBLE) AS nav_per_quota
+    FROM {summ} s JOIN {gen} g USING (cnpj, reference_date, version)
+    WHERE g.delivered_on <= CAST(d AS DATE) AND g.isin IS NOT NULL AND s.nav_per_quota_brl > 0
+    QUALIFY row_number() OVER (PARTITION BY g.isin ORDER BY s.reference_date DESC, s.version DESC) = 1
+), line AS (
+    SELECT i.instrument_id, i.value AS isin FROM instrument_identifier i WHERE i.scheme = 'ISIN'
+), px AS (
+    SELECT l.isin, arg_max(p.ticker, p.trade_date) AS ticker, max(p.trade_date) AS price_date,
+           arg_max(CAST(p.close AS DOUBLE) * p.brl_num / p.brl_den, p.trade_date) AS close_brl
+    FROM line l JOIN price_daily p USING (instrument_id)
+    WHERE p.market_segment = 'lote_padrao'
+      AND p.trade_date BETWEEN CAST(d AS DATE) - INTERVAL 30 DAY AND CAST(d AS DATE)
+    GROUP BY l.isin
+), dy AS (
+    SELECT isin, sum(CAST(value_per_quota AS DOUBLE)) AS income_12m
+    FROM fii_distribution
+    WHERE kind = 'rendimento' AND base_date > CAST(d AS DATE) - INTERVAL 365 DAY AND base_date <= CAST(d AS DATE)
+      AND (delivered_at IS NULL OR CAST(delivered_at AS DATE) <= CAST(d AS DATE))
+    GROUP BY isin
+)
+SELECT CAST(d AS DATE) AS as_of, px.ticker, nav.isin, nav.fund_name, px.price_date, px.close_brl,
+       nav.nav_per_quota, nav.nav_reference_date, nav.delivered_on AS nav_delivered_on,
+       px.close_brl / nav.nav_per_quota AS price_to_nav, dy.income_12m,
+       dy.income_12m / px.close_brl AS dividend_yield_12m
+FROM nav JOIN px USING (isin) LEFT JOIN dy USING (isin)
+"""
+
+
 def build(z: Zones) -> list[str]:
     """(Re)create every view whose files exist. Returns the names created."""
     made: list[str] = []
@@ -317,6 +357,11 @@ def build(z: Zones) -> list[str]:
         if {"share_count", "issuer", "issuer_instrument", "fundamental_metric", "adjustment_factor"} <= set(made):
             con.execute(VALUATION)
             made.append("valuation()")
+        if {"instrument_identifier", "price_daily", "fii_distribution"} <= set(made) and (
+            z.staging / "cvm_fii" / "monthly_summary"
+        ).exists():
+            con.execute(fii_valuation_sql(z.staging))
+            made.append("fii_valuation()")
     finally:
         con.close()
     tmp.replace(z.catalog)
