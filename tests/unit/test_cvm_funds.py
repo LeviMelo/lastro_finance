@@ -255,9 +255,9 @@ def test_discovery_plans(zones: Zones, monkeypatch: pytest.MonkeyPatch) -> None:
         and "inf_diario_fi_2000.zip" in urls
     )
     assert len(nav) == 71 + 21  # monthly 2021-01..2026-11 and HIST 2000..2020
-    cda = list(cf.CvmFiCda().discover(Mode.BACKFILL, zones))
+    cda = list(cf.CvmFiCda().discover(Mode.BACKFILL, zones, hist=False))
     assert len(cda) == 47 and cda[-1].url.endswith("cda_fi_202301.zip")  # 2023-01..2026-11 (the last may be a 404)
-    assert len(list(cf.CvmFiCda().discover(Mode.BACKFILL, zones, hist=True))) == 47 + 18
+    assert len(list(cf.CvmFiCda().discover(Mode.BACKFILL, zones))) == 47 + 18  # HIST 2005..2022 by default
 
     def at(*pairs: tuple[str, date]) -> pl.DataFrame:
         notes = [p for p, _ in pairs]
