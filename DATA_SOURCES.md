@@ -27,7 +27,7 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `b3_cotahist` | B3 | P | yearly 1986–, daily 2014– | parsed (1986–2026) | [note](docs/sources/b3_cotahist.md) |
 | `b3_company_events` | B3 | **U** | cash since 1995, incomplete for stock events | parsed (weekly per issuer) | [note](docs/sources/b3_company_events.md) |
 | `cvm_cia_cadastro` | CVM | P | **ephemeral: today's snapshot** | archiving since 2026-11-07 | [note](docs/sources/cvm_cia_cadastro.md) |
-| `cvm_fi_cadastro` | CVM | P | **ephemeral: today's snapshot** | archiving since 2026-11-07 | [note](docs/sources/cvm_fi_cadastro.md) |
+| `cvm_fi_cadastro` | CVM | P | **ephemeral: today's snapshot** | parsed (archived since 2026-11-07) | [note](docs/sources/cvm_fi_cadastro.md) |
 | `cvm_fca` | CVM | P | 2010– (tickers from 2018) | parsed | [note](docs/sources/cvm_fca.md) |
 | `cvm_fre` | CVM | P | 2010– | parsed | [note](docs/sources/cvm_fre.md) |
 | `cvm_dfp_itr` | CVM | P | DFP 2010–, ITR 2011– | recon | [note](docs/sources/cvm_dfp_itr.md) |

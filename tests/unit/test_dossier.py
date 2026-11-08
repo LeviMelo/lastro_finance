@@ -6,12 +6,12 @@ from datetime import date
 from pathlib import Path
 
 import polars as pl
+from test_valuation import test_valuation_point_in_time  # pytest puts tests/unit on the path
 
 from fin.catalog import build as build_catalog
 from fin.config import Zones
 from fin.export.dossier import build
 from fin.store.tables import write_parquet
-from test_valuation import test_valuation_point_in_time  # pytest puts tests/unit on the path
 
 
 def test_dossier_values_holdings_and_labels_missing(zones: Zones, tmp_path: Path) -> None:

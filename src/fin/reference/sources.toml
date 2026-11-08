@@ -118,7 +118,7 @@ institution = "CVM"
 access = "HTTP files (.csv, .zip)"
 tier = "P"
 ephemeral = true
-status = "archiving"
+status = "parsed"
 recon = "docs/sources/cvm_fi_cadastro.md"
 
 [cvm_fi_inf_diario]

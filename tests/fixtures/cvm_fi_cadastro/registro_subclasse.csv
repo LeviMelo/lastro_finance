@@ -1,0 +1,6 @@
+ID_Registro_Classe;ID_Subclasse;Codigo_CVM;Data_Constituicao;Data_Inicio;Denominacao_Social;Situacao;Data_Inicio_Situacao;Forma_Condominio;Exclusivo;Publico_Alvo;Previdenciario;Exclusivo_INR;Exclusivo_Previdencia_Complementar
+81;MZMRC1747322915;251690;2025-05-15;2025-05-14;SUBCLASSE A;Em Funcionamento Normal;2025-05-15;Aberto;N;Público Geral;N;N;N
+81;RBMFN1747320951;251682;2025-05-15;2025-05-14;SUBCLASSE I;Em Funcionamento Normal;2025-05-15;Aberto;N;Público Geral;N;N;N
+24370;BX5501766531682;441961;2025-12-23;2025-12-22;SUBCLASSE I;Em Funcionamento Normal;2026-02-13;Aberto;N;Profissional;N;N;N
+25446;FIT7B1779454230;486630;2026-05-22;2026-05-22;SUBCLASSE RETAIL;Fase Pré-Operacional;2026-05-22;Aberto;N;Profissional;N;N;N
+25446;GSW8G1779454338;486647;2026-05-22;2026-05-22;SUBCLASSE INSTITUCIONAL;Fase Pré-Operacional;2026-05-22;Aberto;N;Profissional;N;N;N

@@ -30,7 +30,7 @@ Day one (2026-11-07).
   (`scripts/check_golden_portfolio.py`; Stage D exit).
 - **Exit criteria** (`scripts/check_exit_criteria.py`): C, E, H and F's look-through pass; G is measured at 93.06 %
   (Tesouro's own irregularities); H's restatement rule is unit-tested, since CVM's open data keeps only the latest
-  version (docs/evaluation/2026-11-08-exit-criteria.md). The CVM 175 bridge (Stage F) is in progress.
+  version (docs/evaluation/2026-11-08-exit-criteria.md). The CVM 175 bridge (Stage F) passes: 19,971 of 20,217 testable classes continue the legacy quota (ADR-0025).
 - **Storage is lean by rule** (ADR-0014): re-sent files as deltas, CVM zips as member deltas, staging keeps changed
   rows, small files compacted. C: has 49 GB free: the binding limit.
 - **Data gaps are mapped and ranked** ([gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md)). Everything

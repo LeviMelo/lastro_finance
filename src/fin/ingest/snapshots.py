@@ -25,7 +25,7 @@ import polars as pl
 
 from fin.config import Zones
 from fin.core import issuers
-from fin.ingest import anbima_parsers, b3_pr, b3_taxaswap, nefin, tesouro
+from fin.ingest import anbima_parsers, b3_pr, b3_taxaswap, cvm_fi_cad, nefin, tesouro
 from fin.ingest.base import Connector, Mode, Parsed
 from fin.ingest.fetch import FetchSpec
 from fin.ingest.http import BROWSER_UA
@@ -84,9 +84,22 @@ class CvmCiaCadastro(Connector):
 
 
 class CvmFiCadastro(Connector):
+    """CVM's fund registers, legacy and CVM 175, replaced in place daily (docs/sources/cvm_fi_cadastro.md). Parsed to
+    staging (`ingest/cvm_fi_cad.py`) and core `fund_lineage` (`core/funds.py`, ADR-0025); the META files stay raw."""
+
     source_id: ClassVar[str] = "cvm_fi_cadastro"
-    version: ClassVar[str] = "0-archive"
+    version: ClassVar[str] = "1"
     BASE = "https://dados.cvm.gov.br/dados/FI/CAD"
+    dedup_staging: ClassVar[bool] = True  # whole registers, re-sent every day
+    contracts: ClassVar[dict[str, Contract]] = cvm_fi_cad.CONTRACTS
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return cvm_fi_cad.parse_payload(blob, row)
+
+    def derive(self, zones: Zones, run: Any) -> None:
+        from fin.core import funds
+
+        funds.build(zones, run)
 
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
         d = today_brt()

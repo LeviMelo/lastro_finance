@@ -10,6 +10,9 @@ and exits 1 when one fails. Run after `fin catalog`: `uv run python scripts/chec
 - H: the balance identity, total assets (BPA 1) = total liabilities and equity (BPP 2), holds on every consolidated
   DFP/ITR filing, breaks being recorded findings; a point-in-time query returns, for every restated filing, the
   original total between the two deliveries and the restated one after;
+- F: CVM 175 bridging: of the adapted classes whose legacy and class daily series both exist, at least 98 % continue
+  the legacy quota (|move| <= 1 % or within 5 sigma of the fund's own daily moves) after at most 3 business days
+  (core/funds.py, ADR-0025);
 - F: look-through: a sample fund's CDA holdings sum to its NAV within 0.01 %, and CDA's net assets equal the daily
   report's (measured across all funds).
 """
@@ -161,4 +164,20 @@ agg = con.execute(
     """
 ).fetchone()
 print(f"MEAS F CDA net assets = daily report's, 2026-06: {agg[1]} of {agg[0]} funds within 1 %")
+
+# F: CVM 175 bridging
+import polars as pl  # noqa: E402
+
+from fin.core import funds  # noqa: E402
+from fin.ingest.snapshots import _calendar  # noqa: E402
+
+lin = pl.read_parquet(zones().core / "fund_lineage" / "fund_lineage.parquet")
+res = funds.bridge_check(lin, funds.load_daily(zones(), lin), _calendar(zones()))
+st = dict(res.group_by("status").len().iter_rows())
+testable = sum(st.get(k, 0) for k in ("clean", "moved", "jump", "gap"))
+ok = st.get("clean", 0) + st.get("moved", 0)
+report("F CVM 175 bridging: legacy quota continues into the class", testable > 0 and ok >= 0.98 * testable,
+       f"{ok} of {testable} testable ({st.get('clean', 0)} within 1 %, {st.get('moved', 0)} within 5 sigma;"
+       f" {st.get('jump', 0)} jumps, {st.get('gap', 0)} gaps; untestable: {st.get('no_legacy_series', 0)} without a"
+       f" legacy series, {st.get('no_class_series', 0)} without a class series)")  # fmt: skip
 sys.exit(1 if failed else 0)

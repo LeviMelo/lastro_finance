@@ -32,6 +32,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `quality/dq_finding/<check>.parquet` | data-quality findings, one file per check; status from `fin/quality/resolutions.toml` | rebuildable (ADR-0022) |
 | `catalog.duckdb` | views only | rebuilt by `fin catalog` (ADR-0017) |
 | `core/share_count/share_count.parquet` | shares per filing, in units | rebuildable (ADR-0020) |
+| `core/fund_lineage/fund_lineage.parquet` | CVM 175 class → legacy predecessor CNPJ, with the rule | rebuildable (ADR-0025) |
 | `core/instrument_link/instrument_link.parquet` | edges between instruments | rebuildable (ADR-0019) |
 | `core/issuer/issuer.parquet`, `core/issuer_instrument/issuer_instrument.parquet` | companies by CNPJ and their instruments | rebuildable (ADR-0018) |
 | `core/tesouro_bond/tesouro_bond.parquet`, `core/tesouro_price_daily/tesouro_price_daily.parquet` | Tesouro Direto bonds 2004– and daily rates/PUs | rebuildable |
@@ -92,6 +93,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/fundosnet.py` | Fundos.NET notices → staging `distribution` (per Provento and kind, exact BRL per quota) and `listing` (delivery minute = knowledge time, version) |
 | `ingest/b3_events.py` | B3 listed-companies backend: issuers, cash history, stock events, subscriptions; Yahoo chart events (tier U) |
 | `ingest/intraday.py` | Yahoo 5-minute bars for the most traded shares and FIIs, Ibovespa and USD/BRL (tier U) |
+| `ingest/cvm_fi_cad.py` | CVM fund register: legacy `cad_fi` and `cad_fi_hist` (long form), CVM 175 `registro_fundo_classe` → staging `fund`, `fund_history`, `registered_fund`, `registered_class`, `registered_subclass` (no directors, no person managers) |
 | `ingest/tesouro.py` | Tesouro Direto `PrecoTaxaTesouroDireto.csv` → staging `price_rate` (exact decimals; 0,00 PU = not offered) |
 | `ingest/b3_cotahist.py` | COTAHIST fixed-width → staging `quote` (exact decimals as quoted), line repair and quarantine (ADR-0008) |
 | `reference/` | L0 reference data |
@@ -102,6 +104,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `core/shares.py` | `share_count`: CVM share counts in units, unit inferred per filing (ADR-0020); FRE counts 2010– (ADR-0021) |
 | `core/links.py` | `instrument_link`: ticker and name continuity across ISIN changes, B3 cross-asset events (ADR-0019) |
 | `core/issuers.py` | CVM register → staging `company` (no contact data) → core `issuer`, `issuer_instrument` (ADR-0018) |
+| `core/funds.py` | `fund_lineage`: the legacy CNPJ a CVM 175 class continues (ADR-0025); `bridge_check` tests it on the daily quota |
 | `core/tesouro.py` | Tesouro Direto → core `tesouro_bond`, `tesouro_price_daily` (versioned) |
 | `core/equities.py` | COTAHIST → core `instrument`, `instrument_identifier`, `price_daily` (ADR-0015) |
 | `quality/` | data-quality checks and findings (ADR-0022) |
