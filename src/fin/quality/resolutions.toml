@@ -1,0 +1,14 @@
+# Review status of data-quality findings (src/fin/quality/findings.py; ADR-0022), keyed by finding_id.
+# status: acknowledged (true, kept as the source states it), resolved (fixed in code or data), wont_fix.
+# A finding not listed here is open.
+
+[F4ce060889408]  # vna_ntnb_vs_ipca, tesouro_vna:NTN-B 2014-02-15
+status = "acknowledged"
+note = """Tesouro's VNA 2376.026557 implies a Jan-2014 IPCA index of 3836.38. IBGE prints 3836.37 in SIDRA 1737 and in its
+historical series (ipca_SerieHist, fetched 2026-11-07). The published VNA is what the bonds pay, so it is kept as
+published. The other 315 months follow the rule exactly."""
+
+[F633af14feb5c]  # ohlc_inconsistent, BGIP4 2021-05-18
+status = "acknowledged"
+note = """COTAHIST states 1 trade of 100 shares for R$ 2,224.00 (R$ 22.24 each) with every price 0: a source defect. The
+row is kept as the source states it (raw is immutable). Consumers must skip a non-positive close."""

@@ -53,6 +53,9 @@ What was confirmed: the record length, the header and trailer parse, and plausib
 (TPMERC, CODBDI, FATCOT, MODREF, dates). The fields were not checked against an independently known quote *(not verified)*.
 
 ## 4. Quirks (measured)
+- **PREMED is not bounded by high/low.** It lies outside [PREMIN, PREMAX] on 6,520 standard-lot sessions: 1989-91,
+  and from 2021 about 500 a year, mostly BDRs. So it includes trades the high/low do not. O/H/L/C are consistent on
+  every session but one: BGIP4 2021-05-18 has 1 trade of R$ 2,224.00 and every price 0 (quality finding, ADR-0022).
 - Encoding: the 2025 and daily files are ASCII only. The 1986 file has one 0xD0 byte and 25 rows with PRAZOT = `\x00\x0f ` (binary garbage). Decode as latin-1 and never fail on a byte.
 - **The trailer count changed meaning.** In 1986 the trailer equals records + 2 (header and trailer included, as the PDF says). In the 2025 yearly and 2026 daily files it equals the data records only.
 - **FATCOT is not only 1 or 1000.**

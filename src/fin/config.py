@@ -52,6 +52,10 @@ class Zones:
         return self.home / "quarantine"
 
     @property
+    def quality(self) -> Path:
+        return self.home / "quality"
+
+    @property
     def exports(self) -> Path:
         return self.home / "exports"
 
@@ -61,7 +65,7 @@ class Zones:
 
     def rebuildable(self) -> tuple[Path, ...]:
         """The zones a full rebuild replaces (PLAN §4.1 invariant 10)."""
-        return (self.staging, self.core, self.derived, self.quarantine)
+        return (self.staging, self.core, self.derived, self.quarantine, self.quality)
 
 
 def zones() -> Zones:

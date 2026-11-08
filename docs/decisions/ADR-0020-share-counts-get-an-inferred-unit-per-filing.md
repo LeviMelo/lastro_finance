@@ -17,4 +17,10 @@
 
 **Measured.** 18,485 filing rows, 7,905 with an inferred unit. Bradesco's switch is found at 2024.
 
-**Limits.** Issuers no longer listed (no B3 count) stay without units. FRE capital tables could anchor them later.
+**Addendum (2026-11-07): FRE anchors the unit per period.** FRE `capital_social` states whole shares (ADR-0021).
+The nearest FRE count delivered within 120 days sets a filing's unit: 1 or 1,000, whichever brings the filed total
+within 30 % of it. This is direct evidence for the period, so it overrides the B3-anchored walk. The walk remains
+where no FRE is near; the column `unit_basis` says which applied.
+- DFP/ITR rows with a unit: 7,905 → 13,513 of 18,485. Delisted issuers now have units too.
+- The 5 walk errors the quality check found (SmartFit 2020, Iguatemi 2020-21) are corrected.
+- Valuation on 2021-06-30: 224 → 240 market caps.

@@ -29,6 +29,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `core/instrument/instrument.parquet`, `core/instrument_identifier/instrument_identifier.parquet` | exchange-traded instruments and their time-ranged ISIN, B3 code and tickers | rebuildable (ADR-0015) |
 | `core/corporate_event/corporate_event.parquet` | dividends, JCP, FII income, bonuses, splits, rights, with sources and grade | rebuildable (ADR-0016) |
 | `derived/adjustment_factor/adjustment_factor.parquet` | split and cash factors per instrument and ex-date | rebuildable |
+| `quality/dq_finding/<check>.parquet` | data-quality findings, one file per check; status from `fin/quality/resolutions.toml` | rebuildable (ADR-0022) |
 | `catalog.duckdb` | views only | rebuilt by `fin catalog` (ADR-0017) |
 | `core/share_count/share_count.parquet` | shares per filing, in units | rebuildable (ADR-0020) |
 | `core/instrument_link/instrument_link.parquet` | edges between instruments | rebuildable (ADR-0019) |
@@ -51,7 +52,8 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `__init__.py` | version |
 | `config.py` | the data home and its zones |
 | `catalog.py` | `catalog.duckdb`: views over the Parquet zones, `fundamental_fact` and `price_adjusted` on read (ADR-0017); macros `universe(d, cls)` and `valuation(d)` (ADR-0021) |
-| `cli.py` | `fin`: `ingest`, `status`, `verify-raw`, `reparse <sources>`, `compact-raw`, `compact-staging`, `catalog`, `rebuild --from-raw` |
+| `cli.py` | `fin`: `ingest`, `status`, `verify-raw`, `reparse <sources>`, `compact-raw`, `compact-staging`, `catalog`, `quality`, `rebuild --from-raw` |
+| `quality/findings.py` | named checks → `dq_finding`; review status from `quality/resolutions.toml` (ADR-0022) |
 | `schema.py` | `Contract`, `Column`, `Rule`: typed columns with unit and pt/en meaning; conform and quarantine split (ADR-0005) |
 | `store/` | L1 and the operational tables |
 | `store/raw.py` | content-addressed raw store; zstd at rest; deltas of previous versions (ADR-0014) |

@@ -20,7 +20,9 @@
   pinned (two data points).
 - **Rule measured on the whole file (2026-11-07):** NTN-B VNA = trunc(1000 × IPCA index(m−1) / 1614.62, 6 dp) with
   IBGE's index (SIDRA 1737 v2266): exact on 315 of 316 months. 2014-02-15 (2376.026557) needs a Jan-2014 index of
-  3836.38 where IBGE serves 3836.37 (a revision or a different print; not resolved).
+  3836.38 where IBGE serves 3836.37. IBGE's historical series (`ipca_SerieHist.zip`, fetched 2026-11-07) also
+  prints 3836.37, so the difference is Tesouro's. The published VNA is kept: it is what the bonds pay.
+  Recorded as an acknowledged quality finding (ADR-0022).
 - Workbook quirks: numbers are floats written with 17 digits (1051.9850879999999 for 1051.985088); NTN-C 2018-01-01
   is a pt-BR text cell ` 3.580,282456`; the 2002/2006 group reads 0 after 2006-12 (no VNA). Parsed into
   `series_observation` as `tesouro_vna:NTN-B`, `tesouro_vna:NTN-C/<maturities>` (ADR-0013).

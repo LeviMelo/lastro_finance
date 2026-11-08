@@ -68,7 +68,13 @@ def ingest(
                 if (z.staging / sid).exists():
                     compact_staging(z.staging / sid)
             from fin.catalog import build as build_catalog
+            from fin.quality.findings import run as run_checks
 
+            try:
+                run_checks(z, run)
+            except Exception as e:  # a failing check never loses the day's archive
+                errors += 1
+                run.error("quality", f"{type(e).__name__}: {e}")
             build_catalog(z)
         for ds, c in sorted(run.counts.items()):
             typer.echo(f"  {ds}: entrada {c['in']}, saída {c['out']}, quarentena {c['quarantined']}")
@@ -157,6 +163,24 @@ def catalog_cmd() -> None:
     typer.echo(f"{z.catalog}: {len(made)} visões ({', '.join(made)})")
 
 
+@app.command("quality")
+def quality_cmd(
+    checks: Annotated[list[str] | None, typer.Argument(help="verificações (padrão: todas)")] = None,
+) -> None:
+    """Roda as verificações de qualidade e grava os achados (dq_finding); a situação vem de resolutions.toml."""
+    from fin.catalog import build
+    from fin.quality.findings import run
+
+    z = zones()
+    with IngestRun(z, f"quality {' '.join(checks or [])}".strip()) as r:
+        counts = run(z, r, checks)
+    build(z)
+    f = pl.scan_parquet(z.quality / "dq_finding" / "*.parquet").group_by("check_id", "severity", "status").len()
+    for row in f.sort("check_id", "status").collect().iter_rows():
+        typer.echo(f"  {row[0]} [{row[1]}] {row[2]}: {row[3]}")
+    typer.echo(f"{sum(counts.values())} achado(s) em {len(counts)} verificação(ões)")
+
+
 @app.command("compact-raw")
 def compact_raw(
     sources: Annotated[list[str] | None, typer.Argument(help="fontes (padrão: todas)")] = None,
@@ -233,6 +257,9 @@ def rebuild(
             manifest = Manifest(z.manifest).read()
             for sid in dict.fromkeys(DAILY + tuple(CONNECTORS)):
                 reparse(connector(sid), z, run, manifest)
+            from fin.quality.findings import run as run_checks
+
+            run_checks(z, run)  # quality/ is rebuildable too (ADR-0022)
             errors = list(run.errors)
     except BaseException:
         for p in z.rebuildable():

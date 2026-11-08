@@ -28,7 +28,7 @@ from fin.store.tables import read_parquet_dir, write_parquet
 
 SHARE_COUNT = Contract(
     table="core.share_count",
-    version=2,
+    version=3,
     description="Shares paid in and in treasury per filing, converted to units by the inferred filing unit.",
     provenance=False,
     columns=(
@@ -47,6 +47,9 @@ SHARE_COUNT = Contract(
             "received_on", pl.Date, "CVM delivery date of the version (knowledge date)", "data de recebimento", "date"
         ),
         Column("unit", pl.Int32, "inferred: 1 (units) or 1000 (thousands); null when unknown", "unidade", "shares"),
+        Column(
+            "unit_basis", pl.String, "fre (nearest FRE count) or b3_anchor (walk from B3's count)", "base da unidade"
+        ),
         Column("common", pl.Int64, "common shares paid in, units", "ações ordinárias", "shares"),
         Column("preferred", pl.Int64, "preferred shares paid in, units", "ações preferenciais", "shares"),
         Column("total", pl.Int64, "total shares paid in, units", "total de ações", "shares"),
@@ -149,6 +152,49 @@ def fre_counts(zones: Zones) -> pl.DataFrame | None:
     ).unique(["issuer_cnpj", "form", "reference_date", "version"], keep="last")
 
 
+FRE_TOLERANCE = "120d"
+
+
+def fre_units(df: pl.DataFrame, fre: pl.DataFrame | None) -> pl.DataFrame:
+    """The unit of each DFP/ITR filing from the nearest FRE count (whole shares) delivered within 120 days: 1 or 1,000,
+    whichever brings the filed total within 30 % of it. Direct evidence per period, so it overrides the B3-anchored
+    walk; the walk remains where no FRE is near (`unit_basis`)."""
+    walk = df.with_columns(pl.when(pl.col("unit").is_not_null()).then(pl.lit("b3_anchor")).alias("unit_basis"))
+    if fre is None or not fre.height:
+        return walk
+    near = (
+        walk.with_row_index("_r")
+        .filter(pl.col("received_on").is_not_null())
+        .sort("received_on")
+        .join_asof(
+            fre.select("issuer_cnpj", "received_on", pl.col("total").alias("_fre")).sort("received_on"),
+            on="received_on",
+            by="issuer_cnpj",
+            strategy="nearest",
+            tolerance=FRE_TOLERANCE,
+            check_sortedness=False,
+        )
+    )
+    filed = pl.col("total_paid_in").cast(pl.Float64)
+    near = (
+        near.filter(pl.col("_fre") > 0)
+        .select(
+            "_r",
+            pl.when((filed / pl.col("_fre") - 1).abs() <= 0.3)
+            .then(pl.lit(1, dtype=pl.Int32))
+            .when((filed * 1000 / pl.col("_fre") - 1).abs() <= 0.3)
+            .then(pl.lit(1000, dtype=pl.Int32))
+            .alias("_u"),
+        )
+        .drop_nulls("_u")
+    )
+    out = walk.with_row_index("_r").join(near, on="_r", how="left")
+    return out.with_columns(
+        pl.coalesce("_u", "unit").alias("unit"),
+        pl.when(pl.col("_u").is_not_null()).then(pl.lit("fre")).otherwise(pl.col("unit_basis")).alias("unit_basis"),
+    ).drop("_r", "_u")
+
+
 def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
     sc = read_parquet_dir(zones.staging / "cvm_dfp_itr" / "share_capital")
     reg = read_parquet_dir(zones.staging / "cvm_cia_cadastro" / "company")
@@ -176,7 +222,7 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
     for _, g in sc.group_by("issuer_cnpj", "form", maintain_order=True):
         units = infer_units(g["total_paid_in"].fill_null(0).to_list(), g["anchor_b3_total"][0])
         parts.append(g.with_columns(pl.Series("unit", units, dtype=pl.Int32)))
-    df = pl.concat(parts)
+    df = fre_units(pl.concat(parts), fre_counts(zones))
     u = pl.col("unit").cast(pl.Int64)
     out = df.select(
         "issuer_cnpj",
@@ -185,6 +231,7 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
         "version",
         "received_on",
         "unit",
+        "unit_basis",
         (pl.col("common_paid_in") * u).alias("common"),
         (pl.col("preferred_paid_in") * u).alias("preferred"),
         (pl.col("total_paid_in") * u).alias("total"),
@@ -196,7 +243,7 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
     )
     fre = fre_counts(zones)
     if fre is not None:
-        out = pl.concat([out, fre], how="vertical_relaxed")
+        out = pl.concat([out, fre.with_columns(pl.lit("fre").alias("unit_basis"))], how="diagonal_relaxed")
     good, bad = SHARE_COUNT.split(out)
     write_parquet(good, zones.core / "share_count" / "share_count.parquet")
     res = {"share_count": good.height, "with_unit": int(good["unit"].is_not_null().sum())}

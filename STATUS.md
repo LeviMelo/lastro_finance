@@ -23,6 +23,8 @@ Day one (2026-11-07).
     148 on 2015-06-30; share counts from DFP/ITR 2020– and FRE 2010–; ADR-0021);
   - staging: Tesouro Direto 2004–, FII distributions, CVM statements 2010– (66.8 M lines), intraday 5-minute bars
     (archived from 2026-11-07).
+- **Data quality** (ADR-0022): `fin quality` runs 5 named checks into `dq_finding` (111 findings: 2 acknowledged,
+  9 link price jumps open, 100 unproven events). Their review status is in `fin/quality/resolutions.toml`.
 - **Storage is lean by rule** (ADR-0014): re-sent files as deltas, CVM zips as member deltas, staging keeps changed
   rows, small files compacted. C: has 49 GB free: the binding limit.
 - **Data gaps are mapped and ranked** ([gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md)). Everything

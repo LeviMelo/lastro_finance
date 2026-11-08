@@ -6,7 +6,7 @@ stay views instead of core copies: storage stays lean (ADR-0014).
 
 Views:
 - core: `instrument`, `instrument_identifier`, `price_daily`, `series_observation`, `series_definition`,
-  `corporate_event`; derived: `adjustment_factor`;
+  `corporate_event`; derived: `adjustment_factor`; quality: `dq_finding` (ADR-0022);
 - `fundamental_fact`: CVM statement lines with the scale applied (`value_brl`), the delivery date of the version
   (`received_on`, knowledge date) and `issuer_cnpj` as 14 digits;
 - `price_adjusted`: standard-lot closes with split and cash adjustment to today's basis (derived on read);
@@ -54,6 +54,7 @@ def views(z: Zones) -> dict[str, str]:
         "tesouro_bond": _scan(c / "tesouro_bond" / "*.parquet"),
         "tesouro_price_daily": _scan(c / "tesouro_price_daily" / "*.parquet"),
         "adjustment_factor": _scan(d / "adjustment_factor" / "*.parquet"),
+        "dq_finding": _scan(z.quality / "dq_finding" / "*.parquet"),
         "fundamental_fact": f"""
             WITH lines AS (
                 SELECT * FROM {_rp(s / "cvm_dfp_itr" / "statement_line" / "**" / "*.parquet")}
