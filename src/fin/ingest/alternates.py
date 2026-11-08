@@ -510,6 +510,11 @@ class CvmDfpItr(_CvmCompanyDocs):
     def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
         return cvm_statements.parse_payload(blob, row)
 
+    def derive(self, zones: Zones, run: Any) -> None:
+        from fin.core import shares
+
+        shares.build(zones, run)
+
 
 class CvmFca(_CvmCompanyDocs):
     source_id: ClassVar[str] = "cvm_fca"

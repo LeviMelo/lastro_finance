@@ -50,5 +50,6 @@ Persistent yearly files, regenerated weekly for the last years (Last-Modified of
 - 66,783,329 statement lines, 0 quarantined; 49,787 delivered document versions of 1,224 companies; 18,495
   share-capital rows. Staging 231 MB; about 2 s per DFP zip.
 - `composicao_capital`: 6 rows with a negative treasury count (Bradesco DFP 2022 and ITR 2024-Q1, Azzas 2020,
-  Ourofino 2023) are quarantined. **The unit of the counts is not stated**: Bradesco's 5,338,394 common shares paid
-  in looks like thousands (it has ~5.3 billion) *(not verified)*. Check against FRE or FCA before any per-share figure.
+  Ourofino 2023) are quarantined. **The unit of the counts is not stated**, and companies use both: against B3's current
+  counts, 201 of 340 issuers file units, 93 thousands, some switch (Bradesco: thousands to 2023, units from 2024).
+  The unit is inferred per filing (ADR-0020, core `share_count`).

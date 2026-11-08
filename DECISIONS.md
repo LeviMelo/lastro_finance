@@ -28,3 +28,4 @@ the alternatives where they were weighed, and **what evidence would overturn it*
 | [ADR-0017](docs/decisions/ADR-0017-the-warehouse-is-duckdb-views-over-parquet.md) | 2026-11-07 | The warehouse is a DuckDB file of views over the Parquet zones; reshaped staging is a view, not a copy | active |  |
 | [ADR-0018](docs/decisions/ADR-0018-an-issuer-is-a-cnpj-linked-to-instruments-through-b3-roots.md) | 2026-11-07 | An issuer is a CNPJ, linked to its instruments through B3's CVM code → ticker root | active |  |
 | [ADR-0019](docs/decisions/ADR-0019-instrument-links-from-ticker-continuity-and-b3-cross-asset-events.md) | 2026-11-07 | Instruments are linked by ticker continuity and by B3 events issuing another asset; only same-class events adjust prices | active |  |
+| [ADR-0020](docs/decisions/ADR-0020-share-counts-get-an-inferred-unit-per-filing.md) | 2026-11-07 | CVM share counts get an inferred unit per filing, anchored to B3's current count | active |  |

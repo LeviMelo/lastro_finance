@@ -65,7 +65,7 @@ Day one (2026-11-07).
 1. **Prove events against CVM IPE** documents; ISIN changes and mergers as event legs (PLAN's event graph).
 2. **Mergers without a B3 event** (ITAU4 → ITUB4, 2009) from CVM IPE; FII issuers from Fundos.NET. Links from ticker
    continuity and B3 cross-asset events exist (`instrument_link`, 170; ADR-0019).
-3. **Fundamentals:** 15 standard metrics exist (`fundamental_metric`); next are insurers' templates, per-share
-   figures (once the unit of CVM share counts is verified) and valuation ratios joined to prices via `issuer_instrument`.
+3. **Fundamentals:** 15 standard metrics exist (`fundamental_metric`); share counts have a per-filing unit
+   (`share_count`, ADR-0020); next are insurers' templates and valuation ratios joined to prices via `issuer_instrument`.
 4. **Context:** every archived context source is parsed (Focus, Copom, CEPEA, ANP, ANBIMA IMA, CFTC included).
    The IMA history before 2026-10-29 remains a gap.
