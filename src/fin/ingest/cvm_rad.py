@@ -726,7 +726,8 @@ class CvmRadVersions(Connector):
     version: ClassVar[str] = str(LEGACY_READER)
     contracts: ClassVar[dict[str, Contract]] = {"statement_line": STATEMENT_LINE, "share_capital": SHARE_CAPITAL}
     min_interval: ClassVar[float] = 0.25
-    concurrency: ClassVar[int] = 4
+    concurrency: ClassVar[int] = 12  # 16 parallel requests measured 2026-11-08: first byte 15-28 s, no errors (was 4)
+    lookahead: ClassVar[int] = 6  # answers take 17-90 s: 72 queued keep the 12 workers busy
     cookies: ClassVar[bool] = False  # RAD's ASP.NET session serialises requests: 4 workers ran at the pace of 1
     timeout: ClassVar[float] = 600.0  # RAD builds each zip on request: some take minutes (3 timeouts at 120 s)
     dedup_staging: ClassVar[bool] = False

@@ -350,7 +350,7 @@ def test_discover_asks_for_superseded_versions_not_yet_held(zones: Zones, monkey
         "https://www.rad.cvm.gov.br/"
     )
     assert first.extract is cvm_rad.extract_statements and first.conditional is False and first.min_bytes > 1000
-    assert conn.concurrency == 4 and conn.min_interval == 0.25 and conn.dedup_staging is False
+    assert conn.concurrency == 12 and conn.min_interval == 0.25 and conn.dedup_staging is False
 
 
 def test_run_archives_stripped_xml_with_its_record_and_does_not_ask_twice(

@@ -32,12 +32,27 @@ def _line(form: str, ref: str, statement: str, name: str, start: str | None, end
 def test_valuation_point_in_time(zones: Zones) -> None:
     c, s = zones.core, zones.staging
     write_parquet(
-        pl.DataFrame({"issuer_id": ["C1"], "cnpj": [DIGITS], "trade_name": ["ACME"], "legal_name": ["ACME SA"]}),
+        pl.DataFrame(
+            {
+                "issuer_id": ["C1"],
+                "cnpj": [DIGITS],
+                "trade_name": ["ACME"],
+                "legal_name": ["ACME SA"],
+                "sector": ["Varejo"],
+            }
+        ),
         c / "issuer" / "issuer.parquet",
     )
     write_parquet(
         pl.DataFrame(
-            {"issuer_id": ["C1"], "instrument_id": ["I1"], "vt_from": [date(2020, 1, 2)], "vt_to": [date(2025, 12, 30)]}
+            {
+                "issuer_id": ["C1"],
+                "instrument_id": ["I1"],
+                "root": ["ACME"],
+                "vt_from": [date(2020, 1, 2)],
+                "vt_to": [date(2025, 12, 30)],
+                "method": ["b3_root"],
+            }
         ),
         c / "issuer_instrument" / "issuer_instrument.parquet",
     )

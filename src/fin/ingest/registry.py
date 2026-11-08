@@ -25,6 +25,7 @@ from fin.ingest.b3_events import B3CompanyEvents
 from fin.ingest.b3_fixed_income import B3FixedIncome
 from fin.ingest.b3_funds_listed import B3FundsListed
 from fin.ingest.b3_holidays import B3Holidays
+from fin.ingest.b3_isin import B3Isin
 from fin.ingest.base import Connector
 from fin.ingest.binance import BinanceKlines
 from fin.ingest.context import context_connectors
@@ -98,6 +99,7 @@ CONNECTORS: dict[str, type[Connector]] = {
         B3FixedIncome,
         B3Holidays,
         B3FundsListed,
+        B3Isin,
         BinanceKlines,
         TiingoDaily,
         SndPuHistorico,
@@ -133,6 +135,7 @@ DAILY: tuple[str, ...] = (
     "b3_fundosnet_cda",  # ETF monthly portfolios (not in CVM open data)
     "tiingo",  # US benchmarks and ADRs, the last 10 days (owner token; nothing runs without it)
     "binance",  # crypto daily klines: new monthly files and this month's days (scope priority 3)
+    "b3_isin",  # B3 ISIN database: daily change files (~19 days served) and the full database weekly
     "b3_funds_listed",  # B3's listed funds today (current state only) and each ETF's report ids
     "bcb_sgs",
     "bcb_ptax",

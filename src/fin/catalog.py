@@ -7,6 +7,7 @@ stay views instead of core copies: storage stays lean (ADR-0014).
 Views:
 - core: `instrument`, `instrument_identifier`, `price_daily`, `series_observation`, `series_definition`,
   `corporate_event`; derived: `adjustment_factor`; quality: `dq_finding` (ADR-0022);
+- `fundamental_metric`: standard metrics per filing (derived zone, rebuilt when the statements change);
 - `fundamental_fact`: CVM statement lines (open data plus the superseded versions from RAD, ADR-0027) with the
   scale applied (`value_brl`), the delivery date of the version
   (`received_on`, knowledge date) and `issuer_cnpj` as 14 digits;
@@ -88,7 +89,7 @@ def views(z: Zones) -> dict[str, str]:
                 l.raw_sha256, l.raw_locator
             FROM lines l LEFT JOIN docs d USING (form, cnpj, reference_date, version)
         """,
-        "fundamental_metric": """
+        "fundamental_metric_live": """
             -- standard metrics by account name among CVM's fixed accounts: names are stable across the industrial
             -- and the bank templates where codes are not (equity is 2.03 for industrials, 2.07 or 2.08 for banks);
             -- the shallowest matching code wins (docs/evaluation/2026-11-07-fundamentals-mapping.md)
@@ -376,6 +377,14 @@ FROM nav JOIN px USING (isin) LEFT JOIN dy USING (isin)
 """
 
 
+def _stale(out: Path, inputs: list[Path]) -> bool:
+    """True when `out` is missing or older than any Parquet file under `inputs`."""
+    if not out.exists():
+        return True
+    built = out.stat().st_mtime
+    return any(f.stat().st_mtime > built for d in inputs if d.exists() for f in d.rglob("*.parquet"))
+
+
 def build(z: Zones) -> list[str]:
     """(Re)create every view whose files exist. Returns the names created."""
     made: list[str] = []
@@ -392,6 +401,23 @@ def build(z: Zones) -> list[str]:
                 made.append(name)
             except duckdb.Error:
                 con.execute(f"DROP VIEW IF EXISTS {name}")  # its files do not exist yet
+        if "fundamental_metric_live" in made:
+            # the metrics are derived from 66 M statement lines; as a view every query re-derived them (49 s per
+            # valuation date). Kept in the derived zone (1.2 M rows, 17 MB) and rebuilt when the statements change.
+            out = z.derived / "fundamental_metric" / "fundamental_metric.parquet"
+            if _stale(
+                out, [z.staging / "cvm_dfp_itr" / "statement_line", z.staging / "cvm_rad_versions" / "statement_line"]
+            ):
+                out.parent.mkdir(parents=True, exist_ok=True)
+                part = out.with_name("fundamental_metric.building.parquet")
+                con.execute("SET max_temp_directory_size = '4GB'")
+                con.execute(
+                    f"COPY (SELECT * FROM fundamental_metric_live ORDER BY issuer_cnpj, metric, period_end) "
+                    f"TO '{str(part).replace(chr(92), '/')}' (FORMAT parquet, COMPRESSION zstd)"
+                )
+                part.replace(out)
+            con.execute(f"CREATE OR REPLACE VIEW fundamental_metric AS SELECT * FROM {_rp(out)}")
+            made.append("fundamental_metric")
         if {"instrument", "price_daily"} <= set(made):
             # point-in-time universe (PLAN §4.4): instruments with a standard-lot session in the 30 days up to `d`,
             # whatever happened to them later (delisted ones included: no survivorship bias)

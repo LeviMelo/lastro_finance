@@ -43,3 +43,14 @@ def test_an_isin_belongs_to_the_fund_with_a_majority_of_its_reports() -> None:
     })  # fmt: skip
     own = isin_owners(p)
     assert own.select("isin", "cnpj").rows() == [("BRBBPOCTF003", "A")]  # a 2-2 tie has no owner
+
+
+def test_name_history_needs_both_the_short_name_and_the_isin_code() -> None:
+    from fin.core.issuers import _name_match, _tokens
+
+    assert _name_match("KROTON EDUCACIONAL S.A.", _tokens("KROTON"), "KROT")
+    assert _name_match("CETIP S.A. - MERCADOS ORGANIZADOS", _tokens("CETIP"), "CTIP")
+    assert _name_match("TRACTEBEL ENERGIA S.A.", _tokens("TRACTEBEL"), "TBLE")
+    assert not _name_match("SUNO FIAGRO", _tokens("CAF BRASILIA"), "CAFB")  # a reassigned code: the words disagree
+    # the known weakness, why the method comes last and never overrides another: a similar name can pass
+    assert _name_match("SABER SERVICOS EDUCACIONAIS S.A.", _tokens("SER EDUCA"), "SEER")

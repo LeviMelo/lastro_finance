@@ -26,6 +26,7 @@ multiplies prices **before** the ex-date: 1/ratio for stock events; (1 − cash 
 from __future__ import annotations
 
 import math
+from datetime import date
 from fractions import Fraction
 from typing import Any
 
@@ -666,6 +667,71 @@ def implied_events(zones: Zones, prices: pl.LazyFrame, fac: pl.DataFrame) -> pl.
     return ev.with_columns(pl.lit("confirmed").alias("status"), pl.col("ex_date").alias("ex_date_reported"))
 
 
+IMPLIED_IPE_MIN = 3.0  # a one-day move this large on a day no factor adjusts is a candidate stock event
+# without a filing, a move of 10x or more is kept only at a conventional ratio and within this of it: 2 % for a
+# regrouping (prices jump), 0.5 % for a split (prices fall, as they also do in a collapse); any large move lies within
+# 2 % of some integer, so the ratio set matters (TRADE DESK "1:99", CABLE ONE "1:194" are not kept on price alone)
+IMPLIED_EXACT_UP, IMPLIED_EXACT_DOWN = 0.02, 0.005
+CONVENTIONAL = frozenset({2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 40, 50, 100, 200, 250, 500, 1000, 2000, 5000, 10000,
+                          100000, 1000000})  # fmt: skip
+IMPLIED_MAX_GAP_DAYS = 30  # consecutive sessions further apart are not compared (a suspension may hide a real move)
+IMPLIED_FROM = date(
+    1994, 7, 1
+)  # the Real: before it, currency resets and hyperinflation quotes make one-day moves noise
+
+
+def implied_ipe_events(zones: Zones, prices: pl.LazyFrame, fac: pl.DataFrame, taken: pl.DataFrame) -> pl.DataFrame:
+    """Stock events no source lists and Yahoo cannot show (lines delisted before Yahoo's coverage: TOYB3 2015,
+    OGXP3 2016, BRPR3 2023): a one-day move of B3's raw close in BRL of at least `IMPLIED_IPE_MIN`x that our factors
+    leave in place. It is kept when a CVM IPE filing of the issuer announces the regrouping, split or bonus around it
+    (`ipe_evidence`), or when the move is 10x or more at a conventional ratio (`CONVENTIONAL`), from `IMPLIED_FROM`.
+    The ratio is that fraction; the ex-date is the day of the move. `taken`: (instrument_id, ex_date) of the events
+    already found."""
+    brl = pl.col("brl_num").cast(pl.Float64) / pl.col("brl_den").cast(pl.Float64)
+    day = (
+        prices.filter(pl.col("market_segment") == "lote_padrao")
+        .select("instrument_id", "trade_date", (pl.col("close").cast(pl.Float64) * brl).alias("c"))
+        .filter(pl.col("c") > 0)
+        .sort("instrument_id", "trade_date")
+        .with_columns(
+            (pl.col("c") / pl.col("c").shift(1)).over("instrument_id").log().alias("lr"),
+            pl.col("trade_date").shift(1).over("instrument_id").alias("d0"),
+        )
+        .filter(
+            (pl.col("trade_date") >= IMPLIED_FROM)
+            & (pl.col("lr").abs() >= math.log(IMPLIED_IPE_MIN))
+            & ((pl.col("trade_date") - pl.col("d0")).dt.total_days() <= IMPLIED_MAX_GAP_DAYS)
+        )
+        .collect()
+        .join(fac.select("instrument_id", pl.col("ex_date").alias("trade_date"), "split_factor"),
+              on=["instrument_id", "trade_date"], how="left")
+        .filter(pl.col("split_factor").fill_null(1.0) == 1.0)
+        .join(taken.select("instrument_id", pl.col("ex_date").alias("trade_date")), on=["instrument_id", "trade_date"],
+              how="anti")
+    )  # fmt: skip
+    rows = []
+    for r in day.iter_rows(named=True):
+        s = math.exp(-r["lr"])  # new shares per old that the move implies
+        snapped = _snap(s)
+        if snapped is None:
+            continue
+        num, den = snapped
+        check = s / (num / den)
+        kind = "REVERSE_SPLIT" if num < den else ("BONUS" if num / den < 2 else "SPLIT")
+        rows.append({
+            "instrument_id": r["instrument_id"], "event_type": kind,
+            "data_com": r["d0"], "ex_date": r["trade_date"], "ratio_num": num, "ratio_den": den,
+            "sources": "b3_cotahist", "price_check": check,
+            "_exact": max(num, den) in CONVENTIONAL and min(num, den) == 1 and max(s, 1 / s) >= 10
+            and abs(check - 1) <= (IMPLIED_EXACT_UP if num < den else IMPLIED_EXACT_DOWN),
+        })  # fmt: skip
+    if not rows:
+        return pl.DataFrame()
+    ev = ipe_evidence(zones, pl.DataFrame(rows))
+    ev = ev.filter(pl.col("sources").str.contains("cvm_ipe") | pl.col("_exact")).drop("_exact")
+    return ev.with_columns(pl.lit("confirmed").alias("status"), pl.col("ex_date").alias("ex_date_reported"))
+
+
 def rights_events(zones: Zones, dates: pl.Series) -> pl.DataFrame:
     """B3 subscriptions: ratio = 1 + percentage/100 (shares after full subscription), price in cash_per_share."""
     s = _staging(zones, "b3_company_events", "subscription")
@@ -1091,6 +1157,15 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
         fac0.sort("instrument_id", "ex_date"), zones.derived / "adjustment_factor" / "adjustment_factor.parquet"
     )
     implied = implied_events(zones, prices, fac0)
+    # pass 2b: the same misses on lines Yahoo does not cover, proven by a CVM filing or by an exact ratio
+    taken = (
+        implied.select("instrument_id", "ex_date")
+        if implied.height
+        else pl.DataFrame(schema={"instrument_id": pl.String, "ex_date": pl.Date})
+    )
+    more = implied_ipe_events(zones, prices, fac0, taken)
+    if more.height:
+        implied = pl.concat([implied, more], how="diagonal_relaxed") if implied.height else more
     if implied.height:
         allev = assemble([*parts, fill(implied)])
     good, bad = EVENT.split(allev)

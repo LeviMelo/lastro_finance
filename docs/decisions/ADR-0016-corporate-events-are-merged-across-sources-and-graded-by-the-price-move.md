@@ -96,3 +96,17 @@ multiplied ITUB4's prices before 2011-11 by 100.
 41 events were added, 34 of them Fras-le 2008-2026 (B3's history stops in 2002). Yahoo alone is never applied.
 
 **Not done.** Mergers and ISIN changes without a B3 event, as event legs (ADR-0019).
+
+**Addendum (2026-11-08): stock events on lines Yahoo does not cover.**
+- **Why.** The panel showed month returns of 30x to 230,000x on delisted or old lines: TOYB3 2015, OGXP3 2016,
+  BRPR3 2023, JBDU 2013–14, MAPT4 2019. These were regroupings that B3's events backend lacks. The Yahoo-led
+  path never sees them, because Yahoo only covers tickers that still trade.
+- **The new path (`implied_ipe_events`).** It runs from the Real (1994-07) on. A one-day move of the raw BRL close
+  of 3x or more, on a day no factor adjusts, is kept when either:
+  - a CVM IPE filing of the issuer announces the regrouping, split or bonus around it (202 events, now reachable
+    thanks to the issuer links of ADR-0018); or
+  - the move is 10x or more at a conventional ratio (2, 3, 4, 5, 8, 10, 15, 20, 25 … 1,000,000): within 2 % for a
+    regrouping, and within 0.5 % for a split, since a collapse also moves prices down (125 events).
+  Any large move lies within 2 % of some integer, so the ratio set is what keeps CABLE ONE "1:194" out.
+- **Result.** 52,972 events, none quarantined. Golden events 9/9 and the §13.1 portfolio are unchanged. Panel
+  month returns beyond +300 % or -90 % fell from 112 to 57; the rest are flagged (`ret_suspect`, ADR-0032).

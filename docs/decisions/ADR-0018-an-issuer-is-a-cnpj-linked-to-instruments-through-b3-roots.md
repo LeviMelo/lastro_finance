@@ -48,3 +48,25 @@ share and unit lines were linked.
 - **Result.** 948 of 1,204 share and unit lines trading since 2010 are linked, and 230 of 1,895 older ones. No
   instrument has two issuers, and no link ends before its issuer's registration. Companies gone before 2010 stay
   mostly unlinked: their CVM statements start in 2010, so the link would carry no fundamentals.
+
+**Addendum (2026-11-08, later): B3's ISIN registry and name history.**
+- **Why.** FCA trading codes are empty before 2019, so renamed and merged companies stayed unlinked. Those were
+  2.5–5 % of spot volume in 2010–2017: Kroton, Cetip, Tractebel, Smiles, BR Properties, BTG units.
+- **`b3_isin_emitter`.** B3's ISIN database (`b3_isin`) maps an issuer code to a CNPJ. It only applies to
+  companies with a CVM code, and only to lines that traded on or after the company's registration: B3 reassigns
+  deleted codes, some of them to funds (TRPL to an FII, CAFB to a fiagro). 1,038 links.
+- **`name_history`.** It applies only where every other method fails, and needs two signals to agree on exactly
+  one CNPJ:
+  - every word of the COTAHIST short name starts a word of a name the company had while the line traded (FCA
+    names and previous names by year, or the CVM register within registration);
+  - the ISIN code is a subsequence of that name.
+
+  222 links: KROT3 → Cogna, CTIP3 → Cetip, TBLE3 → Engie, BRIN3 → Alper.
+- **Precision.** Measured against the other methods, name matching agrees on 2,008 of 2,038 links (98.5 %). It
+  loses where similar names exist (SER EDUCA → "Saber Serviços Educacionais"), so it never overrides another
+  method.
+- **Result.**
+  - Share and unit lines trading since 2010: 1,177 of 1,204 linked (97.8 %).
+  - Older lines: 1,117 of 1,895.
+  - Unlinked spot volume: 2.5 % in 2010, falling to ~0 from 2013.
+  - No instrument has two issuers, and no link ends before its issuer's registration.

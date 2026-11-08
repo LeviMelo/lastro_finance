@@ -40,6 +40,18 @@ def dossier_cmd(
     typer.echo(f"dossiê: {build(zones(), Path(portfolio), d)}")
 
 
+@export_app.command("panel")
+def panel_cmd(
+    start: Annotated[str, typer.Option(help="primeiro mês (AAAA-MM-DD)")] = "2010-01-01",
+) -> None:
+    """Gera painéis mensais prontos para modelos (ações e macro, Parquet + dicionário) em data/exports/panel/."""
+    from datetime import date
+
+    from fin.export.panel import build
+
+    typer.echo(f"painéis: {build(zones(), date.fromisoformat(start))}")
+
+
 MIN_FREE = 5 * 10**9  # bytes of free disk below which ingest refuses to start
 
 

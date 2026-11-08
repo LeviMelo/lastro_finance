@@ -35,6 +35,7 @@ uv run fin reparse bcb_sgs ipeadata ibge_sidra  # re-parse archived raw of some 
 uv run fin compact-raw [sources]          # store repeated versions as deltas (verified; read bytes unchanged)
 uv run fin compact-staging [sources]      # merge small staging files (the daily job does this itself)
 uv run fin catalog                        # rebuild data/catalog.duckdb (views; the daily job does it)
+uv run fin export panel                   # monthly model panels (equity, macro) + dictionary in data/exports/panel/
 # a query killed mid-way leaves DuckDB spill files in data/catalog.duckdb.tmp/ (38 GB once): delete when idle
 uv run fin quality [checks]               # run the data-quality checks → data/quality/dq_finding (the daily job does it)
 uv run python scripts/check_golden_events.py  # golden corporate events vs core (exit 1 on a miss)

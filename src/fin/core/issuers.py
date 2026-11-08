@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import hashlib
 import io
+import re
+import unicodedata
 from collections.abc import Iterable
 from typing import Any
 
@@ -291,6 +293,39 @@ def company_links(zones: Zones, known: pl.DataFrame, span: pl.DataFrame, issuers
                 pl.lit("fca_ticker").alias("method"),
             )
         )
+    inst = pl.read_parquet(zones.core / "instrument" / "instrument.parquet")
+    shares = inst.filter(pl.col("asset_class").is_in(["share", "unit"])).select("instrument_id", "short_name")
+    roots = tick.group_by("instrument_id").agg(pl.col("value").sort().last().str.slice(0, 4).alias("root"))
+    taken = pl.concat([known.select("instrument_id"), *[o.select("instrument_id") for o in out]]).unique()
+    em = read_parquet_dir(zones.staging / "b3_isin" / "emitter")
+    if em is not None:  # B3's own issuer-code registry (b3_isin): the official code -> CNPJ
+        codes = (
+            em.filter(pl.col("cnpj").str.contains(r"^\d{14}$"))
+            .group_by("code")
+            .agg(pl.col("cnpj").unique().alias("c"))
+            .filter(pl.col("c").list.len() == 1)
+            .select("code", pl.col("c").list.first().map_elements(issuer_id, return_dtype=pl.String).alias("issuer_id"))
+        )
+        out.append(
+            isin.join(shares, on="instrument_id")
+            .join(taken, on="instrument_id", how="anti")
+            .with_columns(pl.col("isin").str.slice(2, 4).alias("code"))
+            .join(codes, on="code")
+            # a company registered at CVM (B3 reassigns deleted codes, some to funds: TRPL to an FII, CAFB to a
+            # fiagro), and the line traded on or after its registration
+            .join(issuers.filter(pl.col("cd_cvm") != "").select("issuer_id", "registered_on"), on="issuer_id")
+            .join(span, on="instrument_id")
+            .filter(pl.col("registered_on").is_null() | (pl.col("vt_to") >= pl.col("registered_on")))
+            .join(roots, on="instrument_id", how="left")
+            .select(
+                "issuer_id",
+                "instrument_id",
+                pl.col("root").fill_null(pl.col("code")),
+                "vt_from",
+                "vt_to",
+                pl.lit("b3_isin_emitter").alias("method"),
+            )
+        )
     linked = pl.concat([known.select("issuer_id", "instrument_id"), *[o.select("issuer_id", "instrument_id")
                                                                      for o in out]]).unique()  # fmt: skip
     code = (
@@ -323,7 +358,81 @@ def company_links(zones: Zones, known: pl.DataFrame, span: pl.DataFrame, issuers
             pl.lit("isin_issuer").alias("method"),
         )
     )
-    return pl.concat([*out, ext], how="vertical_relaxed").select(LINK.names)
+    done = pl.concat([linked.select("instrument_id"), ext.select("instrument_id")]).unique()
+    names = name_history_links(zones, shares.join(done, on="instrument_id", how="anti"), isin, span, issuers)
+    names = names.join(roots, on="instrument_id", how="left").with_columns(pl.col("root").fill_null(pl.col("code")))
+    return pl.concat([*out, ext, names.select(LINK.names)], how="vertical_relaxed").select(LINK.names)
+
+
+NAME_STOP = frozenset({"SA", "S", "A", "CIA", "COMPANHIA", "DE", "DO", "DA", "E", "EM", "PART", "PARTICIPACOES",
+                       "HOLDING", "RECUPERACAO", "JUDICIAL"})  # fmt: skip
+
+
+def _norm(text: str | None) -> str:
+    plain = unicodedata.normalize("NFKD", text or "").encode("ascii", "ignore").decode().upper()
+    return " ".join(re.sub(r"[^A-Z0-9 ]", " ", plain).split())
+
+
+def _tokens(text: str | None) -> list[str]:
+    return [t for t in _norm(text).split() if t not in NAME_STOP]
+
+
+def _subsequence(code: str, name: str) -> bool:
+    it = iter(name.replace(" ", ""))
+    return all(ch in it for ch in code)
+
+
+def _name_match(name: str, words: list[str], code: str) -> bool:
+    have = _tokens(name)
+    return bool(have) and all(any(h.startswith(w) for h in have) for w in words) and _subsequence(code, _norm(name))
+
+
+def name_history_links(
+    zones: Zones, todo: pl.DataFrame, isin: pl.DataFrame, span: pl.DataFrame, issuers: pl.DataFrame
+) -> pl.DataFrame:
+    """`name_history`, for share lines no other method reaches (OQ-7; mostly renamed or merged companies whose code
+    B3 deleted: KROT -> Cogna, CTIP -> Cetip, TBLE -> Engie). Two independent signals must agree on exactly one
+    CNPJ: every word of COTAHIST's short name (NOMRES) starts a word of a name the company had while the line traded
+    (FCA names and previous names by year, or the CVM register's names within registration and cancellation), and
+    the ISIN's issuer code is a subsequence of that name (KROT in KROTON). Ties link nothing."""
+    co = read_parquet_dir(zones.staging / "cvm_fca" / "company")
+    reg = read_parquet_dir(zones.staging / "cvm_cia_cadastro" / "company")
+    empty = pl.DataFrame(schema={"issuer_id": pl.String, "instrument_id": pl.String, "code": pl.String,
+                                 "vt_from": pl.Date, "vt_to": pl.Date, "method": pl.String})  # fmt: skip
+    if not todo.height or (co is None and reg is None):
+        return empty
+    fca: list[tuple[str, int, str]] = []
+    if co is not None:
+        for col in ("company_name", "previous_name"):
+            for cnpj, ref, name in (
+                co.select(pl.col("cnpj").str.replace_all(r"\D", ""), "reference_date", col).drop_nulls().iter_rows()
+            ):
+                fca.append((cnpj, ref.year, name))
+    cvm: list[tuple[str, Any, Any, str]] = []
+    if reg is not None:
+        for col in ("legal_name", "trade_name"):
+            for cnpj, r_on, c_on, name in reg.select(pl.col("cnpj").str.replace_all(r"\D", ""), "registered_on",
+                                                     "cancelled_on", col).drop_nulls(col).iter_rows():  # fmt: skip
+                cvm.append((cnpj, r_on, c_on, name))
+    known = set(issuers["cnpj"].to_list())
+    rows = todo.join(isin, on="instrument_id").join(span, on="instrument_id")
+    out = []
+    for iid, short, code_isin, v0, v1 in rows.select(
+        "instrument_id", "short_name", "isin", "vt_from", "vt_to"
+    ).iter_rows():
+        words, code = _tokens(short), code_isin[2:6]
+        if not words or len(code) != 4:
+            continue
+
+        hits = {c for c, y, n in fca if v0.year - 1 <= y <= v1.year + 1 and _name_match(n, words, code)}
+        if not hits:
+            hits = {c for c, r_on, c_on, n in cvm if (r_on is None or r_on <= v1) and (c_on is None or c_on >= v0)
+                    and _name_match(n, words, code)}  # fmt: skip
+        hits &= known
+        if len(hits) == 1:
+            out.append({"issuer_id": issuer_id(hits.pop()), "instrument_id": iid, "code": code, "vt_from": v0,
+                        "vt_to": v1, "method": "name_history"})  # fmt: skip
+    return pl.DataFrame(out, schema=empty.schema) if out else empty
 
 
 def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:

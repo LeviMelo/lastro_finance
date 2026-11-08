@@ -99,9 +99,11 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/focus.py` | BCB Focus expectations (8 tables) → staging `expectation` |
 | `ingest/fundosnet.py` | Fundos.NET notices → staging `distribution` (per Provento and kind, exact BRL per quota) and `listing` (delivery minute = knowledge time, version) |
 | `ingest/cvm_vlmo.py` | CVM VLMO → staging `document` (filing index, delivery date) and `movement` (insider positions and trades by role group; free text not parsed) |
+| `export/panel.py` | `fin export panel`: monthly point-in-time equity and macro panels with a column dictionary (ADR-0032); reads `derived/fundamental_metric` |
 | `core/etfs.py` | core `etf_nav` (every ETF daily report, Fundos.NET 2018- and CVM 2004-18, latest flag) and `etf_link` (fund CNPJ → quota by trading name and B3 listing, verified by price) |
 | `ingest/tiingo.py` | Tiingo daily prices and metadata → staging `daily`, `meta` (token in a header) |
 | `ingest/binance.py` | Binance bulk daily klines → staging `kline` (ms and µs timestamps) |
+| `ingest/b3_isin.py` | B3 ISIN database → staging `emitter` (issuer code → CNPJ); NUMERACA archived as member deltas |
 | `ingest/b3_funds_listed.py` | B3 listed funds → staging `listed_fund` (acronym, Fundos.NET id, daily) and `fund_report` (ETF report doc ids: acronym → CNPJ) |
 | `ingest/fundosnet_cda.py` | Fundos.NET ETF monthly portfolios (CDA XML, two layouts) → staging `position`, `net_assets`, `listing` |
 | `ingest/fundosnet_daily.py` | Fundos.NET ETF daily reports → staging `daily` (NAV per quota, net assets, flows, holders; exact decimals) and `listing` |

@@ -570,3 +570,12 @@ tier = "S"
 ephemeral = false
 status = "parsed"
 recon = "docs/sources/context_global.md"
+
+[b3_isin]
+name = "B3: base de códigos ISIN (emissores e números ISIN)"
+institution = "B3"
+access = "JSON list + zip per file (isinProxy), no login"
+tier = "P"
+ephemeral = true
+status = "parsed"
+recon = "docs/sources/b3_isin.md"

@@ -832,6 +832,10 @@ def etf_link(zones: Zones) -> pl.DataFrame:
             "{} ({}) and {} ({} prices): not linked", "fund_cnpj", "trading_name", "ticker", "price_source"
         ).alias("detail"),
         pl.format("etf_link {} {}..{}", "fund_cnpj", "first_date", "last_date").alias("evidence"),
+        pl.lit("acknowledged").alias("status"),
+        pl.lit(
+            "rule: an unverified link values nothing (no NAV, no premium, no look-through); the fund stays unlinked"
+        ).alias("resolution_note"),
     )
 
 

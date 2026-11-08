@@ -65,6 +65,9 @@ class Connector(ABC):
     concurrency: ClassVar[int] = 1  # requests in flight at once (ADR-0023)
     stateless: ClassVar[bool] = False  # the server remembers the first query of a session: drop cookies per request
     cookies: ClassVar[bool] = True  # False: never store a cookie (concurrent requests then never share a session)
+    # downloads kept in flight ahead of the (in-order) archiving, as a multiple of `concurrency`: a source whose
+    # answers vary from 17 to 90 s (RAD) needs more, or a slow head blocks idle workers (measured 2026-11-08)
+    lookahead: ClassVar[int] = 2
     timeout: ClassVar[float] = 120.0  # seconds to wait for a response (a source that builds files on demand needs more)
     dedup_staging: ClassVar[bool] = False  # its files are re-sent whole: keep only rows that changed (ADR-0014)
     whole_datasets: ClassVar[frozenset[str]] = frozenset()  # exempt: identical rows there are distinct facts
@@ -149,7 +152,7 @@ def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode
         ahead: dict[int, Future[Any]] = {}
         while queue:
             if pool is not None:  # keep `concurrency` downloads in flight ahead of the (sequential) archiving
-                for s in queue[: connector.concurrency * 2]:
+                for s in queue[: connector.concurrency * connector.lookahead]:
                     if id(s) not in ahead:
                         ahead[id(s)] = pool.submit(fetcher.download, s)
             spec = queue.pop(0)
