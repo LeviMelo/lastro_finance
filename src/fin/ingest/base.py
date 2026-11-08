@@ -68,6 +68,7 @@ class Connector(ABC):
     # downloads kept in flight ahead of the (in-order) archiving, as a multiple of `concurrency`: a source whose
     # answers vary from 17 to 90 s (RAD) needs more, or a slow head blocks idle workers (measured 2026-11-08)
     lookahead: ClassVar[int] = 2
+    busy_marker: ClassVar[bytes | None] = None  # bytes of a 200 'too busy' page: retried with backoff (http.py)
     timeout: ClassVar[float] = 120.0  # seconds to wait for a response (a source that builds files on demand needs more)
     dedup_staging: ClassVar[bool] = False  # its files are re-sent whole: keep only rows that changed (ADR-0014)
     whole_datasets: ClassVar[frozenset[str]] = frozenset()  # exempt: identical rows there are distinct facts
@@ -143,6 +144,7 @@ def run_connector(connector: Connector, zones: Zones, run: IngestRun, mode: Mode
         timeout=connector.timeout,
         stateless=connector.stateless,
         cookies=connector.cookies,
+        busy=connector.busy_marker,
     )
     fetcher = Fetcher(run, raw, client, connector.version)
     errors = 0

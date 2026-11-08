@@ -678,8 +678,14 @@ def _legacy_capital(members: dict[str, bytes], head: dict[str, Any]) -> pl.DataF
     comp = root.findall("ComposicaoCapitalSocialDemonstracaoFinanceira")
     if not comp:
         return pl.DataFrame(schema=CAPITAL_SCHEMA)
-    if len(comp) != 1:
-        raise RadError(f"{len(comp)} capital compositions")
+    if len(comp) != 1:  # some filings repeat the same composition (95 of 2,749 legacy zips): one when they agree
+        tags = ("AcaoOrdinaria", "AcaoPreferencial", "TotalAcao")
+        sig = {
+            tuple(_text(c, f"Quantidade{t}{k}") for t in tags for k in ("CapitalIntegralizado", "Tesouraria"))
+            for c in comp
+        }
+        if len(sig) != 1:
+            raise RadError(f"{len(comp)} capital compositions that differ")
     c = comp[0]
     out: dict[str, Any] = {k: head[k] for k in ("form", "cnpj", "reference_date", "version", "company_name")}
     names = {"common": "AcaoOrdinaria", "preferred": "AcaoPreferencial", "total": "TotalAcao"}
@@ -727,6 +733,7 @@ class CvmRadVersions(Connector):
     contracts: ClassVar[dict[str, Contract]] = {"statement_line": STATEMENT_LINE, "share_capital": SHARE_CAPITAL}
     min_interval: ClassVar[float] = 0.25
     concurrency: ClassVar[int] = 12  # 16 parallel requests measured 2026-11-08: first byte 15-28 s, no errors (was 4)
+    busy_marker: ClassVar[bytes | None] = b"is unavailable"  # the 297-byte 'service too busy' page under load
     lookahead: ClassVar[int] = 6  # answers take 17-90 s: 72 queued keep the 12 workers busy
     cookies: ClassVar[bool] = False  # RAD's ASP.NET session serialises requests: 4 workers ran at the pace of 1
     timeout: ClassVar[float] = 600.0  # RAD builds each zip on request: some take minutes (3 timeouts at 120 s)

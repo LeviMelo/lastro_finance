@@ -52,6 +52,7 @@ class PoliteClient:
         timeout: float = 120.0,
         stateless: bool = False,
         cookies: bool = True,
+        busy: bytes | None = None,
         transport: httpx.BaseTransport | None = None,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
@@ -65,6 +66,9 @@ class PoliteClient:
         self._sleep = sleep
         self._clock = clock
         self.stateless = stateless
+        # a server that answers 200 with a short 'too busy' page (RAD: 297 bytes, measured 2026-11-08) is treated as a
+        # 503: slower spacing and a retry, never a quiet 'absent'
+        self.busy = busy
         self._last: dict[str, float] = {}
         # cookies=False: a jar that accepts none, so concurrent requests never share a server session (ASP.NET
         # serialises the requests of one session: RAD ran 4 workers at the pace of 1, measured 2026-11-08)
@@ -106,7 +110,11 @@ class PoliteClient:
                 continue
             if self.stateless:  # no session survives a request (ANBIMA's ima-sh answers the first date of a session)
                 self._client.cookies.clear()
-            if resp.status_code in RETRY_STATUS:
+            busy = (
+                self.busy is not None and resp.status_code == 200 and len(resp.content) < 4096
+                and self.busy in resp.content
+            )  # fmt: skip
+            if resp.status_code in RETRY_STATUS or busy:
                 self._slower(host)
                 if attempt < self.max_retries:
                     self._backoff(attempt, resp.headers.get("Retry-After"))
