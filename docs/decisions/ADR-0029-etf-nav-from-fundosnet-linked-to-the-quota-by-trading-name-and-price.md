@@ -39,3 +39,12 @@ they no longer equal NOMRES.
 - **`b3_listing` link.** B3's listed-funds page gives each ETF's acronym and Fundos.NET id, and its report list
   gives the document ids (`b3_funds_listed`). The document names the CNPJ, so acronym + "11" → CNPJ comes from B3
   itself. `etf_link.methods` records which routes found the link: trading_name, b3_listing or both.
+- **Measured (2026-11-08, full backfill).**
+  - `etf_nav`: 244,939 reports of 263 funds.
+  - `etf_link`: 224 pairs, 218 verified. 120 are found by both routes, 65 by the trading name only, and 37 by B3's
+    listing only; 36 of the latter are fixed-income ETFs priced from the Price Report.
+  - The price check rejected a false name match: the fund named XPETFCHINA trades at 1.56x the NAV of the EURP11
+    match.
+- **Shared names.** BNDX11 and USDB11 are both "INVESTO USDB" in Fundos.NET, with NAVs 1 % apart. A name-only
+  link therefore stands only as the closest pair of both its ticker and its fund. A ticker change of the same fund
+  (USAL11 → SPXU11) keeps both links.

@@ -140,7 +140,7 @@ Recommendation: `httpx` + `polars` for the CSV/SDMX-CSV routes (all verified abo
 
 ## FRED API (measured 2026-11-08 with the owner's key)
 - `https://api.stlouisfed.org/fred/series/observations?series_id=DGS10&api_key=…&file_type=json`: 200 JSON, header fields (realtime_start/end, count, limit 100000) and `observations[{realtime_start, realtime_end, date, value}]`; a missing value is `.`. `fred/series?series_id=…` gives title, frequency_short, units, seasonal_adjustment_short, observation_start (DGS10: 1962-01-02).
-- Tier S: FRED redistributes other publishers' series (ICE BofA spreads under licence windows; S&P 500 10 years). The rows are the current vintage; ALFRED (`realtime_start`/`realtime_end` parameters) keeps earlier vintages and is not requested yet.
+- Tier S: FRED redistributes other publishers' series (ICE BofA spreads under licence windows; S&P 500 10 years). The rows are the current vintage. ALFRED (`realtime_start=1776-07-04&realtime_end=9999-12-31`) gives every vintage of a series in one request (CPIAUCSL 0.32 MB, 670 vintages from 1972; INDPRO 3.8 MB). It is wired for 7 revisable series (staging `vintage`; core versions by release date, CPIAUCSL 2020-03: 6 versions 2020-04-10 → 2025-02-12).
 
 ## Tiingo API (measured 2026-11-08 with the owner's token)
 - `https://api.tiingo.com/tiingo/daily/spy/prices?startDate=…&endDate=…` with header `Authorization: Token …`: 200 JSON list of `{date, open, high, low, close, volume, adjOpen…adjVolume, divCash, splitFactor}`; `…/tiingo/daily/spy` gives name, description, exchangeCode, startDate, endDate. Wired as `tiingo` (`ingest/tiingo.py`), 17 tickers.

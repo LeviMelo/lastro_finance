@@ -433,3 +433,17 @@ def test_susep_ettj_asks_one_url_per_month_not_held(tmp_path: Path, monkeypatch:
     assert back[-1].url.endswith("/arquivos-ettj/2015/curvazero_201512.txt/@@download/file")
     assert 404 in back[0].absent_status  # a month not published yet is absent, not an error
     assert [s.locator for s in conn.discover(Mode.INCREMENTAL, Zones(tmp_path))] == ["202611", "202610", "202609"]
+
+
+def test_alfred_vintages_version_by_release_date() -> None:
+    from fin.ingest import series as sr
+
+    doc = {"observations": [
+        {"realtime_start": "2020-04-10", "realtime_end": "2021-02-07", "date": "2020-03-01", "value": "257.953"},
+        {"realtime_start": "2021-02-08", "realtime_end": "2022-02-07", "date": "2020-03-01", "value": "257.989"},
+    ]}  # fmt: skip
+    row = {"raw_sha256": "x", "ingest_run_id": "r", "fetched_at": datetime(2026, 11, 8, tzinfo=UTC),
+           "request": json.dumps({"url": "u", "params": {"series_id": "CPIAUCSL"}})}  # fmt: skip
+    v = sr.versions(sr.parse_alfred(json.dumps(doc).encode(), row))
+    assert v.sort("version")["value_text"].to_list() == ["257.953", "257.989"]
+    assert v.sort("version")["kt_published_at"].dt.date().to_list() == [date(2020, 4, 10), date(2021, 2, 8)]

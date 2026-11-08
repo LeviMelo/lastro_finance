@@ -252,7 +252,23 @@ def link_frame(zones: Zones, nav: pl.DataFrame) -> pl.DataFrame:
             .then(pl.lit("b3_price_report"))
             .otherwise(pl.lit("cotahist"))
             .alias("price_source"),
-            ((pl.col("median_ratio") - 1).abs() <= ETF_LINK_TOLERANCE).fill_null(False).alias("verified"),
+            ((pl.col("median_ratio") - 1).abs() <= ETF_LINK_TOLERANCE).fill_null(False).alias("_ok"),
+            (pl.col("median_ratio") - 1).abs().alias("_dist"),
+        )
+        # two funds can share a trading name (BNDX11 and USDB11 are both "INVESTO USDB" in Fundos.NET, NAVs 1 %
+        # apart): a name-only link stands only as the closest pair of both its ticker and its fund; B3's listing
+        # confirms a link by itself
+        .with_columns(
+            (
+                pl.col("_ok")
+                & (
+                    pl.col("methods").str.contains("b3_listing")
+                    | (
+                        (pl.col("_dist") == pl.col("_dist").filter(pl.col("_ok")).min().over("ticker"))
+                        & (pl.col("_dist") == pl.col("_dist").filter(pl.col("_ok")).min().over("fund_cnpj"))
+                    )
+                )
+            ).alias("verified")
         )
         .select(ETF_LINK.names)
     )

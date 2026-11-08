@@ -17,6 +17,7 @@ Series ids are `<source_id>:<source code>`: `bcb_sgs:433`, `ipeadata:IGP12_IGPM1
 
 from __future__ import annotations
 
+import dataclasses
 import html
 import json
 import re
@@ -1443,10 +1444,23 @@ def parse_fred_meta(blob: bytes, row: dict[str, Any]) -> pl.DataFrame:
     return _frame(rows, row, _DEF_IN)
 
 
+def parse_alfred(blob: bytes, row: dict[str, Any]) -> pl.DataFrame:
+    """ALFRED: the same endpoint with `realtime_start=1776-07-04&realtime_end=9999-12-31` returns every vintage, one
+    row per (date, vintage range); `realtime_start` is the release date of that value (CPIAUCSL 2020-03: 257.953 on
+    2020-04-10, 257.989 on 2021-02-08…; measured 2026-11-08). It becomes `kt_published_at` (midnight UTC: FRED gives
+    the date only), so core versions follow the publication history, not our fetch dates."""
+    df = parse_fred(blob, row)
+    doc = json.loads(blob)
+    rel = [o["realtime_start"] for o in doc["observations"]]
+    return df.with_columns(pl.Series("kt_published_at", rel).str.to_datetime("%Y-%m-%d", time_zone="UTC").cast(KT))
+
+
 def _fred(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
     ds = str(row["dataset_id"])
     if ds.startswith("fred_meta_"):
         yield Parsed("definition", ds, parse_fred_meta(blob, row))
+    elif ds.startswith("fred_vintages_"):
+        yield Parsed("vintage", ds, parse_alfred(blob, row))
     else:
         yield Parsed("observation", ds, parse_fred(blob, row))
 
@@ -1534,17 +1548,28 @@ def versions(obs: pl.DataFrame) -> pl.DataFrame:
     """Keep the first row of each (series, period) and each later row whose value differs from the one before it.
     A period is its date and, where the source states one, its end (SGS TR: one start date, several periods)."""
     key = ("series_id", "vt_date", "vt_until")
-    o = obs.filter(pl.col("value").is_not_null()).sort(*key, "kt_first_seen_at", "raw_sha256", nulls_last=True)
+    if "kt_published_at" not in obs.columns:
+        obs = obs.with_columns(pl.lit(None, dtype=KT).alias("kt_published_at"))
+    # a value's knowledge time is its publication where the source states it (ALFRED vintages), else first fetch
+    known = pl.coalesce("kt_published_at", "kt_first_seen_at").alias("_known")
+    o = (
+        obs.filter(pl.col("value").is_not_null())
+        .with_columns(known)
+        .sort(*key, "_known", "raw_sha256", nulls_last=True)
+    )
     prev = pl.col("value").shift(1).over(key)
     changed = prev.is_null() | (pl.col("value") != prev)
     o = o.filter(changed)
-    return o.with_columns(pl.int_range(1, pl.len() + 1, dtype=pl.Int32).over(key).alias("version"))
+    return o.with_columns(pl.int_range(1, pl.len() + 1, dtype=pl.Int32).over(key).alias("version")).drop("_known")
 
 
 def build_core(zones: Zones, source_id: str, run: IngestRun | None = None) -> tuple[int, int]:
     """Rebuild this source's partition of core `series_observation` and `series_definition` from its staging.
     Returns (rows written, rows quarantined)."""
     obs = read_parquet_dir(zones.staging / source_id / "observation")
+    vint = read_parquet_dir(zones.staging / source_id / "vintage")
+    if vint is not None:  # vintage histories (ALFRED) join the snapshots, with their publication times
+        obs = vint if obs is None else pl.concat([obs, vint], how="diagonal_relaxed")
     defs = read_parquet_dir(zones.staging / source_id / "definition")
     out_obs = zones.core / "series_observation" / f"source={source_id}.parquet"
     out_def = zones.core / "series_definition" / f"source={source_id}.parquet"
@@ -1560,7 +1585,6 @@ def build_core(zones: Zones, source_id: str, run: IngestRun | None = None) -> tu
     v = v.with_columns(*_period(pl.col("frequency"), pl.col("vt_date"), pl.col("vt_until")))
     v = v.with_columns(
         pl.when(pl.col("_aligned")).then(pl.col("vt_reference")).alias("vt_reference"),
-        pl.lit(None, dtype=KT).alias("kt_published_at"),
     ).drop("_aligned")
     # a series without a definition, or a date off its frequency's grid, breaks a not-null rule: quarantined
     full = v.with_columns(
@@ -1577,8 +1601,22 @@ def build_core(zones: Zones, source_id: str, run: IngestRun | None = None) -> tu
     return good.height, bad.height
 
 
+VINTAGE = dataclasses.replace(
+    OBSERVATION,
+    table="staging.series.vintage",
+    version=1,
+    description="One value of one series in one vintage of the source's revision history, with its release time.",
+    columns=(
+        *OBSERVATION.columns,
+        Column("kt_published_at", KT, "release time of this vintage (date at 00:00 UTC)", "publicado em", "timestamp",
+               nullable=False),
+    ),
+    key=("series_id", "vt_date", "kt_published_at", "raw_sha256"),
+)  # fmt: skip
+
 CONTRACTS: dict[str, Contract] = {
     "observation": OBSERVATION,
+    "vintage": VINTAGE,
     "definition": DEFINITION,
     "unit_label": UNIT_LABEL,
     "ima_component": IMA_COMPONENT,

@@ -297,3 +297,14 @@ keys = [
   "DEXBZUS", "DEXCHUS", "BAMLH0A0HYM2", "BAMLEMCBPIEY", "DCOILBRENTEU", "DCOILWTICO", "NFCI", "WALCL", "CPIAUCSL",
   "CPILFESL", "PCEPILFE", "UNRATE", "PAYEMS", "INDPRO", "GDPC1", "SP500", "NASDAQCOM",
 ]
+
+[[file]]
+source = "fred"
+dataset = "fred_vintages_{key}"
+url = "https://api.stlouisfed.org/fred/series/observations"
+params = { series_id = "{key}", file_type = "json", realtime_start = "1776-07-04", realtime_end = "9999-12-31" }
+secret = { api_key = "fred_api_key" }
+ext = "json"
+every_days = 7
+about = "ALFRED: every published vintage of the revisable US macro series, with release dates (invariant 3)"
+keys = ["CPIAUCSL", "CPILFESL", "PCEPILFE", "UNRATE", "PAYEMS", "INDPRO", "GDPC1"]
