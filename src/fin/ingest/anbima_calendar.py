@@ -20,7 +20,7 @@ import xlrd
 from fin.config import Zones
 from fin.ingest.base import Connector, Mode, Parsed
 from fin.ingest.fetch import FetchSpec
-from fin.reference.calendar import build_calendar_days, extend_back, with_sessions
+from fin.reference.calendar import build_calendar_days, extend_back, with_b3_schedule, with_sessions
 from fin.schema import Column, Contract, Rule
 from fin.store.manifest import Manifest
 from fin.store.runs import IngestRun
@@ -155,6 +155,10 @@ def build_calendar(zones: Zones, run: IngestRun | None, days: pl.DataFrame | Non
     first = days["date"].min()
     # before ANBIMA's file: a CDI publication day or a B3 session (BCB skipped days after the Plano Cruzado, 1986-03)
     full = with_sessions(extend_back(days, sorted(set(pub) | {s for s in sessions if s < first})), sessions)  # type: ignore[operator]
+    b3 = read_parquet_dir(zones.staging / "b3_holidays" / "market_day")
+    if b3 is not None and b3.height:  # B3's published closures carry the trading-day flag into the future (OQ-1)
+        closed = b3.filter(pl.col("equities_closed"))["date"].unique().to_list()
+        full = with_b3_schedule(full, closed, date(b3["date"].max().year, 12, 31))  # type: ignore[union-attr]
     write_parquet(full, path)
     if run is not None:
         run.count("calendar_day", in_=days.height, out=full.height)

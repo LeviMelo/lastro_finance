@@ -112,6 +112,24 @@ def with_sessions(days: pl.DataFrame, sessions: list[date]) -> pl.DataFrame:
     )
 
 
+def with_b3_schedule(days: pl.DataFrame, closed: list[date], published_through: date | None) -> pl.DataFrame:
+    """After the last observed session, `is_b3_trading_day` from B3's published calendar (OQ-1): a business day is a
+    trading day unless B3 lists it as closed for equities; a weekday B3 lists as closed is not one either. Dates
+    beyond the last year B3 has published stay null."""
+    if published_through is None:
+        return days
+    known = days.filter(pl.col("is_b3_trading_day").is_not_null())
+    last = known["date"].max() if known.height else None
+    future = pl.col("date") > last if last is not None else pl.lit(True)
+    within = future & (pl.col("date") <= published_through)
+    return days.with_columns(
+        pl.when(within)
+        .then(pl.col("is_anbima_business_day") & ~pl.col("date").is_in(closed))
+        .otherwise(pl.col("is_b3_trading_day"))
+        .alias("is_b3_trading_day")
+    )
+
+
 def extend_back(days: pl.DataFrame, publication: list[date]) -> pl.DataFrame:
     """Prepend the dates from the first publication day to the day before ANBIMA's first date; a business day is a
     publication day. `du_index` is recomputed over the whole range."""

@@ -20,6 +20,7 @@ from fin.ingest.anbima_calendar import AnbimaCalendar
 from fin.ingest.b3_cotahist import B3Cotahist
 from fin.ingest.b3_events import B3CompanyEvents
 from fin.ingest.b3_fixed_income import B3FixedIncome
+from fin.ingest.b3_holidays import B3Holidays
 from fin.ingest.base import Connector
 from fin.ingest.context import context_connectors
 from fin.ingest.cvm_funds import CvmFiCda, CvmFii, CvmFiInfDiario
@@ -84,6 +85,7 @@ CONNECTORS: dict[str, type[Connector]] = {
         YahooIntraday,
         B3CompanyEvents,
         B3FixedIncome,
+        B3Holidays,
         SndPuHistorico,
         *context_connectors(),
     )
@@ -91,6 +93,7 @@ CONNECTORS: dict[str, type[Connector]] = {
 
 # The calendar first: the windowed snapshots compute their dates from it.
 DAILY: tuple[str, ...] = (
+    "b3_holidays",  # before the calendar: B3's published closures extend is_b3_trading_day (OQ-1)
     "anbima_calendar",
     "anbima_titulos_publicos",
     "anbima_ettj",

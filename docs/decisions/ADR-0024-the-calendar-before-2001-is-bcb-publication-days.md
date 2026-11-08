@@ -20,3 +20,11 @@ every business day from 1986-03-06. Over 2001-2005 its dates equal ANBIMA's busi
   Plano Cruzado) while B3 traded.
 - `is_b3_trading_day` is filled from observed standard-lot sessions between the first and the last session. 104
   business days since 1995 had no session (OQ-1).
+
+**Addendum (2026-11-08, OQ-1): future B3 closures.**
+- B3 publishes its calendar on one page, with a section per year from 2021 (`b3_holidays`, archived daily).
+- After the last observed session, `is_b3_trading_day` is a business day that B3 does not list as an equities
+  closure, up to the last year published. Later dates stay null.
+- Against the sessions of 2021-2026: 0 differences either way.
+- Local closures are included: 2026-12-24 and 12-31 are not ANBIMA holidays but B3 closures, and São Paulo's
+  anniversary closed B3 in 2021 only.

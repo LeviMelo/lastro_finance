@@ -19,6 +19,7 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `anbima_vna` | ANBIMA | P | **ephemeral: 6 business days** | archiving since 2026-10-29 | [note](docs/sources/anbima_vna.md) |
 | `anbima_debentures` | ANBIMA | P | **ephemeral: 6 business days** | archiving since 2026-10-29 | [note](docs/sources/anbima_debentures.md) |
 | `anbima_projecoes` | ANBIMA | P | **ephemeral: latest values only** | archiving since 2026-11-07 | [note](docs/sources/anbima_projecoes.md) |
+| `b3_holidays` | B3 | P | 2021– | parsed | [note](docs/sources/b3_holidays.md) |
 | `b3_bdi` | B3 | P | **ephemeral: 21 business days** (DebenturesBusiness: M-18, backfilled from 2025-05-08) | archiving since 2026-10-07 | [note](docs/sources/b3_settlement_prices.md) |
 | `b3_instruments` | B3 | P | **since 2025-06-10, start may roll (OQ-19)** | archiving; served history backfilled | [note](docs/sources/b3_instruments.md) |
 | `b3_pesquisapregao` | B3 | P | PR 2018-01-02–, TS 2000-01-14– | archiving daily since 2026-11-07; TS and PR parsed (PR backfill pending) | [note](docs/sources/b3_settlement_prices.md) |

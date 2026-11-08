@@ -87,6 +87,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/ptax.py` | BCB PTAX (Olinda OData): every currency 1984– → staging `quote`, `currency`; series `bcb_ptax:<CCY>:buy/sell` |
 | `ingest/anbima_parsers.py` | ANBIMA ETTJ (Svensson parameters, vertices), VNA, debentures, government bonds, projections |
 | `ingest/nefin.py` | NEFIN risk factors (market, SMB, HML, WML, IML, risk-free) |
+| `ingest/b3_holidays.py` | B3's trading calendar page → staging `market_day`; future `is_b3_trading_day` (ADR-0024) |
 | `ingest/b3_pr.py` | B3 PR files (BVBG.086.01 price report: trades, settlement, open interest; several snapshots per day merged) → staging `price_report` |
 | `ingest/b3_taxaswap.py` | B3 reference rates (TaxaSwap TS files 2001–: DI, IPCA, FX curves by vertex) → staging `swap_rate` |
 | `ingest/cvm_funds.py` | CVM FII monthly/quarterly/annual and FIAGRO monthly reports, fund daily NAV (`inf_diario`), fund holdings (CDA) → staging |

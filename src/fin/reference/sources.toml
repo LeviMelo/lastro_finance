@@ -31,6 +31,15 @@ ephemeral = true
 status = "archiving"
 recon = "docs/sources/b3_settlement_prices.md"
 
+[b3_holidays]
+name = "Calendário de negociação: feriados"
+institution = "B3"
+access = "HTML page, one per site (sections per year)"
+tier = "P"
+ephemeral = true
+status = "parsed"
+recon = "docs/sources/b3_holidays.md"
+
 [b3_fixed_income]
 name = "Renda fixa de balcão do BDI com histórico (Negócio a negócio, Liquidação, Estoque)"
 institution = "B3"
