@@ -21,3 +21,6 @@ build/
 .idea/
 Thumbs.db
 desktop.ini
+
+# owner secrets (API tokens): never in git
+/secrets.toml

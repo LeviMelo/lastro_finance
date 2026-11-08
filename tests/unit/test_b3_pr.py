@@ -150,3 +150,12 @@ def test_connector_routes_pr_and_ignores_empty_download() -> None:
     assert "price_report" in B3PesquisaPregao.contracts and "swap_rate" in B3PesquisaPregao.contracts
     with pytest.raises(b3_pr.NotData):
         b3_pr.snapshots(b"PK\x05\x06" + b"\x00" * 18)  # the 22-byte empty zip of a day without a file
+
+
+def test_kept_tzst_holds_the_same_snapshots_and_parses_the_same() -> None:
+    b = blob(HEAD, HEAD.replace(b"18:39:38", b"19:16:45"))
+    kept, ext, record = b3_pr.extract_snapshots(b)
+    assert ext == "tzst" and kept[:4] == b3_pr.ZSTD_MAGIC
+    assert sorted(b3_pr.snapshots(kept)) == sorted(b3_pr.snapshots(b))
+    assert [m["name"] for m in record["outer"]] == ["PR261106.zip"] and len(record["inner"]) == 2
+    assert b3_pr.extract_snapshots(b)[0] == kept  # deterministic: content addressing holds

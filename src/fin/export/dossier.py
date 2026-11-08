@@ -96,8 +96,25 @@ def holdings_table(con: duckdb.DuckDBPyConnection, p: Portfolio, as_of: date) ->
             """,
             [tk, as_of, as_of],
         ).fetchone()
-        if r is None:
-            rows.append({"ticker": tk, "quantity": qty, "status": "sem preço (instrumento não encontrado)"})
+        if r is None:  # not in COTAHIST (fixed-income ETFs): the B3 Price Report's last price, if any
+            try:
+                pr = con.execute(
+                    "SELECT trade_date, close FROM price_report_close WHERE ticker = ? AND trade_date <= ? "
+                    "ORDER BY trade_date DESC LIMIT 1",
+                    [tk, as_of],
+                ).fetchone()
+            except duckdb.CatalogException:
+                pr = None
+            if pr is None:
+                rows.append({"ticker": tk, "quantity": qty, "status": "sem preço (instrumento não encontrado)"})
+                continue
+            d, close = pr
+            stale = (as_of - d).days
+            rows.append({
+                "ticker": tk, "asset_class": "fund_quota", "quantity": qty, "price_date": d, "close_brl": close,
+                "market_value_brl": qty * close, "method": "B3 Price Report: último preço (fora do COTAHIST)",
+                "status": "ok" if stale <= 7 else f"preço defasado ({stale} dias)",
+            })  # fmt: skip
             continue
         iid, cls, d, close = r
         stale = (as_of - d).days
@@ -220,31 +237,36 @@ def fii_fundamentals(con: duckdb.DuckDBPyConnection, h: pl.DataFrame, as_of: dat
 
 
 def etf_fundamentals(con: duckdb.DuckDBPyConnection, h: pl.DataFrame, as_of: date) -> pl.DataFrame:
-    """Per ETF line: the latest NAV per quota delivered by `as_of` (Fundos.NET daily report, verified link) and the
-    premium of that day's close over it."""
-    ids = h.filter(pl.col("instrument_id").is_not_null())["instrument_id"].to_list()
-    if not ids:
+    """Per ETF line (by ticker): the latest NAV per quota delivered by `as_of` (Fundos.NET daily report, verified
+    link) and the premium of that day's close over it; the close is COTAHIST's, or the B3 Price Report's for a
+    fixed-income ETF (ADR-0029)."""
+    tickers = h["ticker"].to_list() if "ticker" in h.columns else []
+    if not tickers:
         return pl.DataFrame()
     return _q(
         con,
         """
         WITH n AS (
-            SELECT l.instrument_id, e.fund_cnpj, e.reference_date, e.quota_value_brl, e.net_assets_brl
+            SELECT l.ticker, l.instrument_id, e.fund_cnpj, e.reference_date, e.quota_value_brl, e.net_assets_brl
             FROM etf_link l JOIN etf_daily e USING (fund_cnpj)
-            WHERE l.verified AND l.instrument_id IN (SELECT unnest(?)) AND e.reference_date <= ?
+            WHERE l.verified AND l.ticker IN (SELECT unnest(?)) AND e.reference_date <= ?
               AND CAST(e.delivered_at AT TIME ZONE 'America/Sao_Paulo' AS DATE) <= ? AND e.quota_value_brl > 0
-            QUALIFY row_number() OVER (PARTITION BY l.instrument_id
-                                       ORDER BY e.reference_date DESC, e.delivered_at DESC) = 1
+            QUALIFY row_number() OVER (PARTITION BY l.ticker ORDER BY e.reference_date DESC, e.delivered_at DESC) = 1
+        ), c AS (
+            SELECT n.*, coalesce(
+                (SELECT CAST(p.close AS DOUBLE) FROM price_daily p WHERE p.instrument_id = n.instrument_id
+                   AND p.trade_date = n.reference_date AND p.market_segment = 'lote_padrao'),
+                (SELECT r.close FROM price_report_close r WHERE r.ticker = n.ticker AND r.trade_date = n.reference_date)
+            ) AS close_brl
+            FROM n
         )
-        SELECT p.ticker, n.fund_cnpj, n.reference_date AS nav_reference_date,
-               CAST(n.quota_value_brl AS DOUBLE) AS nav_per_quota, CAST(n.net_assets_brl AS DOUBLE) AS net_assets_brl,
-               CAST(p.close AS DOUBLE) AS close_brl, CAST(p.close AS DOUBLE) / CAST(n.quota_value_brl AS DOUBLE) - 1
-                   AS premium
-        FROM n JOIN price_daily p ON p.instrument_id = n.instrument_id AND p.trade_date = n.reference_date
-             AND p.market_segment = 'lote_padrao'
+        SELECT ticker, fund_cnpj, reference_date AS nav_reference_date,
+               CAST(quota_value_brl AS DOUBLE) AS nav_per_quota, CAST(net_assets_brl AS DOUBLE) AS net_assets_brl,
+               close_brl, close_brl / CAST(quota_value_brl AS DOUBLE) - 1 AS premium
+        FROM c WHERE close_brl IS NOT NULL
         ORDER BY 1
         """,
-        [ids, as_of, as_of],
+        [tickers, as_of, as_of],
     )
 
 

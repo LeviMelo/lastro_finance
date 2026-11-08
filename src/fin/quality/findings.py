@@ -809,7 +809,7 @@ def etf_link(zones: Zones) -> pl.DataFrame:
     con = duckdb.connect(str(zones.catalog), read_only=True, config={"max_temp_directory_size": "4GB"})
     try:
         cur = con.execute(
-            "SELECT fund_cnpj, trading_name, instrument_id, isin, first_date, last_date, common_days, median_ratio "
+            "SELECT fund_cnpj, ticker, trading_name, price_source, first_date, last_date, common_days, median_ratio "
             "FROM etf_link WHERE NOT verified"
         )
         df = pl.DataFrame(cur.fetchall(), schema=[d[0] for d in cur.description or []], orient="row")
@@ -824,11 +824,13 @@ def etf_link(zones: Zones) -> pl.DataFrame:
         # no common day: the quota has not traded while the fund reported (info); off the NAV: a wrong match (warn)
         pl.when(pl.col("common_days").is_null()).then(pl.lit("info")).otherwise(pl.lit("warn")).alias("severity"),
         pl.lit("instrument").alias("entity_kind"),
-        pl.format("{}>{}", "fund_cnpj", "instrument_id").alias("entity_id"),
+        pl.format("{}>{}", "fund_cnpj", "ticker").alias("entity_id"),
         pl.col("last_date").alias("vt"),
         pl.format("median close/NAV {} over {} days", pl.col("median_ratio").round(4), "common_days").alias("observed"),
         pl.lit("within 10 % of 1").alias("expected"),
-        pl.format("{} ({}) named like {}: not linked", "fund_cnpj", "trading_name", "isin").alias("detail"),
+        pl.format(
+            "{} ({}) and {} ({} prices): not linked", "fund_cnpj", "trading_name", "ticker", "price_source"
+        ).alias("detail"),
         pl.format("etf_link {} {}..{}", "fund_cnpj", "first_date", "last_date").alias("evidence"),
     )
 

@@ -446,6 +446,9 @@ class B3PesquisaPregao(Connector):
     user_agent: ClassVar[str | None] = BROWSER_UA
     URL = "https://www.b3.com.br/pesquisapregao/download"
     contracts: ClassVar[dict[str, Contract]] = b3_taxaswap.CONTRACTS | b3_pr.CONTRACTS
+    # a PR is kept as its XML snapshots in tar+zstd (ADR-0031): ~35 s of CPU and ~1 GB of RAM each, done in the
+    # download threads, so three days are compressed at once
+    concurrency: ClassVar[int] = 3
 
     def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
         yield from b3_taxaswap.parse_payload(blob, row)
@@ -489,6 +492,7 @@ class B3PesquisaPregao(Connector):
                     conditional=False,
                     min_bytes=100,
                     locator=f"file={name}",
+                    extract=b3_pr.extract_snapshots if fam == "PR" else None,
                 )
 
 

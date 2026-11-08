@@ -15,6 +15,7 @@ Views:
 - `insider_movement`: CVM VLMO insider positions and trades by role group, with delivery date and latest flag;
 - `etf_daily` / `etf_nav`: ETF daily reports (every version / the latest per date), `etf_link` to the instrument;
   `etf_position`: ETF monthly portfolios; `crypto_daily`: Binance daily klines (tier S);
+- `price_report_close`: B3 Price Report closes per ticker and day (fixed-income ETFs' only price);
 - debentures (ADR-0028): `debenture`, `debenture_terms`, `debenture_pu` (SND accrued PU), `debenture_secondary_price`;
 - `intraday_bar`: Yahoo 5-minute bars (tier U);
 - macro `universe(date, asset_class)`: instruments trading in the 30 days up to a date, delisted later or not;
@@ -167,6 +168,15 @@ def views(z: Zones) -> dict[str, str]:
         "etf_daily": _scan(c / "etf_nav" / "*.parquet"),
         "etf_nav": f"SELECT * FROM {_rp(c / 'etf_nav' / '*.parquet')} WHERE is_latest",
         "etf_link": _scan(c / "etf_link" / "*.parquet"),
+        # B3 Price Report closes (BVBG.086, 2018-; ADR-0031): the last regular price per ticker and day, the only
+        # price of instruments COTAHIST omits (fixed-income ETFs); the latest file of the day wins
+        "price_report_close": f"""
+            SELECT ticker, trade_date, CAST(last_price AS DOUBLE) AS close, CAST(avg_price AS DOUBLE) AS avg_price,
+                   regular_trade_count, regular_quantity, volume_brl, file_date
+            FROM {_rp(s / "b3_pesquisapregao" / "price_report" / "**" / "*.parquet")}
+            WHERE last_price IS NOT NULL
+            QUALIFY row_number() OVER (PARTITION BY ticker, trade_date ORDER BY file_date DESC) = 1
+        """,
         # crypto daily klines (Binance, tier S): a daily file and the month's file repeat a day; one row per day
         "crypto_daily": f"""
             FROM {_rp(s / "binance" / "kline" / "**" / "*.parquet")}

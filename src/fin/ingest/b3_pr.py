@@ -33,6 +33,7 @@ from datetime import UTC, date, datetime
 from typing import Any
 
 import polars as pl
+import zstandard
 
 from fin.ingest.base import NotData, Parsed
 from fin.schema import Column, Contract, Rule
@@ -155,8 +156,66 @@ _APP_AT = re.compile(rb"<CreDt>(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})Z</CreDt>")
 _OPEN, _CLOSE = b"<PricRpt>", b"</PricRpt>"
 
 
+ZSTD_MAGIC = bytes.fromhex("28b52ffd")
+# Stored form of a downloaded PR (ADR-0031): the day's XML snapshots, byte for byte, in a deterministic tar, compressed
+# with zstd level 16 and long-distance matching over a 256 MB window, so a snapshot is coded against the previous one
+# (95-99 % identical). 2026-11-06: 11.08 MB as served, 7.28 MB as 4 XML at zstd 19, 2.98 MB so (36 s).
+PR_LEVEL, PR_WINDOW_LOG = 16, 28
+
+
+def extract_snapshots(blob: bytes) -> tuple[bytes, str, dict[str, Any]]:
+    """What is kept of a PR download: its XML snapshots in a `.tzst`, and a record of the zip's structure."""
+    import tarfile
+
+    try:
+        outer = zipfile.ZipFile(io.BytesIO(blob))
+    except zipfile.BadZipFile as e:
+        raise NotData(f"B3 PR: not a zip ({e})") from e
+    record: dict[str, Any] = {"outer": [{"name": i.filename, "size": i.file_size, "crc32": i.CRC}
+                                        for i in outer.infolist()], "inner": []}  # fmt: skip
+    members = snapshots(blob)
+    for i in outer.infolist():
+        data = outer.read(i)
+        if data[:2] == b"PK":
+            inner = zipfile.ZipFile(io.BytesIO(data))
+            record["inner"] += [{"name": j.filename, "size": j.file_size, "crc32": j.CRC, "date_time": j.date_time}
+                                for j in inner.infolist()]  # fmt: skip
+    buf = io.BytesIO()
+    with tarfile.open(fileobj=buf, mode="w", format=tarfile.USTAR_FORMAT) as tar:
+        for name, data in sorted(members):
+            info = tarfile.TarInfo(name)  # fixed metadata: equal snapshots give equal bytes (content addressing)
+            info.size, info.mtime, info.mode = len(data), 0, 0o644
+            tar.addfile(info, io.BytesIO(data))
+    params = zstandard.ZstdCompressionParameters.from_level(
+        PR_LEVEL, enable_ldm=True, window_log=PR_WINDOW_LOG, write_content_size=True
+    )
+    kept = zstandard.ZstdCompressor(compression_params=params).compress(buf.getvalue())
+    record["kept"] = {"format": "tar+zstd", "level": PR_LEVEL, "window_log": PR_WINDOW_LOG, "members": len(members)}
+    return kept, "tzst", record
+
+
+def _tzst_members(blob: bytes) -> list[tuple[str, bytes]]:
+    import tarfile
+
+    reader = zstandard.ZstdDecompressor(max_window_size=2**31).stream_reader(io.BytesIO(blob))
+    out: list[tuple[str, bytes]] = []
+    with tarfile.open(fileobj=reader, mode="r|") as tar:
+        for info in tar:
+            f = tar.extractfile(info)
+            if f is None:
+                raise LayoutError(f"B3 PR: tar member {info.name} is not a file")
+            out.append((info.name, f.read()))
+    return out
+
+
 def snapshots(blob: bytes) -> list[tuple[str, bytes]]:
-    """(member name, XML bytes) of the archived PR object (zip -> zip -> XML files). Nothing is executed."""
+    """(member name, XML bytes) of the archived PR object: zip -> zip -> XML files as served, or the `.tzst` kept
+    since ADR-0031 (`extract_snapshots`). Nothing is executed."""
+    if blob[:4] == ZSTD_MAGIC:
+        members = _tzst_members(blob)
+        if not members:
+            raise NotData("B3 PR: empty archive")
+        return members
     try:
         outer = zipfile.ZipFile(io.BytesIO(blob))
         members: list[tuple[str, bytes]] = []

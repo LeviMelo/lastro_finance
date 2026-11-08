@@ -61,7 +61,14 @@ ETF_LINK = Contract(
     provenance=False,
     columns=(
         Column("fund_cnpj", pl.String, "fund CNPJ", "CNPJ", nullable=False),
-        Column("instrument_id", pl.String, "the quota instrument", "id do instrumento", nullable=False),
+        Column("ticker", pl.String, "the quota's standard-lot ticker (acronym + 11)", "ticker", nullable=False),
+        Column(
+            "instrument_id",
+            pl.String,
+            "COTAHIST instrument (null: fixed-income ETF, not in COTAHIST)",
+            "id do instrumento",
+        ),
+        Column("price_source", pl.String, "cotahist or b3_price_report", "fonte do preço", nullable=False),
         Column("isin", pl.String, "the quota's ISIN", "ISIN"),
         Column("trading_name", pl.String, "B3 trading name", "nome de pregão"),
         Column("methods", pl.String, "trading_name, b3_listing or both (comma-separated)", "métodos", nullable=False),
@@ -71,7 +78,7 @@ ETF_LINK = Contract(
         Column("median_ratio", pl.Float64, "median close / NAV per quota", "mediana preço/cota", "ratio"),
         Column("verified", pl.Boolean, "median within the tolerance of 1", "verificado", nullable=False),
     ),
-    key=("fund_cnpj", "instrument_id"),
+    key=("fund_cnpj", "ticker"),
 )
 CONTRACTS = {"etf_nav": ETF_NAV, "etf_link": ETF_LINK}
 
@@ -151,7 +158,24 @@ def _dtype(name: str) -> pl.DataType | None:
     return None
 
 
+def _pr_closes(zones: Zones, tickers: list[str]) -> pl.DataFrame:
+    """(ticker, reference_date, close) from the B3 Price Report: the last regular price of the day."""
+    pr = _scan(zones.staging / "b3_pesquisapregao" / "price_report")
+    if pr is None or not tickers:
+        return pl.DataFrame(schema={"ticker": pl.String, "reference_date": pl.Date, "close": pl.Float64})
+    return (
+        pr.filter(pl.col("ticker").is_in(tickers) & pl.col("last_price").is_not_null())
+        .select(
+            "ticker", pl.col("trade_date").alias("reference_date"), pl.col("last_price").cast(pl.Float64).alias("close")
+        )
+        .unique(["ticker", "reference_date"], keep="last")
+        .collect()
+    )
+
+
 def link_frame(zones: Zones, nav: pl.DataFrame) -> pl.DataFrame:
+    """One row per (fund CNPJ, B3 ticker). The ticker's instrument is COTAHIST's when it trades there; fixed-income
+    ETFs (segment FIXED INCOME) never do, so their link has no instrument and is checked against the Price Report."""
     latest = nav.filter(pl.col("is_latest") & (pl.col("quota_value_brl") > 0))
     span = latest.group_by("fund_cnpj").agg(
         pl.col("reference_date").min().alias("first_date"), pl.col("reference_date").max().alias("last_date")
@@ -159,12 +183,18 @@ def link_frame(zones: Zones, nav: pl.DataFrame) -> pl.DataFrame:
     inst = pl.read_parquet(zones.core / "instrument" / "instrument.parquet")
     ids = pl.read_parquet(zones.core / "instrument_identifier" / "instrument_identifier.parquet")
     isin = ids.filter(pl.col("scheme") == "ISIN").group_by("instrument_id").agg(pl.col("value").first().alias("isin"))
+    tick = ids.filter(pl.col("scheme") == "TICKER").select("instrument_id", pl.col("value").alias("ticker")).unique()
+    main = tick.filter(pl.col("ticker").str.contains(r"^[A-Z0-9]{4}11$"))  # the quota's standard-lot ticker
     names = latest.drop_nulls("trading_name").select("fund_cnpj", "trading_name").unique()
-    by_name = names.join(
-        inst.filter(pl.col("codbdi") == "14").select("instrument_id", pl.col("short_name").alias("trading_name")),
-        on="trading_name",
-    ).with_columns(pl.lit("trading_name").alias("method"))
-    pairs = [by_name.select("fund_cnpj", "instrument_id", "method")]
+    by_name = (
+        names.join(
+            inst.filter(pl.col("codbdi") == "14").select("instrument_id", pl.col("short_name").alias("trading_name")),
+            on="trading_name",
+        )
+        .join(main, on="instrument_id")
+        .select("fund_cnpj", "ticker", pl.lit("trading_name").alias("method"))
+    )
+    pairs = [by_name]
     lf, fr = (
         _scan(zones.staging / "b3_funds_listed" / "listed_fund"),
         _scan(zones.staging / "b3_funds_listed" / "fund_report"),
@@ -174,44 +204,54 @@ def link_frame(zones: Zones, nav: pl.DataFrame) -> pl.DataFrame:
             lf.filter(pl.col("type_fund").str.starts_with("ETF")).select("fnet_id", "acronym").unique()
             .join(fr.select("fnet_id", "doc_id").unique(), on="fnet_id").collect()
             .join(nav.filter(pl.col("doc_id").is_not_null()).select("doc_id", "fund_cnpj"), on="doc_id")
-            .select("fund_cnpj", (pl.col("acronym") + "11").alias("value")).unique()
+            .select("fund_cnpj", (pl.col("acronym") + "11").alias("ticker"), pl.lit("b3_listing").alias("method"))
+            .unique()
         )  # fmt: skip
-        tick = ids.filter(pl.col("scheme") == "TICKER").select("instrument_id", "value").unique()
-        pairs.append(
-            acr.join(tick, on="value").select("fund_cnpj", "instrument_id", pl.lit("b3_listing").alias("method"))
-        )
+        pairs.append(acr)
     p = (
         pl.concat(pairs)
-        .group_by("fund_cnpj", "instrument_id")
+        .group_by("fund_cnpj", "ticker")
         .agg(pl.col("method").unique().sort().str.join(",").alias("methods"))
+        .join(main.unique("ticker", keep="first"), on="ticker", how="left")
     )
     if not p.height:
         return pl.DataFrame(schema={c.name: c.dtype for c in ETF_LINK.columns})
-    wanted = p["instrument_id"].unique().implode()
-    prices = (
+    wanted = p["instrument_id"].drop_nulls().unique().implode()
+    cot = (
         pl.scan_parquet(zones.core / "price_daily" / "*.parquet")
         .filter(pl.col("instrument_id").is_in(wanted) & (pl.col("market_segment") == "lote_padrao"))
-        .select("instrument_id", pl.col("trade_date").alias("reference_date"), "close")
+        .select("instrument_id", pl.col("trade_date").alias("reference_date"), pl.col("close").cast(pl.Float64))
         .collect()
     )
+    priced = pl.concat(
+        [
+            p.drop_nulls("instrument_id")
+            .join(cot, on="instrument_id")
+            .select("fund_cnpj", "ticker", "reference_date", "close"),
+            p.filter(pl.col("instrument_id").is_null())
+            .join(_pr_closes(zones, p.filter(pl.col("instrument_id").is_null())["ticker"].to_list()), on="ticker")
+            .select("fund_cnpj", "ticker", "reference_date", "close"),
+        ]
+    )
     ratio = (
-        p.join(prices, on="instrument_id")
-        .join(latest.select("fund_cnpj", "reference_date", "quota_value_brl"), on=["fund_cnpj", "reference_date"])
-        .group_by("fund_cnpj", "instrument_id")
+        priced.join(latest.select("fund_cnpj", "reference_date", "quota_value_brl"), on=["fund_cnpj", "reference_date"])
+        .group_by("fund_cnpj", "ticker")
         .agg(
             pl.len().alias("common_days"),
-            (pl.col("close").cast(pl.Float64) / pl.col("quota_value_brl").cast(pl.Float64))
-            .median()
-            .alias("median_ratio"),
+            (pl.col("close") / pl.col("quota_value_brl").cast(pl.Float64)).median().alias("median_ratio"),
         )
     )
     return (
-        p.join(ratio, on=["fund_cnpj", "instrument_id"], how="left")
+        p.join(ratio, on=["fund_cnpj", "ticker"], how="left")
         .join(span, on="fund_cnpj", how="left")
         .join(isin, on="instrument_id", how="left")
         .join(names.group_by("fund_cnpj").agg(pl.col("trading_name").first()), on="fund_cnpj", how="left")
         .with_columns(
             pl.col("common_days").cast(pl.Int64),
+            pl.when(pl.col("instrument_id").is_null())
+            .then(pl.lit("b3_price_report"))
+            .otherwise(pl.lit("cotahist"))
+            .alias("price_source"),
             ((pl.col("median_ratio") - 1).abs() <= ETF_LINK_TOLERANCE).fill_null(False).alias("verified"),
         )
         .select(ETF_LINK.names)

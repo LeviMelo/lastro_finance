@@ -76,6 +76,8 @@ class Fetcher:
         self.raw = raw
         self.client = client
         self.connector_version = connector_version
+        # extracts made in the download threads (CPU-heavy ones, e.g. the PR tar+zstd), keyed by response id
+        self._extracted: dict[int, Any] = {}
 
     def download(self, spec: FetchSpec) -> tuple[Any, Any, Any]:
         """The network half of `fetch`: (fetched_at, response, previous manifest row). Thread-safe; it writes
@@ -99,6 +101,11 @@ class Fetcher:
             content=spec.content.encode("utf-8") if spec.content is not None else None,
             headers=headers,
         )
+        if spec.extract is not None and resp.status_code == 200 and len(resp.content) >= spec.min_bytes:
+            try:  # done here, in parallel; an error is raised again where `fetch` would have raised it
+                self._extracted[id(resp)] = spec.extract(resp.content)
+            except Exception as e:
+                self._extracted[id(resp)] = e
         return fetched_at, resp, previous
 
     def fetch(self, spec: FetchSpec, downloaded: tuple[Any, Any, Any] | None = None) -> FetchOutcome | None:
@@ -152,7 +159,10 @@ class Fetcher:
         if spec.extract is not None:  # keep only the part that matters; record what the full download was
             import json
 
-            content, ext, record = spec.extract(resp.content)
+            done = self._extracted.pop(id(resp), None)
+            if isinstance(done, Exception):
+                raise done
+            content, ext, record = done if done is not None else spec.extract(resp.content)
             record = {"request": json.loads(request), "full_sha256": hashlib.sha256(resp.content).hexdigest(),
                       "full_bytes": len(resp.content), **record}  # fmt: skip
             rec = self.raw.put_bytes(json.dumps(record, sort_keys=True, ensure_ascii=False).encode("utf-8"), "json")

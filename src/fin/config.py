@@ -71,3 +71,18 @@ class Zones:
 def zones() -> Zones:
     home = os.environ.get("FIN_DATA_HOME")
     return Zones(Path(home) if home else REPO_ROOT / "data")
+
+
+def secret(name: str) -> str | None:
+    """An owner API token: the environment variable `FIN_<NAME>` or `<name>` in the git-ignored `secrets.toml` at
+    the repository root. Never logged: the manifest redacts `api_key`, `token` and `authorization`."""
+    import tomllib
+
+    env = os.environ.get(f"FIN_{name.upper()}")
+    if env:
+        return env.strip()
+    path = REPO_ROOT / "secrets.toml"
+    if not path.exists():
+        return None
+    value = tomllib.loads(path.read_text(encoding="utf-8")).get(name)
+    return str(value).strip() if value else None

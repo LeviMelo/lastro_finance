@@ -61,7 +61,11 @@ def _home(tmp_path: Path) -> Zones:
     )  # fmt: skip
     write_parquet(
         pl.DataFrame(
-            {"instrument_id": ["i1", "i2"], "scheme": ["ISIN", "ISIN"], "value": ["BRBOVACTF003", "BRDIVOCTF003"]}
+            {
+                "instrument_id": ["i1", "i2", "i1", "i2"],
+                "scheme": ["ISIN", "ISIN", "TICKER", "TICKER"],
+                "value": ["BRBOVACTF003", "BRDIVOCTF003", "BOVA11", "DIVO11"],
+            }
         ),
         z.core / "instrument_identifier" / "instrument_identifier.parquet",
     )  # fmt: skip
@@ -90,3 +94,35 @@ def test_link_is_verified_by_price_not_by_name(tmp_path: Path) -> None:
     assert out["etf_link"] == 2
     link = pl.read_parquet(z.core / "etf_link" / "etf_link.parquet")
     assert dict(link.select("fund_cnpj", "verified").rows()) == {"10406511000161": True, "31024153000100": False}
+
+
+def test_a_fixed_income_etf_links_by_b3_listing_and_is_priced_by_the_price_report(tmp_path: Path) -> None:
+    z = _home(tmp_path)
+    s = z.staging
+    write_parquet(
+        pl.DataFrame({"doc_id": [9], "fund_cnpj": ["31024153000199"], "reference_date": [date(2026, 1, 2)],
+                      "quota_value_brl": pl.Series([Decimal("118.5")], dtype=pl.Decimal(38, 12))})
+        .with_columns(**{k: pl.lit(v) for k, v in PROV.items()}),
+        s / "b3_fundosnet_daily" / "daily" / "b.parquet",
+    )  # fmt: skip
+    write_parquet(
+        pl.DataFrame({"doc_id": [9], "delivered_at": [datetime(2026, 1, 5, tzinfo=UTC)], "version": [1],
+                      "trading_name": ["IT NOW IMA-B"]}),
+        s / "b3_fundosnet_daily" / "listing" / "b.parquet",
+    )  # fmt: skip
+    write_parquet(pl.DataFrame({"type_fund": ["ETF-RF"], "fnet_id": [7], "acronym": ["IMAB"]}),
+                  s / "b3_funds_listed" / "listed_fund" / "a.parquet")  # fmt: skip
+    write_parquet(pl.DataFrame({"fnet_id": [7], "doc_id": [9]}), s / "b3_funds_listed" / "fund_report" / "a.parquet")
+    write_parquet(
+        pl.DataFrame({"ticker": ["IMAB11"], "trade_date": [date(2026, 1, 2)], "last_price": [118.55]}),
+        s / "b3_pesquisapregao" / "price_report" / "a.parquet",
+    )
+    etfs.build(z)
+    link = pl.read_parquet(z.core / "etf_link" / "etf_link.parquet").filter(pl.col("ticker") == "IMAB11")
+    r = link.row(0, named=True)
+    assert (r["instrument_id"], r["price_source"], r["methods"], r["verified"]) == (
+        None,
+        "b3_price_report",
+        "b3_listing",
+        True,
+    )
