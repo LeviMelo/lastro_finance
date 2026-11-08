@@ -16,6 +16,7 @@ Checks:
   non-positive price (`error`: it breaks every return through it). The average (PREMED) is not checked: it lies
   outside high/low on 6,520 sessions (1989-91 and, from 2021, mostly BDRs), so it includes trades the high/low do
   not (docs/sources/b3_cotahist.md);
+- `series_gap`: a daily series silent for more than 5 business days (completeness, invariant 12);
 - `fund_bridge`: CVM 175 classes whose quota does not continue the legacy fund's (jump or gap);
 - `balance_identity`: total assets = liabilities + equity on every consolidated CVM filing;
 - `cash_vs_yahoo`: every Yahoo dividend of a line we hold matched by a cash event of ours (completeness);
@@ -653,6 +654,64 @@ def fund_bridge(zones: Zones) -> pl.DataFrame:
     )
 
 
+SERIES_GAP_BD = 5  # a daily series silent for more business days than this is a finding
+
+
+def series_gap(zones: Zones) -> pl.DataFrame:
+    """Completeness of daily series (invariant 12): a series published daily (`frequency` D and a daily cadence in
+    `frequency_text`) with more than 5 ANBIMA business days between two observations. Measured 2026-11-08: 160
+    such series, every BCB/B3/ANBIMA one with gaps of at most 2; the longer ones are the publishers' (US markets
+    after 2001-09-11 and in 2012-10, the US 30-year bond not issued 2002-2006, CEPEA coffee 2010-09). Kept as gaps."""
+    obs, defs = zones.core / "series_observation", zones.core / "series_definition"
+    cal_path = zones.core / "reference" / "calendar_day" / "calendar_day.parquet"
+    if not obs.exists() or not defs.exists() or not cal_path.exists():
+        return _frame([])
+    d = (
+        pl.scan_parquet(defs / "*.parquet")
+        .filter(
+            (pl.col("frequency") == "D")
+            & (pl.col("frequency_text").is_null() | pl.col("frequency_text").str.contains("(?i)dai|diá"))
+        )
+        .select("series_id")
+        .unique()
+        .collect()
+    )
+    o = (
+        pl.scan_parquet(obs / "*.parquet")
+        .filter(pl.col("series_id").is_in(d["series_id"].to_list()) & (pl.col("vt_reference").str.len_chars() == 10))
+        .select("series_id", pl.col("vt_reference").str.to_date().alias("d"))
+        .unique()
+        .collect()
+    )
+    cal = pl.read_parquet(cal_path).select(
+        pl.col("date").alias("d"), pl.col("is_anbima_business_day").cast(pl.Int32).cum_sum().alias("k")
+    )
+    g = (
+        o.join(cal, on="d")
+        .sort("series_id", "d")
+        .with_columns(
+            (pl.col("k") - pl.col("k").shift(1).over("series_id")).alias("gap"),
+            pl.col("d").shift(1).over("series_id").alias("d0"),
+        )
+        .filter(pl.col("gap") > SERIES_GAP_BD)
+    )
+    return g.select(
+        pl.lit("series_gap").alias("check_id"),
+        pl.lit("info").alias("severity"),
+        pl.lit("series").alias("entity_kind"),
+        pl.col("series_id").alias("entity_id"),
+        pl.col("d").alias("vt"),
+        pl.format("{} business days without a value after {}", "gap", "d0").alias("observed"),
+        pl.lit(f"at most {SERIES_GAP_BD} business days between two values").alias("expected"),
+        pl.lit("a daily series is silent for more than a week").alias("detail"),
+        pl.lit("core series_observation; core calendar_day").alias("evidence"),
+        pl.lit("acknowledged").alias("status"),
+        pl.lit("rule: the publisher served no values for these days; kept as a gap, never filled").alias(
+            "resolution_note"
+        ),
+    )
+
+
 CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "vna_ntnb_vs_ipca": vna_ntnb_vs_ipca,
     "share_count_unit_mismatch": share_count_unit_mismatch,
@@ -665,6 +724,7 @@ CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "cash_vs_yahoo": cash_vs_yahoo,
     "balance_identity": balance_identity,
     "fund_bridge": fund_bridge,
+    "series_gap": series_gap,
 }
 
 
