@@ -157,7 +157,7 @@ PRICE_DAILY = Contract(
             "fator BRL (denominador)",
             "BRL per currency unit (denominator)",
             nullable=False,
-        ),  # fmt: skip
+        ),
     ),
     rules=(
         Rule("segment_known", pl.col("market_segment").is_in(list(SEGMENTS.values()))),

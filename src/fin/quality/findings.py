@@ -16,6 +16,8 @@ Checks:
   non-positive price (`error`: it breaks every return through it). The average (PREMED) is not checked: it lies
   outside high/low on 6,520 sessions (1989-91 and, from 2021, mostly BDRs), so it includes trades the high/low do
   not (docs/sources/b3_cotahist.md);
+- `fii_payout_suspect`: Fundos.NET payouts with a malformed ISIN or a payment before the data-com, kept;
+- `quarantine`: rows that broke a contract rule, counted per source, dataset and rule (invariant 11);
 - `series_gap`: a daily series silent for more than 5 business days (completeness, invariant 12);
 - `fund_bridge`: CVM 175 classes whose quota does not continue the legacy fund's (jump or gap);
 - `balance_identity`: total assets = liabilities + equity on every consolidated CVM filing;
@@ -712,6 +714,73 @@ def series_gap(zones: Zones) -> pl.DataFrame:
     )
 
 
+def quarantine(zones: Zones) -> pl.DataFrame:
+    """Invariant 11: rows that broke a contract rule are kept in quarantine, never dropped. One finding per
+    (source, dataset, rule) with the count, so every reject is listed where the rest of the quality record is."""
+    import duckdb
+
+    root = zones.quarantine
+    if not root.exists():
+        return _frame([])
+    con = duckdb.connect()
+    rows: list[dict[str, object]] = []
+    for src in sorted(p for p in root.iterdir() if p.is_dir() and p.name != "core"):
+        for ds in sorted(p for p in src.iterdir() if p.is_dir()):
+            g = str(ds).replace("\\", "/") + "/**/*.parquet"
+            try:
+                res = con.execute(
+                    f"SELECT r, count(*) FROM (SELECT unnest(reject_rules) r FROM read_parquet('{g}', "
+                    "hive_partitioning = false, union_by_name = true)) GROUP BY r ORDER BY r"
+                ).fetchall()
+            except duckdb.Error:
+                continue
+            for rule, n in res:
+                rows.append({
+                    "check_id": "quarantine", "severity": "info", "entity_kind": "series",
+                    "entity_id": f"{src.name}/{ds.name}:{rule}", "vt": None, "observed": f"{n} rows",
+                    "expected": "0 rows breaking the rule", "detail": f"rows of {src.name}/{ds.name} broke rule {rule}",
+                    "evidence": f"quarantine/{src.name}/{ds.name}",
+                })  # fmt: skip
+    df = _frame(rows)
+    return df.with_columns(
+        pl.lit("acknowledged").alias("status"),
+        pl.lit("rule: kept in quarantine with the rule they broke; never dropped, never in staging").alias(
+            "resolution_note"
+        ),
+    )
+
+
+def fii_payout_suspect(zones: Zones) -> pl.DataFrame:
+    """Fundos.NET payouts kept as written whose fields the source got wrong: a malformed ISIN (matched in core
+    through the trading code) or a payment dated before the data-com (a year typo; the data-com and the value, which
+    are what adjustment uses, are untouched)."""
+    d = read_parquet_dir(zones.staging / "b3_fundosnet" / "distribution")
+    if d is None:
+        return _frame([])
+    bad_isin = ~pl.col("isin").fill_null("").str.contains(r"^[A-Z]{2}[A-Z0-9]{9}\d$")
+    early = pl.col("payment_date") < pl.col("base_date")
+    s = d.filter(bad_isin | early).unique(["doc_id", "isin", "trading_code", "kind"])
+    return s.select(
+        pl.lit("fii_payout_suspect").alias("check_id"),
+        pl.lit("info").alias("severity"),
+        pl.lit("instrument").alias("entity_kind"),
+        pl.format("{}:{}:doc{}", "trading_code", "kind", "doc_id").alias("entity_id"),
+        pl.col("base_date").alias("vt"),
+        pl.format("isin {} payment {}", "isin", "payment_date").alias("observed"),
+        pl.lit("a 12-character ISIN; payment on or after the data-com").alias("expected"),
+        pl.when(bad_isin)
+        .then(pl.lit("malformed ISIN in the notice"))
+        .otherwise(pl.lit("payment dated before the data-com in the notice"))
+        .alias("detail"),
+        pl.format("staging b3_fundosnet/distribution doc {}", "doc_id").alias("evidence"),
+        pl.lit("acknowledged").alias("status"),
+        pl.lit(
+            "rule: kept as the notice writes it; core matches a malformed ISIN by trading code; adjustment "
+            "uses the data-com and the value only"
+        ).alias("resolution_note"),
+    )
+
+
 CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "vna_ntnb_vs_ipca": vna_ntnb_vs_ipca,
     "share_count_unit_mismatch": share_count_unit_mismatch,
@@ -725,6 +794,8 @@ CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "balance_identity": balance_identity,
     "fund_bridge": fund_bridge,
     "series_gap": series_gap,
+    "quarantine": quarantine,
+    "fii_payout_suspect": fii_payout_suspect,
 }
 
 

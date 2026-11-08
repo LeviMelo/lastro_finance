@@ -14,6 +14,7 @@ notice holds an `InformeMensal` instead of distributions and is counted as not d
 from __future__ import annotations
 
 import json
+import re
 import xml.etree.ElementTree as ET
 from collections.abc import Iterable
 from datetime import date, datetime
@@ -37,7 +38,7 @@ class LayoutError(ValueError):
 
 DISTRIBUTION = Contract(
     table="staging.b3_fundosnet.distribution",
-    version=1,
+    version=2,
     description="A fund's announced distribution per quota, from a structured 'Rendimentos e Amortizações' notice.",
     columns=(
         Column("doc_id", pl.Int64, "Fundos.NET document id", "id do documento", nullable=False),
@@ -67,8 +68,10 @@ DISTRIBUTION = Contract(
         Rule("kind_known", pl.col("kind").is_in(KINDS)),
         Rule("value_non_negative", pl.col("value_per_quota") >= 0),
         Rule("cnpj_14_digits", pl.col("fund_cnpj").str.contains(r"^\d{14}$")),
-        Rule("isin_shape", pl.col("isin").str.contains(r"^[A-Z]{2}[A-Z0-9]{9}\d$")),
-        Rule("payment_on_or_after_base", pl.col("payment_date") >= pl.col("base_date")),
+        # a malformed ISIN ("0", "-", "TGARCTF009") or a payment dated before the data-com (a year typo: base
+        # 2020-12-30, paid 2020-01-15) is the source's: the payout is kept as written and reported by the quality
+        # check `fii_payout_suspect`; core maps a malformed ISIN through the trading code (2026-11-08: 108 and 214
+        # rows had been quarantined, losing real payouts)
     ),
     key=("doc_id", "isin", "trading_code", "kind"),
 )
@@ -139,7 +142,7 @@ def parse_distribution(blob: bytes, row: dict[str, Any]) -> pl.DataFrame:
     common = {
         "doc_id": doc_id,
         "fund_name": _text(g, "NomeFundo"),
-        "fund_cnpj": _text(g, "CNPJFundo"),
+        "fund_cnpj": re.sub(r"\D", "", _text(g, "CNPJFundo") or "") or None,  # 27 notices write it formatted
         "admin_cnpj": _text(g, "CNPJAdministrador"),
         "info_date": _day(_text(g, "DataInformacao")),
     }

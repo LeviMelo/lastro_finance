@@ -42,3 +42,10 @@
 - One notice (id 991793) holds an `InformeMensal`: counted as not data.
 - Listing: 1.7 % of documents are re-filings (`versao` 2–5); `dataEntrega` is minute-precise Brasília time.
 - Personal contact fields (`ResponsavelInformacao`, `TelefoneContato`) are not parsed.
+- **Source errors kept, not quarantined (2026-11-08).**
+  - 27 notices write the CNPJ formatted (`17.007.443/0001-07`): it is normalized to 14 digits.
+  - 108 rows carry a malformed ISIN (`0`, `-`, `RBR PLUS`, `TGARCTF009` without `BR`). The payout is kept as written,
+    and core matches it through the trading code valid at the data-com.
+  - 214 rows have a payment date before the data-com (a year typo: base 2020-12-30, paid 2020-01-15). Kept as
+    written; adjustment uses only the data-com and the value.
+  - Both cases are listed by the quality check `fii_payout_suspect`.

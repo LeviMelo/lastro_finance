@@ -91,3 +91,15 @@ def test_old_layout_without_provento() -> None:
         ("BRVLJSCTF020", "VLJS11", "amortizacao", "Parcial")
     ]
     assert str(df["value_per_quota"][0]).startswith("23.9888159102366")
+
+
+def test_formatted_cnpj_and_malformed_isin_are_kept() -> None:
+    # 27 notices write the CNPJ formatted; some write an ISIN like "0": kept (core maps it by trading code)
+    blob = b"""<?xml version="1.0" encoding="UTF-8"?><DadosEconomicoFinanceiros><DadosGerais>
+<NomeFundo>F</NomeFundo><CNPJFundo>17.007.443/0001-07</CNPJFundo><CNPJAdministrador>00806535000154</CNPJAdministrador>
+<CodISINCota>0</CodISINCota><CodNegociacaoCota>ABCD11</CodNegociacaoCota></DadosGerais>
+<InformeRendimentos><Rendimento><DataBase>2020-12-30</DataBase><DataPagamento>2020-01-15</DataPagamento>
+<ValorProventoCota>0.5</ValorProventoCota></Rendimento></InformeRendimentos></DadosEconomicoFinanceiros>"""
+    df = fundosnet.parse_distribution(blob, _row(1))
+    good, bad = fundosnet.DISTRIBUTION.split(df)
+    assert bad.height == 0 and good["fund_cnpj"][0] == "17007443000107" and good["isin"][0] == "0"

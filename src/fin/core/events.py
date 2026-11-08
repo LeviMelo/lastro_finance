@@ -755,9 +755,21 @@ def cash_events(zones: Zones, dates: pl.Series) -> pl.DataFrame:
         isin = (
             ids.filter(pl.col("scheme") == "ISIN").select("instrument_id", pl.col("value").alias("isin")).unique("isin")
         )
-        f = f.unique(["isin", "kind", "base_date", "value_per_quota", "payment_date"]).join(
-            isin, on="isin", how="inner"
+        f = f.unique(["isin", "kind", "base_date", "value_per_quota", "payment_date"])
+        by_isin = f.join(isin, on="isin", how="inner")
+        # a notice whose ISIN is malformed ("0", "-", "TGARCTF009") is matched through its trading code, on the
+        # ticker valid at the data-com (fundosnet.DISTRIBUTION)
+        ticker = ids.filter(pl.col("scheme") == "TICKER").select(
+            "instrument_id", pl.col("value").alias("trading_code"), "vt_from", "vt_to"
         )
+        by_code = (
+            f.join(isin.select("isin"), on="isin", how="anti")
+            .join(ticker, on="trading_code", how="inner")
+            .filter(pl.col("base_date").is_between(pl.col("vt_from"), pl.col("vt_to") + pl.duration(days=30)))
+            .drop("vt_from", "vt_to")
+            .unique(["isin", "trading_code", "kind", "base_date", "value_per_quota", "payment_date"])
+        )
+        f = pl.concat([by_isin, by_code.select(by_isin.columns)])
         listing = _staging(zones, "b3_fundosnet", "listing")
         if listing is not None:
             first = listing.group_by("doc_id").agg(pl.col("delivered_at").min().alias("kt_published_at"))
