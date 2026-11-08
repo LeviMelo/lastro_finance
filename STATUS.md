@@ -4,74 +4,51 @@ What is true now. Rewritten in place, never appended; history is in git. Last re
 
 ## Where the project is
 
-Day one (2026-11-07).
-- **Scope set by the owner** (ADR-0011): the ledger starts in 2026; the holdings are stocks, FIIs, ETFs and Tesouro
-  Direto; economic context data is a domain of its own.
-- **Collection terms** (ADR-0012): automating what the owner could fetch by hand for the owner's own portfolio is the personal
-  use the sources' general terms allow. Collection stays polite and is never redistributed.
-- **Stage A passes its exit criteria.** **Stage B** has a note for every registered source (52). **Stage C**:
-  - core `price_daily` (spot and odd lot, 1986–2026, 7.34 M sessions) with instrument identity: 8,464
-    instruments, ISIN and time-ranged tickers, 911 pre-1995 codes linked (ADR-0015);
-  - core `series_observation`: 1,342+ series, 882,063 values with units (ADR-0013), PTAX for 10 currencies 1984–;
-  - core `corporate_event` (51,819: dividends, JCP, FII income, bonuses, splits, rights, quote-basis changes) from
-    B3, Yahoo, Fundos.NET, CVM IPE and COTAHIST itself, every stock event decided, and derived adjustment factors
-    (ADR-0016); core `tesouro_bond` and
-    `tesouro_price_daily` (150 bonds, 2004–);
-  - the query layer: `data/catalog.duckdb`, views only, incl. `fundamental_fact` and `price_adjusted` (ADR-0017);
-  - staging `expectation`: Focus market expectations 2000– (3.6 M statistics);
-  - core `issuer` (4,006 CNPJs: companies and FII/Fiagro funds) linked to 2,287 instruments (ADR-0018); `universe(date, class)` in the catalog;
-  - `valuation(date)` in the catalog: market cap, P/L, P/VP as known on a date, 2010– (270 issuers on 2026-11-06,
-    148 on 2015-06-30; share counts from DFP/ITR 2020– and FRE 2010–; ADR-0021);
-  - staging: Tesouro Direto 2004–, FII distributions, CVM statements 2010– (66.8 M lines), intraday 5-minute bars
-    (archived from 2026-11-07).
-- **Data quality** (ADR-0022): `fin quality` runs 8 named checks into `dq_finding`: 370 findings, all decided by
-  rule or review. Spin-offs are adjusted (22; ADR-0016).
-- **Golden portfolio** (PLAN §13.1): total return +37.38 % vs the plan's +37.2 %, price +28.69 % vs +28.5 %
-  (`scripts/check_golden_portfolio.py`; Stage D exit).
-- **Exit criteria** (`scripts/check_exit_criteria.py`): C, E, H and F's look-through pass; G is measured at 93.06 %
-  (Tesouro's own irregularities); H's restatement rule is unit-tested, since CVM's open data keeps only the latest
-  version (docs/evaluation/2026-11-08-exit-criteria.md). The CVM 175 bridge (Stage F) passes: 19,971 of 20,217 testable classes continue the legacy quota (ADR-0025).
-- **Storage is lean by rule** (ADR-0014): re-sent files as deltas, CVM zips as member deltas, staging keeps changed
-  rows, small files compacted. C: has 49 GB free: the binding limit.
-- **Data gaps are mapped and ranked** ([gap matrix](docs/evaluation/2026-11-07-data-gap-matrix.md)). Everything
-  priority 1 needs has a free route.
+Day two (2026-11-08). The data layer (stages A–H) is built and measured; the dossier (L) and portfolio analytics
+(K) exist on a portfolio file; the ledger (I) waits for the owner's documents.
+- **Scope and terms** (ADR-0011, ADR-0012): stocks, FIIs, ETFs and Tesouro Direto from 2026; context data as its own
+  domain; collection for personal use, never redistributed; request limits per source and adaptive (ADR-0023).
+- **PLAN.md is a prior, not a contract:** where measured data contradicts it, the evidence is followed and recorded.
+- **Exit criteria** (`scripts/check_exit_criteria.py`, docs/evaluation/2026-11-08-exit-criteria.md):
+  - pass: C (calendar against B3 sessions), E (Selic and CDI compounding 323/323 months), F (look-through 0.0003 %;
+    CVM 175 bridge 19,971/20,217, ADR-0025) and H (balance identity, the 6 breaks being the companies' own filings);
+  - measured: G, LTN PU from rate 93.06 % (the rest are Tesouro's own irregularities);
+  - restatements: as-of rule unit-tested; real superseded versions are being recovered (ADR-0027).
+- **Golden checks:** 9 corporate-event cases exact; the §13.1 portfolio returns +37.38 % (plan +37.2 %).
+- **Data quality** (ADR-0022): `fin quality` runs 12 named checks into `dq_finding`, every finding decided by rule or
+  review. Completeness is measured: cash events against Yahoo (99.5 %), daily series gaps, CVM 175 quota breaks.
+- **Storage** (ADR-0014): raw 8.9 GB, staging 5.1 GB, core 0.2 GB; C: has 43 GB free.
 
-## What the data layer holds (raw 4.1 GB, staging 0.8 GB, core 0.2 GB)
+## What the data layer holds
 
-- **Holdings data (priority 1):**
-  - COTAHIST prices 1986–;
-  - FII distributions 2016– (all 36,583 Fundos.NET notices, both layouts: 40,490 payouts);
-  - Tesouro Direto 2004–; VNA 2000–; CDI and Selic 1986–; IPCA 1979–;
-  - Yahoo events for 848 tickers (U), and the CVM filings index 2003–, which proves them.
-- **Company data:**
-  - CVM statements (DFP 2010–, ITR 2011–), FRE (share counts, treasury) and IPE, kept as versions from now on;
-  - FII monthly/quarterly/annual reports 2016– and FIAGRO monthly 2025-05– (NAV per quota, assets, vacancy); fund
-    daily NAV 2000– (82 M rows); fund holdings (CDA) 2005– (101 M positions);
-  - CVM FCA 2010– (securities with trading codes from 2018); B3 Price Report (BVBG.086) from 2026-10-19;
-  - B3 instrument files 2025-06–.
-- **Context data (priority 2)** ([backfill](docs/evaluation/2026-11-07-context-catalogue-backfill.md)), from the
-  catalogue `src/fin/reference/context_series.toml`:
-  - Brazilian macro: 60 SGS series, 11 SIDRA tables, Ipeadata, Copom since 1996, Focus since 2000;
-  - B3 index levels (Ibovespa 1968–); B3 reference-rate curves 2001– (111 M vertices); futures 2018– (mirror);
-  - ANBIMA ETTJ, VNA, debentures, government bonds, projections; NEFIN risk factors;
-  - global rates (Treasury, Fed, ECB, BIS), VIX, oil, commodities (Pink Sheet 1960–, IMF, CEPEA), OECD leading
-    indicators, CFTC positioning.
-- **Ephemeral sources are archived daily**: ANBIMA (6 datasets including IMA), B3 BDI tables (including investor
-  flows), index compositions, CVM registries, SND terms, and Yahoo 5-minute bars (U). The 2026-11-07 run was started by
-  hand (0 errors).
-
-- **Dossier** (Stage L, ADR-0026): `fin export dossier` builds the PLAN §8 report from a portfolio file;
-  the sample `examples/portfolio_reference.toml` reproduces the golden portfolio's +37.36 %.
+- **Exchange-traded:** COTAHIST prices 1986– (8,464 instruments, identity through ISIN and ticker changes, 260
+  links); corporate events 52,370 (every stock event decided; quote-basis changes, spin-offs, implied events,
+  payouts proven by CVM filings; ADR-0016); adjusted prices on read; B3 Price Report from 2026-10-19.
+- **Companies:** CVM DFP/ITR 2010– (66.8 M lines) plus superseded versions from RAD (backfill running: XML era
+  2021–, then the legacy layout 2010–21; ADR-0027); FRE share counts and treasury 2010–; FCA securities; IPE
+  filings index 2003–; issuers 4,006 (companies and funds); valuation by date 2010–.
+- **Funds:** daily NAV 2000– (82 M rows), CDA holdings 2005– (101 M positions), FII reports 2016–, FIAGRO 2025–,
+  fund register and CVM 175 lineage (27,461 classes), FII payouts 2016– (40,490).
+- **Fixed income:** Tesouro Direto 2004–, VNA 2000–, ANBIMA bond rates 2020– (mirror, verified against ANBIMA),
+  B3 reference-rate curves 2001–, B3 OTC fixed-income trades 2023-03– (18.5 M), SND daily debenture PU 1994–
+  (7.5 M rows), BDI debenture business (rolling window).
+- **Rates, FX and context:** BCB SGS (CDI, Selic, monthly accumulations), PTAX 10 currencies 1984–, Focus 2000–,
+  Copom, SIDRA, Ipeadata, futures 2018– (mirror), ANBIMA ETTJ/VNA/projections, NEFIN factors, global rates, VIX,
+  commodities, OECD, CFTC; calendar 1986– (ADR-0024).
+- **Ephemeral sources** are archived by `fin ingest daily` (run by hand on 2026-11-07 and 2026-11-08, 0 errors).
+- **Dossier** (ADR-0026): `fin export dossier` with holdings, valuation, performance, risk, sector exposure, events,
+  fundamentals and quality findings.
 
 ## Not done
 
-- **Blocked by the harness:** registering the Windows scheduled task (`scripts/schedule_daily.ps1`) is refused as
-  persistence. Until a permission rule allows it, `fin ingest daily` runs by hand, and a day not run is lost for the
-  today-only sources.
-- **The owner's documents** for the ledger (Stage I): brokerage notes (notas de corretagem) and B3 Área do
-  Investidor exports in `inbox/`. Until then the dossier reads a portfolio file.
-- **Owner decisions:** free FRED and Tiingo tokens (OQ-23); paid sources (OQ-10); PLAN §12 OQ-11 and OQ-14 to OQ-16.
+- **Blocked by the harness:** the Windows scheduled task, and any in-session loop, are refused as persistence:
+  `fin ingest daily` runs by hand; a day not run is lost for the today-only sources.
+- **The owner's documents** for the ledger (Stage I) in `inbox/`.
+- **Owner decisions:** B3 PR history 2018– (OQ-20, deferred); B3 HistoricoRF aggregate files (a form with a
+  reCAPTCHA field); ANBIMA debenture history and ANBIMA Data (login); FRED/Tiingo tokens (OQ-23); paid sources (OQ-10).
 
 ## Next (engineering)
 
-1. B3 fixed-income history (OQ-21); filling `is_b3_trading_day` from observed sessions (OQ-1).
+1. RAD restatement backfill to completion, then `fin reparse cvm_rad_versions` and the H restatement test on real data.
+2. ANBIMA IMA/ETTJ/bond history routes (agent running); SND terms and core `debenture` (agent running).
+3. Future B3 closures before they happen (OQ-1).
