@@ -573,14 +573,22 @@ class B3Bdi(Connector):
             locator=f"page={page}",
         )
 
+    # Tables served for longer than WINDOW days, and how many months back (backfill only). DebenturesBusiness is a
+    # rolling M-18 window (first day served 2025-05-08 on 2026-11-08): each day that passes is lost for good.
+    DEEP_MONTHS: ClassVar[dict[str, int]] = {"DebenturesBusiness": 18}
+
     def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
         cal = _calendar(zones)
         end = cal.preceding(today_brt() - timedelta(days=0))
-        days = cal.business_days(cal.add_business_days(end, -(self.WINDOW - 1)), end)
+        recent = cal.business_days(cal.add_business_days(end, -(self.WINDOW - 1)), end)
         for table in self.TABLES:
+            days = recent
+            if mode is Mode.BACKFILL and table in self.DEEP_MONTHS:
+                k = end.year * 12 + end.month - 1 - self.DEEP_MONTHS[table]
+                days = cal.business_days(date(k // 12, k % 12 + 1, min(end.day, 28)), end)
             have = _archived_dates(zones, self.source_id, table)
             for d in reversed(days):
-                if d in have and d < days[-self.REFRESH]:
+                if d in have and d < recent[-self.REFRESH]:
                     continue
                 yield self._spec(table, d, 1)
 

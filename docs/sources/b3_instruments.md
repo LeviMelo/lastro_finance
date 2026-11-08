@@ -56,9 +56,9 @@ Both files are **served for ~17 months (since 2025-06-10) and the start may roll
 | TickByTick* (RV, Derivatives, BTBTrade) | tick data | request errors on every date probed (not usable here) |
 | DerivativesMtM, DerivativesOperation2, DailyAverage*, StocksOperationSummary, ForwardMarket, IOPV, NegotiStrategi, MarginScenarios, Custody, ProventionCredit, FugibleCustody, DeadlineDeposit, SwapFlex, EletronicTerm, FlexibleOptions, OTCRegistration/Inventory(CCP/WCCP), COE*, SharesInvesVolum*, coffee tables, Ibovespa/Cash biggest highs/lows | misc. daily summaries | 2026-10-07 (or today only) |
 | INDEXES (1034), PreviaQuadrimestral (1039), Previa (1040) | index evolution / theoretical-portfolio previews | empty at every probe date (not usable on the BDI; see b3_index_portfolio.md) |
-| DebenturesBusiness (271), ConsolidatedRecords (529) | fixed-income trades on Puma | ≥ 2025-06-10, < 2025-01-02 (limitDate M-18) |
-| Trade (528), SaleOff (531), Stock (532) | fixed-income trade-by-trade, settlement, stock | ≥ 2025-01-02, < 2023-01-02 |
-| Register (673), RepurchaseDealings (674), Repodebenture (682), TDA (680) | fixed income | ≥ 2025-12-10, < 2025-06-10; B3 text: data before 2025-12-11 are on `https://drp.b3.com.br/Web/HistoricoRF` (SPA, **not explored**) |
+| DebenturesBusiness (271), ConsolidatedRecords (529) | fixed-income trades on Puma | rolling M-18, first day 2025-05-08 on 2026-11-08 (bisected; same on drp.b3.com.br); see b3_fixed_income.md |
+| Trade (528), SaleOff (531), Stock (532) | fixed-income trade-by-trade, settlement, stock | on drp.b3.com.br: Trade from 2023-03-13, SaleOff/Stock from 2023-03-01 (bisected); archived by `b3_fixed_income` |
+| Register (673), RepurchaseDealings (674), Repodebenture (682), TDA (680) | fixed income | ≥ 2025-12-10, < 2025-06-10; B3 text: data before 2025-12-11 are on `https://drp.b3.com.br/Web/HistoricoRF` (SPA: 79 static asset-class aggregate files, see b3_fixed_income.md §1) |
 | InstrumentRegistration (530) | OTC instrument list | today and D-21 only |
 | **DIover (681)** | DI over (volume, average rate, daily factor, Selic) | **1986-03-06** (a single request `1980-01-01/2026-11-06/1/3` returns pageCount 3,388 rows from 1986-03-06): full history, range queries allowed |
 | AverageChart (1031), HistoricalExchange (675, `PDC_ANO-5`) | annual-average volumes; BCB Res. 120 FX table | ≥ 2023-01-02, < 2020-01-02 |
@@ -66,5 +66,5 @@ Beyond these, the JSON `workdays` helper lists only 21 dates.
 
 ## 8. Open questions
 - Is 2025-06-10 a fixed start? Re-probe next session.
-- `drp.b3.com.br/Web/HistoricoRF` (renda fixa before 2025-12-11): not explored (SPA; its `config.js` points to `https://drp.b3.com.br/api/`).
+- `drp.b3.com.br/Web/HistoricoRF` (renda fixa before 2025-12-11): explored 2026-11-08, see b3_fixed_income.md (SPA; its `config.js` points to `https://drp.b3.com.br/api/`).
 - Terms of use of the arquivos.b3.com.br data (not checked); 11 GB backfill is large relative to "≤ 1 request/second" politeness (≈ 700 requests, fine).

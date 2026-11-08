@@ -31,6 +31,24 @@ ephemeral = true
 status = "archiving"
 recon = "docs/sources/b3_settlement_prices.md"
 
+[b3_fixed_income]
+name = "Renda fixa de balcão do BDI com histórico (Negócio a negócio, Liquidação, Estoque)"
+institution = "B3"
+access = "JSON backend drp.b3.com.br/bdi/table, POST per table/date/page; Trade since 2023-03-13"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/b3_fixed_income.md"
+
+[snd_pu_historico]
+name = "PU Histórico de debêntures (SND)"
+institution = "SND / debentures.com.br"
+access = "TSV export per debenture and date range (puhistorico_e.asp), full history since issue"
+tier = "P"
+ephemeral = false
+status = "archiving"
+recon = "docs/sources/snd_pu_historico.md"
+
 [b3_cotahist]
 name = "Séries históricas COTAHIST"
 institution = "B3"
@@ -93,6 +111,15 @@ tier = "P"
 ephemeral = false
 status = "parsed"
 recon = "docs/sources/cvm_dfp_itr.md"
+
+[cvm_rad_versions]
+name = "Versões substituídas de DFP e ITR (RAD)"
+institution = "CVM"
+access = "HTTP, one zip per filing version"
+tier = "P"
+ephemeral = false
+status = "parsed"
+recon = "docs/sources/cvm_rad_versions.md"
 
 [cvm_ipe]
 name = "Documentos eventuais (IPE)"

@@ -31,6 +31,11 @@ Decimal comma, dates dd/mm/yyyy, `--` = no value, footnote markers `(*)`/`(**)` 
 ## 6. Ephemerality
 **EPHEMERAL (6 business days).** Archive daily (178 KB txt). Internet Archive CDX: old path `/merc_sec_debentures/arqs/` lists 15 distinct daily txt dates (2013-03-20..2019-04-01) and 7 xls dates (2013-07-12..2018-02-06) — sparse, content not verified (replay blocked, HTTP 429); new path lists 3 URLs, all 404 captures. Full history = ANBIMA Feed (paid) or ANBIMA Data (token).
 
+## 6b. History routes probed (2026-11-08): none public
+- The form (`default.asp`, POST `Dt_Ref`) ignores the date: past dates (2019-05-10, 2026-01-02, 2026-10-20) return the same 12,674-byte page; its script only accepts the last 5 business days. Files: `db261106` and `db261029` 200 (178 KB); `db261020`, 261001, 260630, 260102, 251230, 241230, 230102, 190402, 181228 and the old path `/merc_sec_debentures/arqs/db190401.txt`, `DB130320.TXT` all 404.
+- ANBIMA Data (`data.anbima.com.br/debentures/<ticker>/precos`) is a SPA over `data-api.prd.anbima.com.br` (404 without a token) whose search actions carry reCAPTCHA and an SSO login; `api.anbima.com.br/feed/...` answers 401 (client_id). Recorded and stopped: no login, no CAPTCHA.
+- Substitutes already archived: B3 `Trade` per trade since 2023-03 (b3_fixed_income) and SND `precos`/`PU Histórico` (snd_pu_historico).
+
 ## 7. Open questions
 - Where the reference date sits in the file; extra fields in xls; SND/B3 as free credit-price history.
 

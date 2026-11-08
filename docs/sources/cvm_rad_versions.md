@@ -1,0 +1,39 @@
+# cvm_rad_versions - CVM RAD: the superseded versions of DFP and ITR
+
+**Tier:** P. **Recon date:** 2026-11-08. **Fixture:** `tests/fixtures/cvm_rad/` (one ITR statements XML trimmed to a few accounts; README there).
+
+Measured on 2026-11-08 against real responses (about 80 requests, 1 per 1.2 s or slower) unless marked *(owner)* or *(not verified)*. Why it exists: the open-data zips of `cvm_dfp_itr` keep only the latest version of each filing; 6,137 filings were restated and 7,558 superseded versions are in the document index, each only on RAD.
+
+## 1. Access
+- `https://www.rad.cvm.gov.br/ENETCONSULTA/frmDownloadDocumento.aspx?CodigoInstituicao=1&NumeroSequencialDocumento=<ID_DOC>`, `ID_DOC` from the `cvm_dfp_itr` index. The index's `http://` link redirects with 302 *(owner)*; the https URL answers 200 with no redirect. No auth; the generic `lastro-fin` User-Agent works. No Range support *(owner)*.
+- Answer: a zip, `Content-Type: text/html; charset=utf-8` (so no content-type filter), 2.6 to 35 MB (mean 7.8 MB over 33 XML-era filings), 10 to 60 s to produce.
+- **Busy stub:** on at least one of about 80 requests RAD answered 200 with a 319-byte HTML page (`Content-Length: 319`); the same URL worked seconds later. `min_bytes=100_000` makes the fetcher log it as absent and the next run asks again.
+- Politeness: concurrency 4 and `min_interval` 0.25 s are the connector's settings; the measurements above used one request at a time.
+
+## 2. Two layouts
+- **Statements XML** (doc ids from 108951, received 2021-10-07, onward): members `<CVM6><DFP|ITR><dd-mm-yyyy>v<N>.xml` (3.1 to 22.6 MB; root `XmlDemonstracoesFinanceiras` for DFP, `XmlInformacoesTrimestraisFinanceiras` for ITR), a PDF (up to 16 MB), `DadosDocumento.xlsx`, `FormularioCadastral.xml`, `FormularioDemonstracaoFinanceira<DFP|ITR>.xml`.
+- **Legacy**: every probed document up to doc 108885 (2021-10-04), and 4 of 37 sampled ones after it (109419, 112861 DFP; 115797, 109608 re-presentations of 2019/2020 periods), is a zip holding a nested `<CVM6><yyyy><mmdd><nn>.dfp|.itr` zip of entity dumps (`InfoFinaDFin.xml` 4 MB, `InformacaoFinanceiraDemonstracaoFinanceira.xml` 28.6 MB for Qualicorp DFP 2011, `Documento.xml`, ...). **Not parsed.** The connector asks only for doc ids >= 108951 (1,953 of the 7,558 superseded versions); the other 5,605 need a legacy parser (open item). A legacy zip met after the cut-over is archived as a 60-byte JSON marker (so it is not downloaded again) and counted under `cvm_rad_versions/not_data`.
+
+## 3. What is kept
+`extract_statements` keeps the statements XML with the text of every `<ImagemObjetoArquivoPdf>` removed (the element stays); the zip, the PDF and the other members are not kept. Raw holds that XML plus a JSON record (full sha256 and size of the zip, each member's name, size, CRC-32). Sizes over 33 filings: member 5.0 MB mean (3.1 to 22.6), kept 1.77 MB mean (35 %), zstd of the kept XML 31 KB mean, about 0.4 % of the 7.8 MB downloaded. `ResponsavelDocumento` (filer name, phone, e-mail) is never parsed; it was empty in all 34 XMLs seen.
+
+## 4. XML to `statement_line` (the open-data contract, `cvm_statements.STATEMENT_LINE`)
+- `EscalaMoeda` 1 UNIDADE, 2 MIL; `Moeda` 1 REAL. CNPJ digits to `00.000.000/0000-00`; `CodigoCvm` 6 digits. `ContaFixa` True/False to `fixed_account`. Statements: `BalancoPatrimonialAtivo/Passivo` BPA/BPP, `DemonstracaoResultado` DRE, `...Abrangente` DRA, `DemonstracaoFluxoCaixa` DFC_MI/DFC_MD by each account's `Metodo`, `...MutacoesPatrimonioLiquido` DMPL, `...ValorAdicionado` DVA; `DfConsolidadas` con, `DfIndividuais` ind.
+- **DFP:** `UltimoExercicio`/`PenultimoExercicio` are ÚLTIMO/PENÚLTIMO (`AntepenultimoExercicio`, a third DMPL block: not in open data, not read); flows carry `DtInicio/DtFim...ExercicioSocial`, balance sheets only the end date.
+- **ITR:** balance sheet `TrimestreAtual` (end `DtFimTrimestreAtual`) and `ExercicioAnterior` (end of last fiscal year). DRE/DRA: `TrimestreAtual` and `AcumuladoExercicioAtual` are both ÚLTIMO (quarter and year to date), `TrimestreAnterior`/`AcumuladoExercicioAnterior` both PENÚLTIMO, the prior-year spans being the same dates a year earlier (a month end stays a month end). DFC/DVA: year to date only (`AcumuladoAtualExercicio`). In Q1 the quarter is the year to date: one line.
+- Numbers are pt-BR: an optional decimal comma (`4,14`) and, in any statement, dots grouping thousands (`-7.626.000`); anything else is refused. Empty value elements and unused template slots (no description, 0) produce no line.
+- `DS_CONTA`: open data's text is the XML's with line breaks and tabs removed, ASCII spaces stripped (before the breaks go), no-break spaces kept, U+2013 as `-`, cut at 100 characters. The parser reproduces that; the full text stays in raw.
+- DMPL columns are elements (`CapitalSocialIntegralizado`, `ReservasCapital`..., `PatrimonioLiquidoConsolidado`) or, in some filings, `DadosContas/CamposDadosContas` with a `Descricao`; each keeps its own name (labels as in open data, plus `Reservas de Reavaliação` and `Ajustes de Avaliação Patrimonial`).
+- `ComposicaoCapital` gives `share_capital`, counts as written (thousands when `EscalaQtdAcoes` is 2, as open data carries them; an absent treasury count is 0).
+
+## 5. Verification against open data (33 filings)
+Filings whose open-data version equals the RAD version (version 1 to 3, the latest), 14 DFP and 19 ITR, doc 109079 to 160878 (reference dates 2020-12 to 2026-06), industrials, banks, insurers, securitisers; 52,032 open-data lines compared on (form, cnpj, reference_date, version, statement, consolidation, period_order, period_start, period_end, equity_column, account_code). 2011 to 2021-09 filings are legacy-layout and could not be compared.
+- **Value, name and key: 30 of 33 filings match 100 %** (52,032 lines, 51,769 matched); share counts match in 33 of 33. DS_CONTA matches on every line.
+- **DMPL: open data labels the Nth column of a filing with the Nth label of a fixed list.** Where a filing's columns differ from that list (an extra `ReservasReavaliacao`, `AjustesAvaliacaoPatrimonial` before `LucroPrejuizoAcumulado`, a ninth column) the open-data `equity_column` is shifted (e.g. Bradesco 2023-Q1 consolidated: its `Patrimônio Líquido` is the OCI value -3,104,199; the real one, 158,265,358, is under `Participação dos Não Controladores`), and a ninth column gets a null label. Relabelling the XML columns by position reproduces open data exactly for the 6- and 7-column layouts (10 filings); the 9-column layout (3 filings: 125759, 132207, 160511; 263 lines, 95 to 97 % of their lines) also orders its last three columns differently. This parser keeps the element's own name, so those lines differ from open data by design; they are dq findings about open data, not about this parser.
+- `ST_CONTA_FIXA`: 410 of 52,032 lines differ; 388 are the EPS headings `3.99`, `3.99.01`, `3.99.02` (XML `True`, open data `N`), the rest are accounts of the new CMN 4.966 bank plan. The XML flag is kept.
+- Empty EPS headings (`3.99`...) with priced lines below are 0 in open data and here; with nothing below, absent in both.
+- `CodigoCvm` and company name can differ from open data (open data uses the current registry values; e.g. `MAHLE-METAL LEVE` vs `MAHLE METAL LEVE`, a securitiser with another `CD_CVM`); the XML's are kept, neither is a key.
+- The XML holds statements open data lacks: Aura Minerals 2026-Q2 has 524 individual-statement lines absent from open data (compatible with the "5 index keys without individual statements" of `cvm_dfp_itr`).
+
+## 6. Ephemerality and open items
+Not ephemeral (RAD keeps every version). Open: a legacy-layout parser for the 5,605 versions filed before 2021-10 (the big prize: 74 % of the restatement history); the doc-id boundary of the XML era is exact only to 108885 / 108951 (65 ids unprobed).

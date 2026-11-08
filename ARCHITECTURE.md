@@ -77,6 +77,9 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/alternates.py` | archive connectors for the routes that close data gaps: SND, Fundos.NET, BCB SGS, Ipeadata, Tesouro VNA, the `pyield_data` mirror, Yahoo (ADR-0010) |
 | `ingest/series.py` | series payloads (SGS JSON and SOAP metadata, Ipeadata OData, SIDRA, Tesouro VNA workbooks, Treasury/NY Fed/Cboe CSVs, SDMX-CSV with the sources' unit codelists) → staging `observation`/`definition` → core `series_observation`/`series_definition`, versioned (ADR-0013) |
 | `ingest/cvm_statements.py` | CVM DFP/ITR zips → staging `statement_line` (every account line, value as written with its scale), `document` (every version and its delivery date), `share_capital` |
+| `ingest/cvm_rad.py` | CVM RAD: superseded DFP/ITR versions (statements XML without its PDFs) → staging `statement_line` (the open-data contract) and `share_capital` |
+| `ingest/b3_fixed_income.py` | B3 BDI fixed-income OTC tables with history from `drp.b3.com.br` (Trade per trade since 2023-03-13, SaleOff, Stock) → staging `fi_trade`, `fi_settlement`, `fi_stock` |
+| `ingest/snd_pu.py` | SND PU Histórico (daily PU of every debenture since issue, one file per ticker) → staging `debenture_pu` |
 | `ingest/cftc.py` | CFTC Commitments of Traders (3 reports) → staging `position`, long |
 | `ingest/cvm_fca.py` | FCA index, `geral` (company identity, no contact data) and `valor_mobiliario` (securities with trading code, market, segment, dates) → staging `document`, `company`, `security` |
 | `ingest/cvm_fre.py` | FRE index, `capital_social` and the treasury row of `posicao_acionaria` → staging `document`, `capital_social`, `treasury` |

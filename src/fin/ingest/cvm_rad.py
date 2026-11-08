@@ -1,0 +1,501 @@
+"""CVM RAD: the superseded versions of DFP/ITR filings (docs/sources/cvm_rad_versions.md).
+
+CVM's open-data DFP/ITR zips keep only the latest version of each filing (docs/sources/cvm_dfp_itr.md). RAD, the
+filing system, still serves every version as a zip (`frmDownloadDocumento.aspx?...NumeroSequencialDocumento=<ID_DOC>`).
+Its statements XML (`<CVM6><DFP|ITR><dd-mm-yyyy>v<N>.xml`) is 60 % base64 PDF; the PDF text is stripped before the
+object is archived (ADR-0027) and the XML is parsed into exactly the open-data `statement_line` contract, so a
+superseded version and the latest one are rows of one table that differ only in `version` and the numbers.
+
+Only the statements are read. `Documento/ResponsavelDocumento` (the filer's name, phone, e-mail) is never parsed.
+"""
+
+from __future__ import annotations
+
+import io
+import json
+import re
+import zipfile
+from collections.abc import Iterable
+from datetime import date, timedelta
+from decimal import Decimal
+from typing import Any, ClassVar
+from xml.etree import ElementTree as ET
+
+import polars as pl
+
+from fin.config import Zones
+from fin.ingest.base import Connector, Mode, NotData, Parsed
+from fin.ingest.cvm_statements import SHARE_CAPITAL, STATEMENT_LINE, VALUE
+from fin.ingest.fetch import FetchSpec
+from fin.ingest.http import FetchError
+from fin.schema import Contract
+from fin.store.manifest import Manifest
+from fin.store.tables import read_parquet_dir
+
+STATEMENTS_MEMBER = re.compile(r"^\d{6}(?:DFP|ITR)\d{2}-\d{2}-\d{4}v\d+\.xml$", re.IGNORECASE)
+URL = "https://www.rad.cvm.gov.br/ENETCONSULTA/frmDownloadDocumento.aspx?CodigoInstituicao=1&NumeroSequencialDocumento={doc_id}"
+MIN_BYTES = 100_000  # RAD answers 200 with a ~300-byte HTML stub when it is busy: absent now, tried again next run
+# RAD served a nested legacy zip (`.dfp`/`.itr` of entity dumps) up to doc 108885 (2021-10-04) and the statements XML
+# from doc 108951 (2021-10-07); the 65 ids between were not probed
+FIRST_XML_DOC_ID = 108951
+_DOC = re.compile(r"doc=(\d+)")
+_NUMBER = re.compile(r"^-?(?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d+)?$")
+LEGACY_MEMBER = re.compile(r"^\d{18}\.(?:dfp|itr)$", re.IGNORECASE)
+_PDF = re.compile(rb"(<ImagemObjetoArquivoPdf(?:\s[^>]*)?>)[^<]*(</ImagemObjetoArquivoPdf>)")
+
+
+class RadError(FetchError):
+    """A RAD download or statements XML that is not what this module reads. A `FetchError`, so a run records it and
+    goes on with the next document."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__("cvm_rad", message)
+
+
+def extract_statements(blob: bytes) -> tuple[bytes, str, dict[str, Any]]:
+    """The statements XML of a RAD download without its embedded PDFs (the base64 text of every
+    `<ImagemObjetoArquivoPdf>`); the empty element stays.
+
+    A filing RAD still serves in the legacy layout (one nested `<CVM6><year><period>.dfp|.itr` zip of entity dumps, no
+    statements XML) is not read: a small JSON marker is kept instead, so the version counts as held and is not
+    downloaded again, and `parse_payload` quarantines it as not data until a legacy parser exists."""
+    try:
+        z = zipfile.ZipFile(io.BytesIO(blob))
+    except zipfile.BadZipFile as e:
+        raise RadError(f"not a zip: {e}") from e
+    infos = [i for i in z.infolist() if not i.is_dir()]
+    members = [{"name": i.filename, "size": i.file_size, "crc32": i.CRC} for i in infos]
+    hits = [i for i in infos if STATEMENTS_MEMBER.match(i.filename)]
+    legacy = [i for i in infos if LEGACY_MEMBER.match(i.filename)]
+    if not hits and len(legacy) == 1:
+        marker = json.dumps({"layout": "legacy", "member": legacy[0].filename}).encode("utf-8")
+        return marker, "json", {"members": members, "kept": None, "layout": "legacy"}
+    if len(hits) != 1:
+        raise RadError(
+            f"expected one statements XML, found {[i.filename for i in hits]} among {[i.filename for i in infos]}"
+        )
+    xml = z.read(hits[0])  # raises on a CRC mismatch
+    kept = _PDF.sub(rb"\1\2", xml)
+    return kept, "xml", {"members": members, "kept": hits[0].filename, "stripped": "ImagemObjetoArquivoPdf"}
+
+
+# --- the statements XML -> the open-data `statement_line` contract ----------------------------------------------
+
+_SCALE = {"1": "UNIDADE", "2": "MIL"}
+_CURRENCY = {"1": "REAL"}
+_STATEMENT_ELEMENTS = {
+    "BalancoPatrimonialAtivo": "BPA",
+    "BalancoPatrimonialPassivo": "BPP",
+    "DemonstracaoResultado": "DRE",
+    "DemonstracaoResultadoAbrangente": "DRA",
+    "DemonstracaoFluxoCaixa": "DFC",
+    "DemonstracaoMutacoesPatrimonioLiquido": "DMPL",
+    "DemonstracaoValorAdicionado": "DVA",
+}
+_GROUP_NAMES = {
+    "BPA": "Balanço Patrimonial Ativo",
+    "BPP": "Balanço Patrimonial Passivo",
+    "DRE": "Demonstração do Resultado",
+    "DRA": "Demonstração de Resultado Abrangente",
+    "DFC_MD": "Demonstração do Fluxo de Caixa (Método Direto)",
+    "DFC_MI": "Demonstração do Fluxo de Caixa (Método Indireto)",
+    "DMPL": "Demonstração das Mutações do Patrimônio Líquido",
+    "DVA": "Demonstração de Valor Adicionado",
+}
+_DFC_METHOD = {"Direto": "DFC_MD", "Indireto": "DFC_MI"}
+_FORMS = {"DadosDFP": "dfp", "DadosITR": "itr"}
+# DMPL column element -> the open-data COLUNA_DF label. Open data labels the Nth column of the XML with the Nth label
+# of its fixed list, so a filing whose columns differ from that list (an extra ReservasReavaliacao, or
+# AjustesAvaliacaoPatrimonial before LucroPrejuizoAcumulado) is mislabelled there; here a column keeps its own name.
+_EQUITY = {
+    "CapitalSocialIntegralizado": "Capital Social Integralizado",
+    "ReservasCapital": "Reservas de Capital, Opções Outorgadas e Ações em Tesouraria",
+    "ReservasCapitalOpcoesOutorgAcoesTesour": "Reservas de Capital, Opções Outorgadas e Ações em Tesouraria",
+    "ReservasReavaliacao": "Reservas de Reavaliação",
+    "ReservasLucro": "Reservas de Lucro",
+    "LucroPrejuizoAcumulado": "Lucros ou Prejuízos Acumulados",
+    "AjustesAvaliacaoPatrimonial": "Ajustes de Avaliação Patrimonial",
+    "OutrosResultadosAbrangentes": "Outros Resultados Abrangentes",
+    "PatrimonioLiquido": "Patrimônio Líquido",
+    "PatrimonioLiquidoAcionistasControl": "Patrimônio Líquido",
+    "PatrimonioLiquidoAcionistasNaoControl": "Participação dos Não Controladores",
+    "PatrimonioLiquidoConsolidado": "Patrimônio Líquido Consolidado",
+}
+# the same columns when the XML spells them out (`DadosContas/CamposDadosContas/Descricao`): prefix -> label
+_EQUITY_TEXT = (
+    ("capital social", "Capital Social Integralizado"),
+    ("reservas de capital", _EQUITY["ReservasCapital"]),
+    ("reservas de reavalia", _EQUITY["ReservasReavaliacao"]),
+    ("reservas de lucro", "Reservas de Lucro"),
+    ("lucros ou preju", "Lucros ou Prejuízos Acumulados"),
+    ("lucros/preju", "Lucros ou Prejuízos Acumulados"),
+    ("ajustes de avalia", _EQUITY["AjustesAvaliacaoPatrimonial"]),
+    ("outros resultados abrangentes", "Outros Resultados Abrangentes"),
+    ("participa", "Participação dos Não Controladores"),
+    ("patrimônio líquido consolidado", "Patrimônio Líquido Consolidado"),
+    ("patrimônio líquido", "Patrimônio Líquido"),
+)
+_EPS_HEADERS = ("3.99", "3.99.01", "3.99.02")  # empty in the XML, 0 in open data
+NAME_WIDTH = 100  # open data cuts DS_CONTA at 100 characters; the archived XML keeps the full text
+_BALANCE_TAGS = ("UltimoExercicio", "PenultimoExercicio", "TrimestreAtual", "ExercicioAnterior")
+_META = ("ContaFixa", "CodigoConta", "DescricaoConta", "Metodo")
+
+COLUMNS = [  # the open-data `statement_line` columns, then the locator of the line in the XML
+    *("form", "cnpj", "reference_date", "version", "company_name", "cd_cvm", "statement", "consolidation"),
+    *("statement_group", "currency", "scale", "period_order", "period_start", "period_end", "equity_column"),
+    *("account_code", "account_name", "value", "fixed_account", "raw_locator"),
+]
+SCHEMA: dict[str, Any] = {
+    **dict.fromkeys(COLUMNS, pl.String),
+    "reference_date": pl.Date,
+    "version": pl.Int16,
+    "period_start": pl.Date,
+    "period_end": pl.Date,
+    "value": VALUE,
+    "fixed_account": pl.Boolean,
+}
+
+Period = tuple[str, date | None, date]  # (period_order, start, end)
+
+
+def _day(text: str | None) -> date | None:
+    if text is None or not text.strip():
+        return None
+    d, m, y = text.strip().split("/")
+    return date(int(y), int(m), int(d))
+
+
+def _year_before(d: date) -> date:
+    """The prior-year counterpart of a period boundary: a month end stays a month end (29 Feb -> 28 Feb)."""
+    month_end = (d + timedelta(days=1)).month != d.month
+    try:
+        out = d.replace(year=d.year - 1)
+    except ValueError:
+        out = d.replace(year=d.year - 1, day=28)
+    if month_end:
+        out = (out.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(days=1)
+    return out
+
+
+def _placeholder(c: ET.Element, v: Decimal) -> bool:
+    """An unused slot of the CVM template: no description and a zero (open data omits them)."""
+    return v == 0 and not _text(c, "DescricaoConta")
+
+
+def _eps_headers(contas: list[ET.Element]) -> set[str]:
+    """The EPS headings (3.99, 3.99.01, 3.99.02) of a DRE that have a priced line below them: their value element
+    is empty in the XML and open data carries them as 0 (a heading with nothing below stays absent)."""
+    priced = {
+        _text(c, "CodigoConta") or "" for c in contas if any((x.text or "").strip() for x in c if x.tag not in _META)
+    }
+    return {h for h in _EPS_HEADERS if any(code.startswith(h + ".") for code in priced)}
+
+
+def _cnpj(digits: str) -> str:
+    d = digits.strip().zfill(14)
+    return f"{d[:2]}.{d[2:5]}.{d[5:8]}/{d[8:12]}-{d[12:]}"
+
+
+def _text(e: ET.Element | None, tag: str) -> str | None:
+    c = None if e is None else e.find(tag)
+    return None if c is None or c.text is None else c.text.strip()
+
+
+def _value(text: str | None) -> Decimal | None:
+    """A number as the XML writes it, pt-BR: an optional decimal comma, and dots grouping thousands when the filer
+    typed them (`-7.626.000`, found in any statement). Anything else is an error, never a guess."""
+    if text is None or not text.strip():
+        return None
+    t = text.strip()
+    if not _NUMBER.match(t):
+        raise RadError(f"unparseable value {text!r}")
+    return Decimal(t.replace(".", "").replace(",", "."))
+
+
+def _periods(data: ET.Element, form: str) -> dict[str, Period]:
+    """The period each value element of a statement reports: tag -> (period_order, start, end)."""
+
+    def need(tag: str) -> date:
+        d = _day(_text(data, tag))
+        if d is None:
+            raise RadError(f"{tag} missing")
+        return d
+
+    if form == "dfp":
+        return {
+            "UltimoExercicio": ("ÚLTIMO", need("DtInicioUltimoExercicioSocial"), need("DtFimUltimoExercicioSocial")),
+            "PenultimoExercicio": (
+                "PENÚLTIMO",
+                need("DtInicioPenultimoExercicioSocial"),
+                need("DtFimPenultimoExercicioSocial"),
+            ),
+        }
+    q0, q1 = need("DtInicioTrimestreAtual"), need("DtFimTrimestreAtual")
+    y0, py0 = need("DtInicioExercicioSocialCurso"), need("DtInicioExercicioSocialAnterior")
+    return {
+        "TrimestreAtual": ("ÚLTIMO", q0, q1),
+        "AcumuladoExercicioAtual": ("ÚLTIMO", y0, q1),
+        "AcumuladoAtualExercicio": ("ÚLTIMO", y0, q1),
+        "TrimestreAnterior": ("PENÚLTIMO", _year_before(q0), _year_before(q1)),
+        "AcumuladoExercicioAnterior": ("PENÚLTIMO", py0, _year_before(q1)),
+        "ExercicioAnterior": ("PENÚLTIMO", None, need("DtFimExercicioSocialAnterior")),
+    }
+
+
+def parse_statements(xml: bytes) -> pl.DataFrame:
+    """The account lines of a RAD statements XML (PDFs stripped) as the open-data `statement_line` contract."""
+    root = ET.fromstring(xml)
+    company, doc = root.find("DadosEmpresa"), root.find("Documento")
+    found = [(f, e) for t, f in _FORMS.items() if (e := root.find(t)) is not None]
+    if company is None or doc is None or len(found) != 1:
+        raise RadError("not a DFP/ITR statements XML")
+    form, data = found[0]
+    reference = _day(_text(data, "DataReferencia"))
+    scale = _SCALE.get(_text(data, "EscalaMoeda") or "")
+    currency = _CURRENCY.get(_text(data, "Moeda") or "")
+    if reference is None or scale is None or currency is None:
+        raise RadError(f"unknown reference/scale/currency: {_text(data, 'EscalaMoeda')} {_text(data, 'Moeda')}")
+    periods = _periods(data, form)
+    head: dict[str, Any] = {
+        "form": form,
+        "cnpj": _cnpj(_text(company, "CnpjEmpresa") or ""),
+        "reference_date": reference,
+        "version": int(_text(doc, "VersaoDocumento") or ""),
+        "company_name": _text(company, "RazaoSocialEmpresa"),
+        "cd_cvm": (_text(company, "CodigoCvm") or "").zfill(6),
+        "currency": currency,
+        "scale": scale,
+    }
+    forms = data.find("Formulario")
+    if forms is None:
+        raise RadError("no Formulario")
+    rows: list[dict[str, Any]] = []
+    for container, cons in (("DfConsolidadas", "con"), ("DfIndividuais", "ind")):
+        group = forms.find(container)
+        for st in () if group is None else group:
+            code = _STATEMENT_ELEMENTS.get(st.tag)
+            if code is None:
+                raise RadError(f"unknown statement element {st.tag}")
+            where = f"Formulario/{container}/{st.tag}"
+            if code == "DMPL":
+                _dmpl(st, rows, head, cons, periods, where)
+                continue
+            balance = code in ("BPA", "BPP")
+            contas = st.findall("Conta")
+            eps = _eps_headers(contas) if code == "DRE" else set()
+            for n, c in enumerate(contas, start=1):
+                stmt = code
+                if code == "DFC":
+                    method = _text(c, "Metodo")
+                    if method not in _DFC_METHOD:
+                        raise RadError(f"DFC method {method!r}")
+                    stmt = _DFC_METHOD[method]
+                heading = _text(c, "CodigoConta") in eps and bool(_text(c, "DescricaoConta"))
+                values: dict[Period, Decimal] = {}  # a Q1 quarter is also the year to date: one line, the written value
+                for tag, (order, start, end) in periods.items():
+                    if tag not in _BALANCE_TAGS if balance else tag == "ExercicioAnterior":
+                        continue
+                    v = _value(_text(c, tag))
+                    span = (order, None if balance else start, end)
+                    if v is None and heading and c.find(tag) is not None:
+                        v = Decimal(0)  # only if no other element of the span has a value
+                        values.setdefault(span, v)
+                    elif v is not None and not _placeholder(c, v) and (span not in values or values[span] == 0):
+                        values[span] = v
+                for span, v in values.items():
+                    rows.append(_line(head, c, stmt, cons, span, None, v, f"{where}/Conta[{n}]"))
+    return pl.DataFrame(rows, schema=SCHEMA) if rows else pl.DataFrame(schema=SCHEMA)
+
+
+_DS_CONTA = {ord("\r"): None, ord("\n"): None, ord("\t"): None, 0x2013: "-"}  # measured against open data
+
+
+def _name(c: ET.Element) -> str | None:
+    """DS_CONTA as the open-data CSV writes it (measured): spaces stripped, then line breaks and tabs removed (so a
+    space before a break survives), a no-break space kept, an en dash written as a hyphen, cut at `NAME_WIDTH`."""
+    e = c.find("DescricaoConta")
+    text = "" if e is None or e.text is None else e.text.strip(" ")
+    return text.translate(_DS_CONTA)[:NAME_WIDTH] or None
+
+
+def _line(
+    head: dict[str, Any],
+    c: ET.Element,
+    stmt: str,
+    cons: str,
+    period: Period,
+    equity: str | None,
+    v: Decimal,
+    locator: str,
+) -> dict[str, Any]:
+    fixed = _text(c, "ContaFixa")
+    return {
+        **head,
+        "statement": stmt,
+        "consolidation": cons,
+        "statement_group": ("DF Consolidado - " if cons == "con" else "DF Individual - ") + _GROUP_NAMES[stmt],
+        "period_order": period[0],
+        "period_start": period[1],
+        "period_end": period[2],
+        "equity_column": equity,
+        "account_code": _text(c, "CodigoConta"),
+        "account_name": _name(c),
+        "value": v,
+        "fixed_account": {"True": True, "False": False}.get(fixed or ""),
+        "raw_locator": locator,
+    }
+
+
+def _dmpl(
+    st: ET.Element,
+    rows: list[dict[str, Any]],
+    head: dict[str, Any],
+    cons: str,
+    periods: dict[str, Period],
+    where: str,
+) -> None:
+    """DMPL: one `<DMPL>` block per period, one column per equity component of each account (an element each, or a
+    `CamposDadosContas` entry with its label)."""
+    by_span = {(p[1], p[2]): p for t, p in periods.items() if t not in ("TrimestreAtual", "TrimestreAnterior")}
+    for b, block in enumerate(st.findall("DMPL"), start=1):
+        per = block.find("Periodo")
+        span = (_day(_text(per, "DtInicio")), _day(_text(per, "DtFim")))
+        period = by_span.get(span)  # type: ignore[arg-type]
+        if period is None:  # the antepenultimate period: not part of the open-data layout
+            continue
+        for n, c in enumerate(block.findall("Contas/Conta"), start=1):
+            at = f"{where}/DMPL[{b}]/Contas/Conta[{n}]"
+            columns: list[tuple[str, str | None, str]] = []  # (label, value text, locator)
+            for col in c:
+                if col.tag in _META:
+                    continue
+                if col.tag == "DadosContas":
+                    for k, f in enumerate(col.findall("CamposDadosContas"), start=1):
+                        label = _equity_label(_text(f, "Descricao") or "")
+                        columns.append((label, _text(f, "Valor"), f"{at}/DadosContas[{k}]"))
+                    continue
+                label = _EQUITY.get(col.tag)
+                if label is None:
+                    raise RadError(f"unknown DMPL column {col.tag}")
+                columns.append((label, col.text, f"{at}/{col.tag}"))
+            for label, text, locator in columns:
+                v = _value(text)
+                if v is not None and not _placeholder(c, v):
+                    rows.append(_line(head, c, "DMPL", cons, period, label, v, locator))
+
+
+def _equity_label(text: str) -> str:
+    t = text.strip().casefold()
+    for prefix, label in _EQUITY_TEXT:
+        if t.startswith(prefix):
+            return label
+    raise RadError(f"unknown DMPL column {text!r}")
+
+
+_CAPITAL = {"common": "Ordinarias", "preferred": "Preferenciais", "total": "QtdeTotalAcoes"}
+
+
+def parse_capital(xml: bytes) -> pl.DataFrame:
+    """`ComposicaoCapital` (shares paid in and in treasury) as the open-data `share_capital` contract: the counts as
+    written, which are in thousands when `EscalaQtdAcoes` is 2, exactly as open data carries them."""
+    root = ET.fromstring(xml)
+    found = [(f, e) for t, f in _FORMS.items() if (e := root.find(t)) is not None]
+    company, doc = root.find("DadosEmpresa"), root.find("Documento")
+    if company is None or doc is None or len(found) != 1:
+        raise RadError("not a DFP/ITR statements XML")
+    form, data = found[0]
+    comp = data.find("Formulario/DadosEmpresa/ComposicaoCapital")
+    if comp is None:
+        return pl.DataFrame(schema=CAPITAL_SCHEMA)
+    out: dict[str, Any] = {
+        "form": form,
+        "cnpj": _cnpj(_text(company, "CnpjEmpresa") or ""),
+        "reference_date": _day(_text(data, "DataReferencia")),
+        "version": int(_text(doc, "VersaoDocumento") or ""),
+        "company_name": _text(company, "RazaoSocialEmpresa"),
+    }
+    for a, tag in (("paid_in", "CaptalIntegralizado"), ("treasury", "Tesouraria")):
+        for b, el in _CAPITAL.items():
+            v = _value(_text(comp, f"{tag}/{el}"))
+            # open data carries a missing treasury count as 0
+            out[f"{b}_{a}"] = int(v) if v is not None else (0 if a == "treasury" else None)
+    return pl.DataFrame([out], schema=CAPITAL_SCHEMA)
+
+
+CAPITAL_SCHEMA: dict[str, Any] = {
+    "form": pl.String,
+    "cnpj": pl.String,
+    "reference_date": pl.Date,
+    "version": pl.Int16,
+    "company_name": pl.String,
+    **{f"{b}_{a}": pl.Int64 for b in _CAPITAL for a in ("paid_in", "treasury")},
+}
+
+
+def parse_payload(blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+    """One archived statements XML -> `statement_line` (and `share_capital`), partitioned like the open-data
+    staging. The JSON record next to each XML (full sha256, members) holds no data and parses to nothing."""
+    if not blob.lstrip().startswith(b"<"):
+        raise NotData("RAD legacy layout (marker only): no statements XML to parse")
+    prov = [pl.lit(row["raw_sha256"]).alias("raw_sha256"), pl.lit(row["ingest_run_id"]).alias("ingest_run_id")]
+    df = parse_statements(blob)
+    for (form, year, stmt, cons), part in df.with_columns(year=pl.col("reference_date").dt.year()).group_by(
+        "form", "year", "statement", "consolidation", maintain_order=True
+    ):
+        partition = f"form={form}/year={year}/statement={stmt}_{cons}"
+        yield Parsed("statement_line", partition, part.drop("year").with_columns(*prov))
+    cap = parse_capital(blob)
+    if cap.height:
+        c = cap.row(0, named=True)
+        yield Parsed(
+            "share_capital",
+            f"form={c['form']}/year={c['reference_date'].year}",
+            cap.with_columns(pl.lit("xml;path=Formulario/DadosEmpresa/ComposicaoCapital").alias("raw_locator"), *prov),
+        )
+
+
+class CvmRadVersions(Connector):
+    """The superseded versions of every DFP/ITR in the document index, from CVM's RAD (one zip each, ~10 MB, a
+    request of its own: ADR-0027). Held versions are skipped, so the job resumes where it stopped."""
+
+    source_id: ClassVar[str] = "cvm_rad_versions"
+    version: ClassVar[str] = "1"
+    contracts: ClassVar[dict[str, Contract]] = {"statement_line": STATEMENT_LINE, "share_capital": SHARE_CAPITAL}
+    min_interval: ClassVar[float] = 0.25
+    concurrency: ClassVar[int] = 4
+    dedup_staging: ClassVar[bool] = False
+
+    def discover(self, mode: Mode, zones: Zones, **options: Any) -> Iterable[FetchSpec]:
+        index = read_parquet_dir(zones.staging / "cvm_dfp_itr" / "document")
+        if index is None:
+            return
+        held = {
+            int(m.group(1))
+            for n in Manifest(zones.manifest)
+            .read()
+            .filter((pl.col("source_id") == self.source_id) & (pl.col("http_status") == 200))["notes"]
+            .drop_nulls()
+            if (m := _DOC.search(n))
+        }
+        todo = (
+            index.with_columns(latest=pl.col("version").max().over("form", "cnpj", "reference_date"))
+            .filter((pl.col("version") < pl.col("latest")) & (pl.col("doc_id") >= FIRST_XML_DOC_ID))
+            .sort("reference_date", "doc_id", descending=True)
+        )
+        for r in todo.iter_rows(named=True):
+            if r["doc_id"] in held:
+                continue
+            yield FetchSpec(
+                self.source_id,
+                "document",
+                URL.format(doc_id=r["doc_id"]),
+                "xml",
+                reference_date=r["reference_date"],
+                conditional=False,
+                min_bytes=MIN_BYTES,
+                extract=extract_statements,
+                notes=f"doc={r['doc_id']};{r['form']};v{r['version']}",
+            )
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return parse_payload(blob, row)

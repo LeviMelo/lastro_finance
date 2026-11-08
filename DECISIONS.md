@@ -35,3 +35,4 @@ the alternatives where they were weighed, and **what evidence would overturn it*
 | [ADR-0024](docs/decisions/ADR-0024-the-calendar-before-2001-is-bcb-publication-days.md) | 2026-11-08 | The calendar before 2001 is BCB's CDI publication days, marked `bcb_sgs_12` | active |  |
 | [ADR-0025](docs/decisions/ADR-0025-a-cvm-175-class-continues-the-legacy-fund-that-shares-or-donates-its-cnpj.md) | 2026-11-08 | A CVM 175 class continues the legacy fund whose CNPJ it carries; the bridge is tested on the daily quota (98.8 % continuous) | active |  |
 | [ADR-0026](docs/decisions/ADR-0026-the-dossier-reads-a-portfolio-file-until-the-ledger-exists.md) | 2026-11-08 | The dossier is built now, from a portfolio file, until the ledger exists | active |  |
+| [ADR-0027](docs/decisions/ADR-0027-superseded-filings-are-kept-as-their-statements-only.md) | 2026-11-08 | Superseded CVM filings are recovered from RAD and kept as their statements only (~0.4 % of the download) | active |  |

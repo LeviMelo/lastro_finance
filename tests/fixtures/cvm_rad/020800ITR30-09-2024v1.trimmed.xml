@@ -1,0 +1,323 @@
+<?xml version='1.0' encoding='utf-8'?>
+<XmlInformacoesTrimestraisFinanceiras>
+  <DadosEmpresa>
+    <CodigoCvm>020800</CodigoCvm>
+    <RazaoSocialEmpresa>TEGMA GESTAO LOGISTICA S.A.</RazaoSocialEmpresa>
+    <CnpjEmpresa>02351144000118</CnpjEmpresa>
+    <TipoEmpresa>1</TipoEmpresa>
+  </DadosEmpresa>
+  <Documento>
+    <TipoDocumento>3</TipoDocumento>
+    <TipoApresentacao>1</TipoApresentacao>
+    <NumeroExigencia />
+    <MotivoReapresentacao />
+    <VersaoDocumento>1</VersaoDocumento>
+  </Documento>
+  <DadosITR>
+    <DataReferencia>30/09/2024</DataReferencia>
+    <DtInicioTrimestreAtual>01/07/2024</DtInicioTrimestreAtual>
+    <DtFimTrimestreAtual>30/09/2024</DtFimTrimestreAtual>
+    <DtInicioExercicioSocialCurso>01/01/2024</DtInicioExercicioSocialCurso>
+    <DtFimExercicioSocialCurso>31/12/2024</DtFimExercicioSocialCurso>
+    <DtInicioExercicioSocialAnterior>01/01/2023</DtInicioExercicioSocialAnterior>
+    <DtFimExercicioSocialAnterior>31/12/2023</DtFimExercicioSocialAnterior>
+    <Moeda>1</Moeda>
+    <EscalaMoeda>2</EscalaMoeda>
+    <EscalaQtdAcoes>1</EscalaQtdAcoes>
+    <TipoDemonstracao>2</TipoDemonstracao>
+    <VersaoPlanoContas>2</VersaoPlanoContas>
+    <Formulario>
+      <DadosEmpresa>
+        <ComposicaoCapital>
+          <CaptalIntegralizado>
+            <Ordinarias>66002915</Ordinarias>
+            <Preferenciais>0</Preferenciais>
+            <QtdeTotalAcoes>66002915</QtdeTotalAcoes>
+          </CaptalIntegralizado>
+          <Tesouraria>
+            <Ordinarias>65143</Ordinarias>
+            <Preferenciais>0</Preferenciais>
+            <QtdeTotalAcoes>65143</QtdeTotalAcoes>
+          </Tesouraria>
+        </ComposicaoCapital>
+      </DadosEmpresa>
+      <DfIndividuais>
+        <BalancoPatrimonialAtivo>
+          <Conta>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>1</CodigoConta>
+            <DescricaoConta>Ativo Total</DescricaoConta>
+            <TrimestreAtual>1.244.763</TrimestreAtual>
+            <ExercicioAnterior>1.155.954</ExercicioAnterior>
+          </Conta>
+          <Conta>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>1.01</CodigoConta>
+            <DescricaoConta>Ativo Circulante</DescricaoConta>
+            <TrimestreAtual>563.049</TrimestreAtual>
+            <ExercicioAnterior>455.754</ExercicioAnterior>
+          </Conta>
+          <Conta>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>1.01.01</CodigoConta>
+            <DescricaoConta>Caixa e Equivalentes de Caixa</DescricaoConta>
+            <TrimestreAtual>190.071</TrimestreAtual>
+            <ExercicioAnterior>141.442</ExercicioAnterior>
+          </Conta>
+        </BalancoPatrimonialAtivo>
+      </DfIndividuais>
+      <DfConsolidadas>
+        <BalancoPatrimonialAtivo>
+          <Conta>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>1</CodigoConta>
+            <DescricaoConta>Ativo Total</DescricaoConta>
+            <TrimestreAtual>1.287.540</TrimestreAtual>
+            <ExercicioAnterior>1.199.711</ExercicioAnterior>
+          </Conta>
+          <Conta>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>1.01</CodigoConta>
+            <DescricaoConta>Ativo Circulante</DescricaoConta>
+            <TrimestreAtual>691.781</TrimestreAtual>
+            <ExercicioAnterior>612.732</ExercicioAnterior>
+          </Conta>
+          <Conta>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>1.01.01</CodigoConta>
+            <DescricaoConta>Caixa e Equivalentes de Caixa</DescricaoConta>
+            <TrimestreAtual>264.126</TrimestreAtual>
+            <ExercicioAnterior>232.539</ExercicioAnterior>
+          </Conta>
+        </BalancoPatrimonialAtivo>
+        <BalancoPatrimonialPassivo>
+          <Conta>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>2</CodigoConta>
+            <DescricaoConta>Passivo Total</DescricaoConta>
+            <TrimestreAtual>1.287.540</TrimestreAtual>
+            <ExercicioAnterior>1.199.711</ExercicioAnterior>
+          </Conta>
+          <Conta>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>2.01</CodigoConta>
+            <DescricaoConta>Passivo Circulante</DescricaoConta>
+            <TrimestreAtual>246.889</TrimestreAtual>
+            <ExercicioAnterior>198.094</ExercicioAnterior>
+          </Conta>
+          <Conta>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>2.01.01</CodigoConta>
+            <DescricaoConta>Obrigações Sociais e Trabalhistas</DescricaoConta>
+            <TrimestreAtual>35.859</TrimestreAtual>
+            <ExercicioAnterior>30.229</ExercicioAnterior>
+          </Conta>
+        </BalancoPatrimonialPassivo>
+        <DemonstracaoResultado>
+          <Conta>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>3.01</CodigoConta>
+            <DescricaoConta>Receita de Venda de Bens e/ou Serviços</DescricaoConta>
+            <TrimestreAtual>603.754</TrimestreAtual>
+            <AcumuladoExercicioAtual>1.465.767</AcumuladoExercicioAtual>
+            <TrimestreAnterior>426.977</TrimestreAnterior>
+            <AcumuladoExercicioAnterior>1.129.666</AcumuladoExercicioAnterior>
+          </Conta>
+          <Conta>
+            <ContaFixa>False</ContaFixa>
+            <CodigoConta>3.01.01</CodigoConta>
+            <DescricaoConta />
+            <TrimestreAtual>0</TrimestreAtual>
+            <AcumuladoExercicioAtual>0</AcumuladoExercicioAtual>
+            <TrimestreAnterior>0</TrimestreAnterior>
+            <AcumuladoExercicioAnterior>0</AcumuladoExercicioAnterior>
+          </Conta>
+          <Conta>
+            <ContaFixa>False</ContaFixa>
+            <CodigoConta>3.01.02</CodigoConta>
+            <DescricaoConta />
+            <TrimestreAtual>0</TrimestreAtual>
+            <AcumuladoExercicioAtual>0</AcumuladoExercicioAtual>
+            <TrimestreAnterior>0</TrimestreAnterior>
+            <AcumuladoExercicioAnterior>0</AcumuladoExercicioAnterior>
+          </Conta>
+          <Conta>
+            <ContaFixa>False</ContaFixa>
+            <CodigoConta>3.01.03</CodigoConta>
+            <DescricaoConta />
+            <TrimestreAtual>0</TrimestreAtual>
+            <AcumuladoExercicioAtual>0</AcumuladoExercicioAtual>
+            <TrimestreAnterior>0</TrimestreAnterior>
+            <AcumuladoExercicioAnterior>0</AcumuladoExercicioAnterior>
+          </Conta>
+        </DemonstracaoResultado>
+        <DemonstracaoResultadoAbrangente>
+          <Conta>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>4.01</CodigoConta>
+            <DescricaoConta>Lucro Líquido Consolidado do Período</DescricaoConta>
+            <TrimestreAtual>84.445</TrimestreAtual>
+            <AcumuladoExercicioAtual>185.475</AcumuladoExercicioAtual>
+            <TrimestreAnterior>56.312</TrimestreAnterior>
+            <AcumuladoExercicioAnterior>130.891</AcumuladoExercicioAnterior>
+          </Conta>
+          <Conta>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>4.02</CodigoConta>
+            <DescricaoConta>Outros Resultados Abrangentes</DescricaoConta>
+            <TrimestreAtual>0</TrimestreAtual>
+            <AcumuladoExercicioAtual>0</AcumuladoExercicioAtual>
+            <TrimestreAnterior>0</TrimestreAnterior>
+            <AcumuladoExercicioAnterior>157</AcumuladoExercicioAnterior>
+          </Conta>
+        </DemonstracaoResultadoAbrangente>
+        <DemonstracaoFluxoCaixa>
+          <Conta>
+            <Metodo>Indireto</Metodo>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>6.01</CodigoConta>
+            <DescricaoConta>Caixa Líquido Atividades Operacionais</DescricaoConta>
+            <AcumuladoAtualExercicio>202.452</AcumuladoAtualExercicio>
+            <AcumuladoExercicioAnterior>200.538</AcumuladoExercicioAnterior>
+          </Conta>
+          <Conta>
+            <Metodo>Indireto</Metodo>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>6.01.01</CodigoConta>
+            <DescricaoConta>Caixa Gerado nas Operações</DescricaoConta>
+            <AcumuladoAtualExercicio>220.539</AcumuladoAtualExercicio>
+            <AcumuladoExercicioAnterior>173.629</AcumuladoExercicioAnterior>
+          </Conta>
+          <Conta>
+            <Metodo>Indireto</Metodo>
+            <ContaFixa>False</ContaFixa>
+            <CodigoConta>6.01.01.01</CodigoConta>
+            <DescricaoConta>Lucro líquido do exercício</DescricaoConta>
+            <AcumuladoAtualExercicio>185.475</AcumuladoAtualExercicio>
+            <AcumuladoExercicioAnterior>130.891</AcumuladoExercicioAnterior>
+          </Conta>
+        </DemonstracaoFluxoCaixa>
+        <DemonstracaoMutacoesPatrimonioLiquido>
+          <DMPL>
+            <Periodo>
+              <DtInicio>01/01/2024</DtInicio>
+              <DtFim>30/09/2024</DtFim>
+            </Periodo>
+            <Contas>
+              <Conta>
+                <ContaFixa>True</ContaFixa>
+                <CodigoConta>5.01</CodigoConta>
+                <DescricaoConta>Saldos Iniciais</DescricaoConta>
+                <CapitalSocialIntegralizado>318.524</CapitalSocialIntegralizado>
+                <ReservasCapitalOpcoesOutorgAcoesTesour>-343</ReservasCapitalOpcoesOutorgAcoesTesour>
+                <ReservasLucro>518.822</ReservasLucro>
+                <LucroPrejuizoAcumulado>0</LucroPrejuizoAcumulado>
+                <OutrosResultadosAbrangentes>-1.833</OutrosResultadosAbrangentes>
+                <PatrimonioLiquido>835.170</PatrimonioLiquido>
+                <PatrimonioLiquidoAcionistasNaoControl>1.375</PatrimonioLiquidoAcionistasNaoControl>
+                <PatrimonioLiquidoConsolidado>836.545</PatrimonioLiquidoConsolidado>
+              </Conta>
+              <Conta>
+                <ContaFixa>True</ContaFixa>
+                <CodigoConta>5.02</CodigoConta>
+                <DescricaoConta>Ajustes de Exercícios Anteriores</DescricaoConta>
+                <CapitalSocialIntegralizado>0</CapitalSocialIntegralizado>
+                <ReservasCapitalOpcoesOutorgAcoesTesour>0</ReservasCapitalOpcoesOutorgAcoesTesour>
+                <ReservasLucro>0</ReservasLucro>
+                <LucroPrejuizoAcumulado>0</LucroPrejuizoAcumulado>
+                <OutrosResultadosAbrangentes>0</OutrosResultadosAbrangentes>
+                <PatrimonioLiquido>0</PatrimonioLiquido>
+                <PatrimonioLiquidoAcionistasNaoControl>0</PatrimonioLiquidoAcionistasNaoControl>
+                <PatrimonioLiquidoConsolidado>0</PatrimonioLiquidoConsolidado>
+              </Conta>
+              <Conta>
+                <ContaFixa>False</ContaFixa>
+                <CodigoConta>5.02.01</CodigoConta>
+                <DescricaoConta />
+                <CapitalSocialIntegralizado>0</CapitalSocialIntegralizado>
+                <ReservasCapitalOpcoesOutorgAcoesTesour>0</ReservasCapitalOpcoesOutorgAcoesTesour>
+                <ReservasLucro>0</ReservasLucro>
+                <LucroPrejuizoAcumulado>0</LucroPrejuizoAcumulado>
+                <OutrosResultadosAbrangentes>0</OutrosResultadosAbrangentes>
+                <PatrimonioLiquido>0</PatrimonioLiquido>
+                <PatrimonioLiquidoAcionistasNaoControl>0</PatrimonioLiquidoAcionistasNaoControl>
+                <PatrimonioLiquidoConsolidado>0</PatrimonioLiquidoConsolidado>
+              </Conta>
+            </Contas>
+          </DMPL>
+          <DMPL>
+            <Periodo>
+              <DtInicio>01/01/2023</DtInicio>
+              <DtFim>30/09/2023</DtFim>
+            </Periodo>
+            <Contas>
+              <Conta>
+                <ContaFixa>True</ContaFixa>
+                <CodigoConta>5.01</CodigoConta>
+                <DescricaoConta>Saldos Iniciais</DescricaoConta>
+                <CapitalSocialIntegralizado>318524,0000000000</CapitalSocialIntegralizado>
+                <ReservasCapitalOpcoesOutorgAcoesTesour>-343,0000000000</ReservasCapitalOpcoesOutorgAcoesTesour>
+                <ReservasLucro>450164,0000000000</ReservasLucro>
+                <LucroPrejuizoAcumulado>0,0000000000</LucroPrejuizoAcumulado>
+                <OutrosResultadosAbrangentes>-2156,0000000000</OutrosResultadosAbrangentes>
+                <PatrimonioLiquido>766189,0000000000</PatrimonioLiquido>
+                <PatrimonioLiquidoAcionistasNaoControl>938,0000000000</PatrimonioLiquidoAcionistasNaoControl>
+                <PatrimonioLiquidoConsolidado>767127,0000000000</PatrimonioLiquidoConsolidado>
+              </Conta>
+              <Conta>
+                <ContaFixa>True</ContaFixa>
+                <CodigoConta>5.02</CodigoConta>
+                <DescricaoConta>Ajustes de Exercícios Anteriores</DescricaoConta>
+                <CapitalSocialIntegralizado>0,0000000000</CapitalSocialIntegralizado>
+                <ReservasCapitalOpcoesOutorgAcoesTesour>0,0000000000</ReservasCapitalOpcoesOutorgAcoesTesour>
+                <ReservasLucro>0,0000000000</ReservasLucro>
+                <LucroPrejuizoAcumulado>0,0000000000</LucroPrejuizoAcumulado>
+                <OutrosResultadosAbrangentes>0,0000000000</OutrosResultadosAbrangentes>
+                <PatrimonioLiquido>0,0000000000</PatrimonioLiquido>
+                <PatrimonioLiquidoAcionistasNaoControl>0,0000000000</PatrimonioLiquidoAcionistasNaoControl>
+                <PatrimonioLiquidoConsolidado>0,0000000000</PatrimonioLiquidoConsolidado>
+              </Conta>
+              <Conta>
+                <ContaFixa>False</ContaFixa>
+                <CodigoConta>5.02.01</CodigoConta>
+                <DescricaoConta />
+                <CapitalSocialIntegralizado>
+                </CapitalSocialIntegralizado>
+                <ReservasCapitalOpcoesOutorgAcoesTesour>
+                </ReservasCapitalOpcoesOutorgAcoesTesour>
+                <ReservasLucro>
+                </ReservasLucro>
+                <LucroPrejuizoAcumulado>
+                </LucroPrejuizoAcumulado>
+                <OutrosResultadosAbrangentes>
+                </OutrosResultadosAbrangentes>
+                <PatrimonioLiquido>
+                </PatrimonioLiquido>
+                <PatrimonioLiquidoAcionistasNaoControl>
+                </PatrimonioLiquidoAcionistasNaoControl>
+                <PatrimonioLiquidoConsolidado>
+                </PatrimonioLiquidoConsolidado>
+              </Conta>
+            </Contas>
+          </DMPL>
+        </DemonstracaoMutacoesPatrimonioLiquido>
+        <DemonstracaoValorAdicionado>
+          <Conta>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>7.01</CodigoConta>
+            <DescricaoConta>Receitas</DescricaoConta>
+            <AcumuladoAtualExercicio>1.731.976</AcumuladoAtualExercicio>
+            <AcumuladoExercicioAnterior>1.331.450</AcumuladoExercicioAnterior>
+          </Conta>
+          <Conta>
+            <ContaFixa>True</ContaFixa>
+            <CodigoConta>7.01.01</CodigoConta>
+            <DescricaoConta>Vendas de Mercadorias, Produtos e Serviços</DescricaoConta>
+            <AcumuladoAtualExercicio>1.731.799</AcumuladoAtualExercicio>
+            <AcumuladoExercicioAnterior>1.330.243</AcumuladoExercicioAnterior>
+          </Conta>
+        </DemonstracaoValorAdicionado>
+      </DfConsolidadas>
+    </Formulario>
+  </DadosITR>
+</XmlInformacoesTrimestraisFinanceiras>

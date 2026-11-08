@@ -22,6 +22,7 @@ from fin.ingest.b3_events import B3CompanyEvents
 from fin.ingest.base import Connector
 from fin.ingest.context import context_connectors
 from fin.ingest.cvm_funds import CvmFiCda, CvmFii, CvmFiInfDiario
+from fin.ingest.cvm_rad import CvmRadVersions
 from fin.ingest.intraday import YahooIntraday
 from fin.ingest.ptax import BcbPtax
 from fin.ingest.snapshots import (
@@ -70,6 +71,7 @@ CONNECTORS: dict[str, type[Connector]] = {
         CvmFii,
         CvmFiInfDiario,
         CvmFiCda,
+        CvmRadVersions,
         FundosNetRendimentos,
         IbgeSidra,
         Ipeadata,
@@ -117,6 +119,7 @@ DAILY: tuple[str, ...] = (
     "cvm_fii",
     "cvm_fi_inf_diario",
     "cvm_fi_cda",
+    "cvm_rad_versions",  # superseded DFP/ITR versions, kept as statements only (ADR-0027)
     "yahoo_intraday",  # tier U: 5-minute bars exist only ~60 days back, so they are archived as they pass
     "b3_company_events",  # each issuer weekly: the Supplement is current state only
     # the context catalogue (reference/context_series.toml): each entry carries its own cadence

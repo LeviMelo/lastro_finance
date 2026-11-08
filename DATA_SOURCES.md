@@ -19,7 +19,7 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `anbima_vna` | ANBIMA | P | **ephemeral: 6 business days** | archiving since 2026-10-29 | [note](docs/sources/anbima_vna.md) |
 | `anbima_debentures` | ANBIMA | P | **ephemeral: 6 business days** | archiving since 2026-10-29 | [note](docs/sources/anbima_debentures.md) |
 | `anbima_projecoes` | ANBIMA | P | **ephemeral: latest values only** | archiving since 2026-11-07 | [note](docs/sources/anbima_projecoes.md) |
-| `b3_bdi` | B3 | P | **ephemeral: 21 business days** | archiving since 2026-10-07 | [note](docs/sources/b3_settlement_prices.md) |
+| `b3_bdi` | B3 | P | **ephemeral: 21 business days** (DebenturesBusiness: M-18, backfilled from 2025-05-08) | archiving since 2026-10-07 | [note](docs/sources/b3_settlement_prices.md) |
 | `b3_instruments` | B3 | P | **since 2025-06-10, start may roll (OQ-19)** | archiving; served history backfilled | [note](docs/sources/b3_instruments.md) |
 | `b3_pesquisapregao` | B3 | P | PR 2018-01-02–, TS 2000-01-14– | archiving daily since 2026-11-07; TS and PR parsed (PR backfill pending) | [note](docs/sources/b3_settlement_prices.md) |
 | `b3_reference_rates` | B3 | P | via TS files 2000–; web CSV since 2026-10-05 | archiving (as `b3_pesquisapregao` TS) | [note](docs/sources/b3_reference_rates.md) |
@@ -31,6 +31,7 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `cvm_fca` | CVM | P | 2010– (tickers from 2018) | parsed | [note](docs/sources/cvm_fca.md) |
 | `cvm_fre` | CVM | P | 2010– | parsed | [note](docs/sources/cvm_fre.md) |
 | `cvm_dfp_itr` | CVM | P | DFP 2010–, ITR 2011– | recon | [note](docs/sources/cvm_dfp_itr.md) |
+| `cvm_rad_versions` | CVM | P | superseded DFP/ITR versions, statements XML from 2021-10 (older: legacy layout, not parsed) | parsed | [note](docs/sources/cvm_rad_versions.md) |
 | `cvm_ipe` | CVM | P | 2003– | parsed | [note](docs/sources/cvm_ipe.md) |
 | `cvm_vlmo` | CVM | P | 2018– | recon | [note](docs/sources/cvm_vlmo.md) |
 | `cvm_fi_inf_diario` | CVM | P | 2000– (real size from 2004) | recon | [note](docs/sources/cvm_fi_inf_diario.md) |
@@ -44,6 +45,8 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `ibge_sidra` | IBGE | P | IPCA number index (Dec-1993 = 100), monthly | recon | [note](docs/sources/ibge_sidra.md) |
 | `nefin` | NEFIN-FEA/USP | S | 2001– (last date 2026-09-08) | archiving since 2026-11-07 | [note](docs/sources/nefin.md) |
 | `snd_debentures` | SND | P | terms 1981– (snapshot), agenda future-only, trades 1993-11– | archiving | [note](docs/sources/snd_debentures.md) |
+| `b3_fixed_income` | B3 | P | Trade 2023-03-13–, SaleOff/Stock 2023-03-01– (`drp.b3.com.br`); HistoricoRF files (79, to 2025-12-11) not fetched | archiving; backfilled | [note](docs/sources/b3_fixed_income.md) |
+| `snd_pu_historico` | SND | P | PU of every debenture since issue (dead ones included) | archiving; backfilled | [note](docs/sources/snd_pu_historico.md) |
 | `tesouro_vna` | Tesouro Nacional | P | VNA NTN-B / NTN-C monthly 2000– | archiving | [note](docs/sources/tesouro_vna.md) |
 | `b3_fundosnet` | B3 | P | FII/Fiagro distribution notices 2016-11– | archiving | [note](docs/sources/b3_fundosnet.md) |
 | `ipeadata` | IPEA (FGV) | S | IGP-M 1989–, IGP-DI 1944– | archiving | [note](docs/sources/ipeadata.md) |
