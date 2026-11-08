@@ -139,6 +139,7 @@ PRICE_DAILY = Contract(
             pl.Int16,
             "DISMES: changes at each corporate event",
             "número de distribuição",
+            "ordinal",
             nullable=False,
         ),
         Column(
@@ -146,9 +147,17 @@ PRICE_DAILY = Contract(
             pl.Int64,
             "BRL per unit of `currency` = brl_num / brl_den",
             "fator BRL (numerador)",
+            "BRL per currency unit (numerator)",
             nullable=False,
         ),
-        Column("brl_den", pl.Int64, "see brl_num", "fator BRL (denominador)", nullable=False),
+        Column(
+            "brl_den",
+            pl.Int64,
+            "see brl_num",
+            "fator BRL (denominador)",
+            "BRL per currency unit (denominator)",
+            nullable=False,
+        ),  # fmt: skip
     ),
     rules=(
         Rule("segment_known", pl.col("market_segment").is_in(list(SEGMENTS.values()))),

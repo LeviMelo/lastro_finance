@@ -139,6 +139,7 @@ QUOTE = Contract(
             pl.Int16,
             "distribution number (DISMES): changes at each corporate event",
             "número de distribuição",
+            "ordinal",
             nullable=False,
         ),
     ),
