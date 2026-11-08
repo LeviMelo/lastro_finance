@@ -41,7 +41,18 @@ CNPJ and CVM_CODE. There are no tickers in the capital tables.
 ## 6. Ephemerality
 Persistent yearly files.
 
-## 7. Open questions
+## 7. Parsed (2026-11-07)
+- `ingest/cvm_fre.py` parses the index into staging `document` (73,421 versions) and `capital_social` into staging
+  `capital_social` (45,661 rows, 0 quarantined). Other members are not parsed; some hold personal data.
+- `capital_social` exists in every year 2010-2026, with ON, PN and total quantities. Each yearly zip keeps only the
+  latest version of each company's FRE; the index lists every version with its DT_RECEB.
+- **Counts are whole shares** (Itaú 2016: 6,582,307,543; Petrobras 13,044,496,930). Against the nearest DFP/ITR count
+  with a known unit (2020-), 2,161 of 2,251 agree within 30 %. The rest are real capital changes, plus 5 at a factor
+  of about 1,000 where the DFP-side unit inference looks wrong (Iguatemi, SmartFit).
+- A document may list several `Capital Integralizado` rows, one per approval; the latest approval is the current
+  one. They feed core `share_count` as form `fre` (ADR-0021).
+
+## 8. Open questions
 - Tipo_Evento domain (desdobramento, grupamento or bonificacao).
 - Number and decimal formats.
 - Whether 2024+ has any replacement for capital history.

@@ -19,8 +19,8 @@ Day one (2026-11-07).
   - the query layer: `data/catalog.duckdb`, views only, incl. `fundamental_fact` and `price_adjusted` (ADR-0017);
   - staging `expectation`: Focus market expectations 2000– (3.6 M statistics);
   - core `issuer` (2,532 CNPJs) linked to 1,575 instruments (ADR-0018); `universe(date, class)` in the catalog;
-  - `valuation(date)` in the catalog: market cap, P/L, P/VP as known on a date, 2020– (253 issuers on 2026-11-06;
-    ADR-0021);
+  - `valuation(date)` in the catalog: market cap, P/L, P/VP as known on a date, 2010– (270 issuers on 2026-11-06,
+    148 on 2015-06-30; share counts from DFP/ITR 2020– and FRE 2010–; ADR-0021);
   - staging: Tesouro Direto 2004–, FII distributions, CVM statements 2010– (66.8 M lines), intraday 5-minute bars
     (archived from 2026-11-07).
 - **Storage is lean by rule** (ADR-0014): re-sent files as deltas, CVM zips as member deltas, staging keeps changed
@@ -66,7 +66,6 @@ Day one (2026-11-07).
    (2009) is linked. Next: FII issuers from Fundos.NET.
 3. **Fundamentals:** 16 standard metrics exist (`fundamental_metric`). `share_count` has a per-filing unit
    (ADR-0020) and `valuation(d)` gives market cap, P/L and P/VP (ADR-0021). Next:
-   - share counts before 2020 from FRE;
    - insurers' templates.
 4. **Context:** every archived context source is parsed (Focus, Copom, CEPEA, ANP, ANBIMA IMA, CFTC included).
    The IMA history before 2026-10-29 remains a gap.

@@ -10,6 +10,11 @@ Inference, per issuer and form, filings in date order:
 2. walking back, a filing keeps the unit of the next one unless the raw counts differ by a factor near 1,000 (between
    300 and 3,000, or its inverse), which toggles it.
 Filings of issuers without a B3 count, or whose anchor is unknown, get `unit` null and no unit-free count.
+
+FRE `capital_social` (form `fre`, 2010-) states whole shares: against the nearest DFP/ITR count with a known unit
+(2020-), 2,161 of 2,251 agree within 30 % (measured 2026-11-07). An FRE row is the paid-in capital of the latest
+approval in the document, dated by the delivery of the version (`reference_date` = `received_on`: an FRE is
+re-delivered within days of a capital change), unit 1, no treasury.
 """
 
 from __future__ import annotations
@@ -28,8 +33,15 @@ SHARE_COUNT = Contract(
     provenance=False,
     columns=(
         Column("issuer_cnpj", pl.String, "14 digits", "CNPJ", nullable=False),
-        Column("form", pl.String, "dfp or itr", "formulário", nullable=False),
-        Column("reference_date", pl.Date, "period of the filing", "data de referência", "date", nullable=False),
+        Column("form", pl.String, "dfp, itr or fre", "formulário", nullable=False),
+        Column(
+            "reference_date",
+            pl.Date,
+            "period of the filing (fre: its delivery date)",
+            "data de referência",
+            "date",
+            nullable=False,
+        ),
         Column("version", pl.Int16, "filing version", "versão", "count", nullable=False),
         Column(
             "received_on", pl.Date, "CVM delivery date of the version (knowledge date)", "data de recebimento", "date"
@@ -106,6 +118,37 @@ def b3_counts(zones: Zones) -> pl.DataFrame:
     return pl.DataFrame(rows, schema={"cd": pl.Int64, "anchor_b3_total": pl.Int64}, orient="row").unique("cd")
 
 
+def fre_counts(zones: Zones) -> pl.DataFrame | None:
+    """Paid-in share counts from FRE `capital_social`, one per delivered document (see the module docstring)."""
+    cs = read_parquet_dir(zones.staging / "cvm_fre" / "capital_social")
+    docs = read_parquet_dir(zones.staging / "cvm_fre" / "document")
+    if cs is None or docs is None:
+        return None
+    pi = (
+        cs.filter(pl.col("capital_type") == "Capital Integralizado")
+        .sort("approved_on", "capital_id")
+        .unique("doc_id", keep="last")
+        .join(docs.select("doc_id", "received_on").unique("doc_id"), on="doc_id")
+    )
+    null = pl.lit(None, dtype=pl.Int64)
+    return pi.select(
+        pl.col("cnpj").str.replace_all(r"\D", "").alias("issuer_cnpj"),
+        pl.lit("fre").alias("form"),
+        pl.col("received_on").alias("reference_date"),
+        "version",
+        "received_on",
+        pl.lit(1, dtype=pl.Int32).alias("unit"),
+        "common",
+        "preferred",
+        "total",
+        null.alias("treasury"),
+        null.alias("common_treasury"),
+        null.alias("preferred_treasury"),
+        pl.col("total").fill_null(0).alias("total_as_filed"),
+        null.alias("anchor_b3_total"),
+    ).unique(["issuer_cnpj", "form", "reference_date", "version"], keep="last")
+
+
 def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
     sc = read_parquet_dir(zones.staging / "cvm_dfp_itr" / "share_capital")
     reg = read_parquet_dir(zones.staging / "cvm_cia_cadastro" / "company")
@@ -151,6 +194,9 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
         pl.col("total_paid_in").fill_null(0).alias("total_as_filed"),
         "anchor_b3_total",
     )
+    fre = fre_counts(zones)
+    if fre is not None:
+        out = pl.concat([out, fre], how="vertical_relaxed")
     good, bad = SHARE_COUNT.split(out)
     write_parquet(good, zones.core / "share_count" / "share_count.parquet")
     res = {"share_count": good.height, "with_unit": int(good["unit"].is_not_null().sum())}

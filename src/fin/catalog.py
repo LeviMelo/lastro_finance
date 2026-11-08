@@ -170,7 +170,9 @@ WITH sc AS (
            preferred - coalesce(preferred_treasury, 0) AS preferred_out
     FROM share_count
     WHERE unit IS NOT NULL AND received_on <= CAST(d AS DATE)
-    QUALIFY row_number() OVER (PARTITION BY issuer_cnpj ORDER BY reference_date DESC, version DESC, form) = 1
+    -- DFP/ITR first (they state treasury), FRE when no DFP/ITR count is known yet (before 2020)
+    QUALIFY row_number() OVER (
+        PARTITION BY issuer_cnpj ORDER BY form = 'fre', reference_date DESC, version DESC, form) = 1
 ), lines AS (
     SELECT s.cnpj AS issuer_cnpj, ii.instrument_id,
            CASE WHEN i.especi LIKE 'ON%' THEN 'ON' WHEN i.especi LIKE 'PN%' THEN 'PN' END AS cls

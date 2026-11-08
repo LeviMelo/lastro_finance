@@ -73,6 +73,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/series.py` | series payloads (SGS JSON and SOAP metadata, Ipeadata OData, SIDRA, Tesouro VNA workbooks, Treasury/NY Fed/Cboe CSVs, SDMX-CSV with the sources' unit codelists) → staging `observation`/`definition` → core `series_observation`/`series_definition`, versioned (ADR-0013) |
 | `ingest/cvm_statements.py` | CVM DFP/ITR zips → staging `statement_line` (every account line, value as written with its scale), `document` (every version and its delivery date), `share_capital` |
 | `ingest/cftc.py` | CFTC Commitments of Traders (3 reports) → staging `position`, long |
+| `ingest/cvm_fre.py` | FRE index and `capital_social` → staging `document`, `capital_social` |
 | `ingest/cvm_ipe.py` | CVM IPE yearly index → staging `document` (evidence for events) |
 | `ingest/copom.py` | BCB Copom decision history → staging `decision` |
 | `ingest/focus.py` | BCB Focus expectations (8 tables) → staging `expectation` |
@@ -86,7 +87,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `reference/sources.py` | loads and validates `reference/sources.toml`, the source registry |
 | `core/` | core tables built from staging |
 | `core/events.py` | corporate events (B3, Yahoo, Fundos.NET) merged and graded by the price move; derived adjustment factors; `adjusted_close` (ADR-0016) |
-| `core/shares.py` | `share_count`: CVM share counts in units, unit inferred per filing (ADR-0020) |
+| `core/shares.py` | `share_count`: CVM share counts in units, unit inferred per filing (ADR-0020); FRE counts 2010– (ADR-0021) |
 | `core/links.py` | `instrument_link`: ticker and name continuity across ISIN changes, B3 cross-asset events (ADR-0019) |
 | `core/issuers.py` | CVM register → staging `company` (no contact data) → core `issuer`, `issuer_instrument` (ADR-0018) |
 | `core/tesouro.py` | Tesouro Direto → core `tesouro_bond`, `tesouro_price_daily` (versioned) |

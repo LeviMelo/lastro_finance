@@ -15,7 +15,7 @@ from typing import Any, ClassVar
 import polars as pl
 
 from fin.config import Zones
-from fin.ingest import b3_events, cvm_ipe, cvm_statements, fundosnet, series
+from fin.ingest import b3_events, cvm_fre, cvm_ipe, cvm_statements, fundosnet, series
 from fin.ingest.base import Connector, Mode, Parsed
 from fin.ingest.context import ContextConnector, catalogue
 from fin.ingest.fetch import FetchSpec
@@ -522,8 +522,16 @@ class CvmFca(_CvmCompanyDocs):
 
 
 class CvmFre(_CvmCompanyDocs):
+    """Parsed to staging `document` and `capital_social` (`ingest/cvm_fre.py`): share counts 2010-."""
+
     source_id: ClassVar[str] = "cvm_fre"
+    version: ClassVar[str] = "1"
     KINDS: ClassVar[dict[str, int]] = {"FRE": 2010}
+    contracts: ClassVar[dict[str, Any]] = cvm_fre.CONTRACTS
+    dedup_staging: ClassVar[bool] = True
+
+    def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
+        return cvm_fre.parse_payload(blob, row)
 
 
 class CvmIpe(_CvmCompanyDocs):
