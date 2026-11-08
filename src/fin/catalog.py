@@ -7,7 +7,8 @@ stay views instead of core copies: storage stays lean (ADR-0014).
 Views:
 - core: `instrument`, `instrument_identifier`, `price_daily`, `series_observation`, `series_definition`,
   `corporate_event`; derived: `adjustment_factor`; quality: `dq_finding` (ADR-0022);
-- `fundamental_fact`: CVM statement lines with the scale applied (`value_brl`), the delivery date of the version
+- `fundamental_fact`: CVM statement lines (open data plus the superseded versions from RAD, ADR-0027) with the
+  scale applied (`value_brl`), the delivery date of the version
   (`received_on`, knowledge date) and `issuer_cnpj` as 14 digits;
 - `price_adjusted`: standard-lot closes with split and cash adjustment to today's basis (derived on read);
 - `fii_distribution`: FII/Fiagro distributions with their delivery minute;
@@ -40,6 +41,12 @@ def _scan(path: Path) -> str:
 
 def views(z: Zones) -> dict[str, str]:
     c, d, s = z.core, z.derived, z.staging
+    rad_dir = s / "cvm_rad_versions" / "statement_line"
+    rad = (
+        f"UNION ALL BY NAME SELECT * FROM {_rp(rad_dir / '**' / '*.parquet')}"
+        if rad_dir.exists() and any(rad_dir.rglob("*.parquet"))
+        else ""
+    )
     out = {
         "instrument": _scan(c / "instrument" / "*.parquet"),
         "instrument_identifier": _scan(c / "instrument_identifier" / "*.parquet"),
@@ -55,9 +62,11 @@ def views(z: Zones) -> dict[str, str]:
         "tesouro_price_daily": _scan(c / "tesouro_price_daily" / "*.parquet"),
         "adjustment_factor": _scan(d / "adjustment_factor" / "*.parquet"),
         "dq_finding": _scan(z.quality / "dq_finding" / "*.parquet"),
+        # superseded versions recovered from RAD (ADR-0027): the same contract, other versions of the same filings
         "fundamental_fact": f"""
             WITH lines AS (
                 SELECT * FROM {_rp(s / "cvm_dfp_itr" / "statement_line" / "**" / "*.parquet")}
+                {rad}
             ), docs AS (
                 SELECT form, cnpj, reference_date, version, min(received_on) AS received_on
                 FROM {_rp(s / "cvm_dfp_itr" / "document" / "**" / "*.parquet")}
