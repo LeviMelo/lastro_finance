@@ -24,3 +24,8 @@ Equity attributable to controlling shareholders is a fixed account only in the b
 - Itaú: total assets 2,854.5, pre-tax income 47.6.
 
 Itaú's assets match the source note's reading of the raw file (`cvm_dfp_itr.md` §3).
+
+**Insurers (checked the same day).** IRB, Porto Seguro, Caixa Seguridade and Wiz use the same fixed account names, so
+the mapping covers them. The one exception was IRB's operating cash flow, which is now mapped: "Caixa Líquido
+Atividades Seguradora/Resseguradora", 2 companies. A 16th metric, `noncontrolling_interest`, serves book value
+(ADR-0021).

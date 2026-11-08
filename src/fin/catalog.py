@@ -103,7 +103,8 @@ def views(z: Zones) -> dict[str, str]:
                         WHEN statement = 'DRE' AND account_name ILIKE 'Atribuído a%Controladora'
                             THEN 'net_income_controlling'
                         WHEN statement LIKE 'DFC%' AND account_name IN ('Caixa Líquido Atividades Operacionais',
-                            'Caixa Líquido das Atividades Operacionais') THEN 'cash_from_operations'
+                            'Caixa Líquido das Atividades Operacionais',
+                            'Caixa Líquido Atividades Seguradora/Resseguradora') THEN 'cash_from_operations'
                         WHEN statement LIKE 'DFC%' AND account_name IN ('Caixa Líquido Atividades de Investimento',
                             'Caixa Líquido das Atividades de Investimento') THEN 'cash_from_investing'
                         WHEN statement LIKE 'DFC%' AND account_name IN ('Caixa Líquido Atividades de Financiamento',

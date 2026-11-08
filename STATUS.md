@@ -61,11 +61,13 @@ Day one (2026-11-07).
 
 ## Next
 
-1. **Events:** 828 stock events are proven by a CVM IPE filing (ADR-0016). Next: the remaining 100 candidates.
+1. **Events:** 828 stock events are proven by a CVM IPE filing (ADR-0016). The 100 candidates left have no price
+   move on their own line, no IPE filing and no instrument link within 10 days. They stay candidates and adjust
+   nothing.
 2. **Links:** 267 in `instrument_link`: ticker and name continuity, B3 cross-asset events (ADR-0019). ITAU4 → ITUB4
    (2009) is linked. Next: FII issuers from Fundos.NET.
 3. **Fundamentals:** 16 standard metrics exist (`fundamental_metric`). `share_count` has a per-filing unit
-   (ADR-0020) and `valuation(d)` gives market cap, P/L and P/VP (ADR-0021). Next:
-   - insurers' templates.
+   (ADR-0020) and `valuation(d)` gives market cap, P/L and P/VP (ADR-0021). Insurers are covered by the same
+   account names.
 4. **Context:** every archived context source is parsed (Focus, Copom, CEPEA, ANP, ANBIMA IMA, CFTC included).
    The IMA history before 2026-10-29 remains a gap.
