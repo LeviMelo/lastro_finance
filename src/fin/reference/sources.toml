@@ -373,6 +373,15 @@ ephemeral = false
 status = "parsed"
 recon = "docs/sources/b3_fundosnet_cda.md"
 
+[b3_funds_listed]
+name = "B3: fundos listados (ETFs, FIIs, Fiagros) e relatórios por fundo"
+institution = "B3"
+access = "JSON proxy with base64 parameters, no login"
+tier = "P"
+ephemeral = true
+status = "parsed"
+recon = "docs/sources/b3_funds_listed.md"
+
 [pyield_data]
 name = "pyield-data (espelho de ANBIMA títulos públicos e B3 futuros)"
 institution = "third party (github.com/crdcj/pyield-data)"

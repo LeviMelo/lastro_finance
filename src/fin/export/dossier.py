@@ -282,7 +282,7 @@ def _brl(x: float | None) -> str:
 
 def build(zones: Zones, portfolio_path: Path, as_of: date) -> Path:
     p = Portfolio.load(portfolio_path)
-    con = duckdb.connect(str(zones.catalog), read_only=True)
+    con = duckdb.connect(str(zones.catalog), read_only=True, config={"max_temp_directory_size": "4GB"})
     con.execute("SET enable_progress_bar = false")
     out = zones.exports / f"dossier-{as_of.isoformat()}"
     out.mkdir(parents=True, exist_ok=True)

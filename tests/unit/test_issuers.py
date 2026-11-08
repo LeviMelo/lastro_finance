@@ -30,3 +30,16 @@ def test_one_issuer_per_cnpj_with_every_cvm_code(zones: Zones) -> None:
     # Itaú: code 1279 (cancelled 1998) and 19348 (active since 2002), newest registration first (source note §4)
     assert itau["cd_cvm"].split(",")[0] == "19348" and "1279" in itau["cd_cvm"]
     assert itau["issuer_id"] == issuers.issuer_id("60872504000123") and out["cnpj"].n_unique() == out.height
+
+
+def test_an_isin_belongs_to_the_fund_with_a_majority_of_its_reports() -> None:
+    import polars as pl
+
+    from fin.core.issuers import isin_owners
+
+    p = pl.DataFrame({
+        "isin": ["BRBBPOCTF003"] * 9 + ["BRXXXXCTF000"] * 4,
+        "cnpj": ["A"] * 6 + ["B"] * 2 + ["C"] + ["D", "D", "E", "E"],
+    })  # fmt: skip
+    own = isin_owners(p)
+    assert own.select("isin", "cnpj").rows() == [("BRBBPOCTF003", "A")]  # a 2-2 tie has no owner

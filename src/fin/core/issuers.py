@@ -6,7 +6,8 @@
   latest register status, sector and names.
 - core `issuer_instrument`: which instruments an issuer's shares are. B3's issuer list gives (CVM code → ticker root);
   an instrument belongs to the root when a modern ticker of it (root + 1-2 digits) traded; the link spans the
-  instrument's whole trading history (its older tickers included). Method `b3_root`.
+  instrument's whole trading history (its older tickers included). Method `b3_root`; beyond B3's current list,
+  `fca_ticker` (CVM FCA trading codes, 2010-) and `isin_issuer` (the ISIN's issuer code), see `company_links`.
 """
 
 from __future__ import annotations
@@ -128,7 +129,13 @@ LINK = Contract(
             nullable=False,
         ),
         Column("vt_to", pl.Date, "last such session", "até", "date", nullable=False),
-        Column("method", pl.String, "b3_root (company) or fund_isin (FII quota)", "método", nullable=False),
+        Column(
+            "method",
+            pl.String,
+            "b3_root, fca_ticker, isin_issuer (company) or fund_isin (FII quota)",
+            "método",
+            nullable=False,
+        ),
     ),
     key=("issuer_id", "instrument_id", "root"),
 )
@@ -138,10 +145,25 @@ def issuer_id(cnpj_digits: str) -> str:
     return "C" + hashlib.sha256(cnpj_digits.encode()).hexdigest()[:12]
 
 
-def fund_issuers(zones: Zones) -> tuple[pl.DataFrame, pl.DataFrame] | None:
-    """(issuer rows, issuer_instrument rows) for funds whose quotas trade: (CNPJ, quota ISIN) pairs from CVM's FII
-    monthly reports (`cvm_fii` monthly_general) and Fundos.NET payout notices, joined to instruments by ISIN
-    (method `fund_isin`, the root being the first four letters of the quota's ticker)."""
+ISIN_MIN_REPORTS = 3  # an owner needs at least this many reports and a strict majority of the ISIN's reports
+
+
+def isin_owners(pairs: pl.DataFrame) -> pl.DataFrame:
+    """(isin, cnpj, reports, share) of each quota ISIN's owner: the CNPJ with a strict majority of the reports that
+    name the ISIN (CVM monthly reports plus Fundos.NET notices). Some funds write another fund's ISIN in a report
+    (BBPO11: 204 reports by its fund, 5 and 4 by two others, 2019): those claims never make a link (`fund_isin_claim`
+    findings). An ISIN with no majority has no owner."""
+    n = pairs.group_by("isin", "cnpj").agg(pl.len().alias("reports"))
+    return (
+        n.with_columns((pl.col("reports") / pl.col("reports").sum().over("isin")).alias("share"))
+        .filter((pl.col("share") > 0.5) & (pl.col("reports") >= ISIN_MIN_REPORTS))
+        .select("isin", "cnpj", "reports", "share")
+    )
+
+
+def fund_isin_pairs(zones: Zones) -> pl.DataFrame | None:
+    """(cnpj, isin, fund_name, segment) of every report naming a quota ISIN: CVM FII monthly reports and Fundos.NET
+    payout notices."""
     pairs: list[pl.DataFrame] = []
     g = read_parquet_dir(zones.staging / "cvm_fii" / "monthly_general")
     if g is not None:
@@ -160,10 +182,25 @@ def fund_issuers(zones: Zones) -> tuple[pl.DataFrame, pl.DataFrame] | None:
                 pl.lit(None, dtype=pl.String).alias("segment"),
             )
         )
-    ids_path = zones.core / "instrument_identifier" / "instrument_identifier.parquet"
-    if not pairs or not ids_path.exists():
+    if not pairs:
         return None
-    p = pl.concat(pairs).filter(pl.col("isin").str.len_chars() == 12).drop_nulls(["cnpj", "isin"])
+    # a fund quota's ISIN has CTF at letters 7-9; some FII reports name a share they hold (MBRF3's ISIN, 2026)
+    return (
+        pl.concat(pairs)
+        .filter((pl.col("isin").str.len_chars() == 12) & (pl.col("isin").str.slice(6, 3) == "CTF"))
+        .drop_nulls(["cnpj", "isin"])
+    )
+
+
+def fund_issuers(zones: Zones) -> tuple[pl.DataFrame, pl.DataFrame] | None:
+    """(issuer rows, issuer_instrument rows) for funds whose quotas trade: (CNPJ, quota ISIN) pairs from CVM's FII
+    monthly reports (`cvm_fii` monthly_general) and Fundos.NET payout notices, joined to instruments by ISIN
+    (method `fund_isin`, the root being the first four letters of the quota's ticker)."""
+    p = fund_isin_pairs(zones)
+    ids_path = zones.core / "instrument_identifier" / "instrument_identifier.parquet"
+    if p is None or not ids_path.exists():
+        return None
+    owners = isin_owners(p)
     issuers = (
         p.group_by("cnpj")
         .agg(pl.col("fund_name").drop_nulls().last(), pl.col("segment").drop_nulls().last())
@@ -192,8 +229,7 @@ def fund_issuers(zones: Zones) -> tuple[pl.DataFrame, pl.DataFrame] | None:
         "instrument_id", pl.col("first_trade").alias("vt_from"), pl.col("last_trade").alias("vt_to")
     )
     link = (
-        p.select("cnpj", "isin")
-        .unique()
+        owners.select("cnpj", "isin")
         .join(isin, on="isin")
         .join(tick, on="instrument_id", how="left")
         .join(span, on="instrument_id")
@@ -207,6 +243,87 @@ def fund_issuers(zones: Zones) -> tuple[pl.DataFrame, pl.DataFrame] | None:
         )
     )
     return issuers, link
+
+
+FCA_WINDOW = "1y"  # an FCA trading code names the ticker valid within a year of the form's reference date
+
+
+def company_links(zones: Zones, known: pl.DataFrame, span: pl.DataFrame, issuers: pl.DataFrame) -> pl.DataFrame:
+    """Links beyond B3's current issuer list (OQ-7), for instruments it does not reach:
+    - `fca_ticker`: CVM FCA securities (2010-) give (CNPJ, trading code) per form; the code joins the ticker valid
+      within `FCA_WINDOW` of the form's date (tickers are reused: the date matters).
+    - `isin_issuer`: B3's issuer code, letters 3-6 of the ISIN (BR**PETR**ACNPR6), stays with the company across
+      ticker changes; an instrument with no link takes the issuer of a linked share or unit whose ISIN has its code,
+      when that code maps to exactly one issuer (fund quotas, CTF, excluded) and the instrument traded on or after
+      the issuer's CVM registration (Embraer's 1991-2002 classes share EMBR with the CNPJ registered in 2006)."""
+    ids = pl.read_parquet(zones.core / "instrument_identifier" / "instrument_identifier.parquet")
+    tick = ids.filter(pl.col("scheme") == "TICKER").select("instrument_id", "value", "vt_from", "vt_to")
+    isin = ids.filter(pl.col("scheme") == "ISIN").select("instrument_id", pl.col("value").alias("isin"))
+    out: list[pl.DataFrame] = []
+    fca = read_parquet_dir(zones.staging / "cvm_fca" / "security")
+    if fca is not None:
+        f = (
+            fca.select(
+                pl.col("cnpj").str.replace_all(r"\D", "").alias("cnpj"),
+                pl.col("trading_code").str.strip_chars().str.to_uppercase().alias("value"),
+                "reference_date",
+            )
+            .filter(pl.col("value").str.contains(r"^[A-Z0-9]{4}\d{1,2}$"))
+            .unique()
+            .join(tick, on="value")
+            .filter(
+                (pl.col("vt_from") <= pl.col("reference_date").dt.offset_by(FCA_WINDOW))
+                & (pl.col("vt_to") >= pl.col("reference_date").dt.offset_by("-" + FCA_WINDOW))
+            )
+        )
+        one = f.group_by("instrument_id").agg(pl.col("cnpj").n_unique().alias("k")).filter(pl.col("k") == 1)
+        out.append(
+            f.join(one, on="instrument_id")
+            .group_by("cnpj", "instrument_id")
+            .agg(pl.col("value").sort().last().str.slice(0, 4).alias("root"))
+            .join(span, on="instrument_id")
+            .select(
+                pl.col("cnpj").map_elements(issuer_id, return_dtype=pl.String).alias("issuer_id"),
+                "instrument_id",
+                "root",
+                "vt_from",
+                "vt_to",
+                pl.lit("fca_ticker").alias("method"),
+            )
+        )
+    linked = pl.concat([known.select("issuer_id", "instrument_id"), *[o.select("issuer_id", "instrument_id")
+                                                                     for o in out]]).unique()  # fmt: skip
+    code = (
+        linked.join(isin, on="instrument_id")
+        .filter(~pl.col("isin").str.slice(6, 3).is_in(["CTF"]))
+        .with_columns(pl.col("isin").str.slice(2, 4).alias("code"))
+        .group_by("code")
+        .agg(pl.col("issuer_id").n_unique().alias("k"), pl.col("issuer_id").first())
+        .filter(pl.col("k") == 1)
+    )
+    ext = (
+        isin.filter(~pl.col("instrument_id").is_in(linked["instrument_id"].implode()))
+        .filter(pl.col("isin").str.slice(6, 3) != "CTF")
+        .with_columns(pl.col("isin").str.slice(2, 4).alias("code"))
+        .join(code.select("code", "issuer_id"), on="code")
+        .join(
+            tick.group_by("instrument_id").agg(pl.col("value").sort().last().str.slice(0, 4).alias("root")),
+            on="instrument_id",
+            how="left",
+        )
+        .join(span, on="instrument_id")
+        .join(issuers.select("issuer_id", "registered_on"), on="issuer_id", how="left")
+        .filter(pl.col("registered_on").is_null() | (pl.col("vt_to") >= pl.col("registered_on")))
+        .select(
+            "issuer_id",
+            "instrument_id",
+            pl.col("root").fill_null(pl.col("code")),
+            "vt_from",
+            "vt_to",
+            pl.lit("isin_issuer").alias("method"),
+        )
+    )
+    return pl.concat([*out, ext], how="vertical_relaxed").select(LINK.names)
 
 
 def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
@@ -251,8 +368,11 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
         span = pl.read_parquet(zones.core / "instrument" / "instrument.parquet").select(
             "instrument_id", pl.col("first_trade").alias("vt_from"), pl.col("last_trade").alias("vt_to")
         )
-        link = (
-            tick.join(roots, on="root")
+        isin_of = pl.read_parquet(ids_path).filter(pl.col("scheme") == "ISIN")
+        quota = isin_of.filter(pl.col("value").str.slice(6, 3) == "CTF")["instrument_id"].implode()
+        link = (  # a company's root never covers a fund quota (MBRF11, an FII 2011-22; Marfrig took MBRF in 2025)
+            tick.filter(~pl.col("instrument_id").is_in(quota))
+            .join(roots, on="root")
             .select("cnpj", "instrument_id", "root")
             .unique()
             .join(span, on="instrument_id")
@@ -262,6 +382,7 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
             )
             .select(LINK.names)
         )
+        link = pl.concat([link, company_links(zones, link, span, issuers)], how="vertical_relaxed")
         if funds is not None:
             link = pl.concat([link, funds[1]], how="vertical_relaxed").unique(["issuer_id", "instrument_id", "root"])
         good, bad = LINK.split(link)

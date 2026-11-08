@@ -37,6 +37,7 @@ def _numeric(dtype: object) -> bool:
 IDENTIFIERS = {
     "version": "filing/report version number",
     "doc_id": "document id at the source",
+    "fnet_id": "a fund's Fundos.NET id",
     "selic_code": "Selic code of a bond",
     "series_id": "a source's series code",
     "tpmerc": "B3 market-type code",

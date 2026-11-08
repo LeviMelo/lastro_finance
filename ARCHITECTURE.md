@@ -99,6 +99,8 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/focus.py` | BCB Focus expectations (8 tables) → staging `expectation` |
 | `ingest/fundosnet.py` | Fundos.NET notices → staging `distribution` (per Provento and kind, exact BRL per quota) and `listing` (delivery minute = knowledge time, version) |
 | `ingest/cvm_vlmo.py` | CVM VLMO → staging `document` (filing index, delivery date) and `movement` (insider positions and trades by role group; free text not parsed) |
+| `core/etfs.py` | core `etf_nav` (every ETF daily report, Fundos.NET 2018- and CVM 2004-18, latest flag) and `etf_link` (fund CNPJ → quota by trading name and B3 listing, verified by price) |
+| `ingest/b3_funds_listed.py` | B3 listed funds → staging `listed_fund` (acronym, Fundos.NET id, daily) and `fund_report` (ETF report doc ids: acronym → CNPJ) |
 | `ingest/fundosnet_cda.py` | Fundos.NET ETF monthly portfolios (CDA XML, two layouts) → staging `position`, `net_assets`, `listing` |
 | `ingest/fundosnet_daily.py` | Fundos.NET ETF daily reports → staging `daily` (NAV per quota, net assets, flows, holders; exact decimals) and `listing` |
 | `ingest/b3_events.py` | B3 listed-companies backend: issuers, cash history, stock events, subscriptions; Yahoo chart events (tier U) |

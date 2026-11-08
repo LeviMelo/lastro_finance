@@ -23,6 +23,7 @@ from fin.ingest.anbima_calendar import AnbimaCalendar
 from fin.ingest.b3_cotahist import B3Cotahist
 from fin.ingest.b3_events import B3CompanyEvents
 from fin.ingest.b3_fixed_income import B3FixedIncome
+from fin.ingest.b3_funds_listed import B3FundsListed
 from fin.ingest.b3_holidays import B3Holidays
 from fin.ingest.base import Connector
 from fin.ingest.context import context_connectors
@@ -94,6 +95,7 @@ CONNECTORS: dict[str, type[Connector]] = {
         B3CompanyEvents,
         B3FixedIncome,
         B3Holidays,
+        B3FundsListed,
         SndPuHistorico,
         *context_connectors(),
     )
@@ -125,6 +127,7 @@ DAILY: tuple[str, ...] = (
     "b3_fundosnet",
     "b3_fundosnet_daily",  # ETF daily NAV (not in CVM open data since 2018-09)
     "b3_fundosnet_cda",  # ETF monthly portfolios (not in CVM open data)
+    "b3_funds_listed",  # B3's listed funds today (current state only) and each ETF's report ids
     "bcb_sgs",
     "bcb_ptax",
     "ipeadata",

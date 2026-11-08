@@ -30,3 +30,12 @@ Report, archived from 2026-10-19 (OQ-20).
 
 **Would overturn it.** A free official CNPJ ↔ ISIN table for fund quotas, or B3 changing trading names so that
 they no longer equal NOMRES.
+
+**Addendum (2026-11-08): built in core, plus B3's own link.**
+- **Core tables.** `etf_nav` and `etf_link` are core tables built by `core/etfs.py`, no longer catalog views. As
+  views, each query re-scanned CVM's 82 M daily rows: two queries spilled 38 GB and 35 GB of DuckDB temp files and
+  brought the disk to 4.5 GB free. Lazy scans with the ETF-CNPJ filter pushed down read each input once, and
+  DuckDB connections opened by the code cap temp files at 4 GB.
+- **`b3_listing` link.** B3's listed-funds page gives each ETF's acronym and Fundos.NET id, and its report list
+  gives the document ids (`b3_funds_listed`). The document names the CNPJ, so acronym + "11" → CNPJ comes from B3
+  itself. `etf_link.methods` records which routes found the link: trading_name, b3_listing or both.

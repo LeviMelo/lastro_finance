@@ -462,7 +462,9 @@ class FundosNetInformeDiario(FundosNetRendimentos):
         return fundosnet_daily.parse_payload(blob, row)
 
     def derive(self, zones: Zones, run: Any) -> None:
-        return None
+        from fin.core import etfs
+
+        etfs.build(zones, run)
 
 
 class FundosNetCda(FundosNetInformeDiario):
@@ -478,6 +480,9 @@ class FundosNetCda(FundosNetInformeDiario):
 
     def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
         return fundosnet_cda.parse_payload(blob, row)
+
+    def derive(self, zones: Zones, run: Any) -> None:
+        return None
 
 
 class YahooChart(Connector):

@@ -12,6 +12,7 @@ Checks:
   on either line within 10 days;
 - `stock_event_unproven`: a stock event no second source, filing or price move confirms (`candidate`, info), or
   whose ratio the price contradicts (`conflicting`, warn); neither adjusts anything;
+- `fund_isin_claim`: a fund report naming a quota ISIN another fund owns (acknowledged by rule: it links nothing);
 - `etf_link`: an ETF report matched by trading name to a quota whose closes do not track its NAV (not linked);
 - `ohlc_inconsistent`: a standard-lot session whose high or low does not bound its open and close, or with a
   non-positive price (`error`: it breaks every return through it); acknowledged by rule (kept as published).
@@ -805,7 +806,7 @@ def etf_link(zones: Zones) -> pl.DataFrame:
 
     if not zones.catalog.exists():
         return _frame([])
-    con = duckdb.connect(str(zones.catalog), read_only=True)
+    con = duckdb.connect(str(zones.catalog), read_only=True, config={"max_temp_directory_size": "4GB"})
     try:
         cur = con.execute(
             "SELECT fund_cnpj, trading_name, instrument_id, isin, first_date, last_date, common_days, median_ratio "
@@ -832,6 +833,40 @@ def etf_link(zones: Zones) -> pl.DataFrame:
     )
 
 
+def fund_isin_claim(zones: Zones) -> pl.DataFrame:
+    """A fund report naming a quota ISIN that belongs to another fund (the owner has a strict majority of the
+    ISIN's reports, `core.issuers.isin_owners`), or an ISIN with no majority owner: the claim links nothing."""
+    from fin.core import issuers
+
+    p = issuers.fund_isin_pairs(zones)
+    if p is None:
+        return _frame([])
+    n = p.group_by("isin", "cnpj").agg(pl.len().alias("reports"), pl.col("fund_name").drop_nulls().last())
+    own = issuers.isin_owners(p).select("isin", pl.col("cnpj").alias("owner"), pl.col("reports").alias("owner_n"))
+    claims = n.join(own, on="isin", how="left").filter(pl.col("owner").is_null() | (pl.col("cnpj") != pl.col("owner")))
+    claims = claims.filter(pl.col("owner").is_not_null() | (pl.col("cnpj").n_unique().over("isin") > 1))
+    if not claims.height:
+        return _frame([])
+    return claims.select(
+        pl.lit("fund_isin_claim").alias("check_id"),
+        pl.lit("info").alias("severity"),
+        pl.lit("instrument").alias("entity_kind"),
+        pl.format("{}:{}", "isin", "cnpj").alias("entity_id"),
+        pl.lit(None, dtype=pl.Date).alias("vt"),
+        pl.format("{} reports by {} ({})", "reports", "cnpj", "fund_name").alias("observed"),
+        pl.when(pl.col("owner").is_null())
+        .then(pl.lit("one fund with a majority of the ISIN's reports"))
+        .otherwise(pl.format("owner {} ({} reports)", "owner", "owner_n"))
+        .alias("expected"),
+        pl.lit("a fund report names a quota ISIN it does not own: not linked").alias("detail"),
+        pl.lit("staging cvm_fii/monthly_general and b3_fundosnet/distribution").alias("evidence"),
+        pl.lit("acknowledged").alias("status"),
+        pl.lit(
+            "rule: an ISIN belongs to the fund with a strict majority of its reports; other claims link nothing"
+        ).alias("resolution_note"),
+    )
+
+
 CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "vna_ntnb_vs_ipca": vna_ntnb_vs_ipca,
     "share_count_unit_mismatch": share_count_unit_mismatch,
@@ -848,6 +883,7 @@ CHECKS: dict[str, Callable[[Zones], pl.DataFrame]] = {
     "quarantine": quarantine,
     "fii_payout_suspect": fii_payout_suspect,
     "etf_link": etf_link,
+    "fund_isin_claim": fund_isin_claim,
 }
 
 

@@ -37,7 +37,7 @@ class LayoutError(ValueError):
 
 DAILY = Contract(
     table="staging.b3_fundosnet_daily.daily",
-    version=1,
+    version=2,
     description="An ETF's daily report: NAV per quota, net assets, flows and holders, as delivered to Fundos.NET.",
     columns=(
         Column("doc_id", pl.Int64, "Fundos.NET document id", "id do documento", nullable=False),
@@ -53,7 +53,9 @@ DAILY = Contract(
     ),
     rules=(
         Rule("cnpj_14_digits", pl.col("fund_cnpj").str.contains(r"^\d{14}$")),
-        Rule("quota_positive", pl.col("quota_value_brl").is_null() | (pl.col("quota_value_brl") > 0)),
+        # a quota of 0 is "no NAV that day" as some funds file it (1,093 rows, 2018-2020): kept as published,
+        # skipped wherever a price is needed (core etf_nav: quota > 0); quarantining it hid real reports
+        Rule("quota_non_negative", pl.col("quota_value_brl").is_null() | (pl.col("quota_value_brl") >= 0)),
     ),
     key=("doc_id", "fund_cnpj", "reference_date"),
 )
@@ -106,7 +108,9 @@ def parse_daily(blob: bytes, row: dict[str, Any]) -> pl.DataFrame:
             raise LayoutError(f"Informe Diário: DIA_COMPT {f['DIA_COMPT']} vs DT_COMPT {ref}")
         holders = f.get("NR_COTST")
         out.append({
-            "doc_id": doc_id, "fund_cnpj": f.get("CNPJ_FDO") or h.get("CNPJ_FDO"), "reference_date": ref,
+            # some administrators write the CNPJ formatted (38.350.645/0001-27: 2,923 rows had been quarantined)
+            "doc_id": doc_id, "fund_cnpj": re.sub(r"\D", "", f.get("CNPJ_FDO") or h.get("CNPJ_FDO") or "") or None,
+            "reference_date": ref,
             "quota_value_brl": _num(f.get("VL_QUOTA"), 12, "VL_QUOTA"),
             "net_assets_brl": _num(f.get("PATRIM_LIQ"), 4, "PATRIM_LIQ"),
             "portfolio_value_brl": _num(f.get("VL_TOTAL"), 4, "VL_TOTAL"),
