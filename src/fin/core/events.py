@@ -584,11 +584,16 @@ IMPLIED_NO_FILING = 3.0  # a one-day move of 3x or more needs no filing: no mark
 
 
 def _snap(s: float) -> tuple[int, int] | None:
-    """New shares per old as a simple fraction near `s` (within 5 %; within 10 % for ratios of 10 or more)."""
+    """New shares per old as a simple fraction near `s` (within 5 %; within 10 % for ratios of 10 or more, where a
+    `CONVENTIONAL` ratio within 10 % is preferred to the rounded move: BTTL3 2015 moved 24.1x on a 25:1 filing)."""
     from fractions import Fraction
 
     big = max(s, 1 / s)
-    f = Fraction(big).limit_denominator(10) if big < 10 else Fraction(round(big))
+    if big < 10:
+        f = Fraction(big).limit_denominator(10)
+    else:
+        c = min(CONVENTIONAL, key=lambda k: abs(math.log(big / k)))
+        f = Fraction(c) if abs(math.log(big / c)) <= math.log(1.10) else Fraction(round(big))
     if f <= 0 or abs(float(f) / big - 1) > (0.10 if big >= 10 else 0.05):
         return None
     return (f.numerator, f.denominator) if s >= 1 else (f.denominator, f.numerator)
@@ -675,6 +680,7 @@ IMPLIED_EXACT_UP, IMPLIED_EXACT_DOWN = 0.02, 0.005
 CONVENTIONAL = frozenset({2, 3, 4, 5, 8, 10, 15, 20, 25, 30, 40, 50, 100, 200, 250, 500, 1000, 2000, 5000, 10000,
                           100000, 1000000})  # fmt: skip
 IMPLIED_MAX_GAP_DAYS = 30  # consecutive sessions further apart are not compared (a suspension may hide a real move)
+IMPLIED_MAX_GAP_FILED = 60  # ...unless a CVM filing proves the event (BTTL3 2015: no trade for 35 days around it)
 IMPLIED_FROM = date(1994, 7, 1)  # the Real: before it, currency resets and hyperinflation quotes make moves noise
 IMPLIED_NEAR_DAYS = 45  # a candidate this close to a known stock event of the line is that event, not another
 
@@ -699,7 +705,7 @@ def implied_ipe_events(zones: Zones, prices: pl.LazyFrame, fac: pl.DataFrame, ta
         .filter(
             (pl.col("trade_date") >= IMPLIED_FROM)
             & (pl.col("lr").abs() >= math.log(IMPLIED_IPE_MIN))
-            & ((pl.col("trade_date") - pl.col("d0")).dt.total_days() <= IMPLIED_MAX_GAP_DAYS)
+            & ((pl.col("trade_date") - pl.col("d0")).dt.total_days() <= IMPLIED_MAX_GAP_FILED)
         )
         .collect()
         .join(fac.select("instrument_id", pl.col("ex_date").alias("trade_date"), "split_factor"),
@@ -728,14 +734,152 @@ def implied_ipe_events(zones: Zones, prices: pl.LazyFrame, fac: pl.DataFrame, ta
             "instrument_id": r["instrument_id"], "event_type": kind,
             "data_com": r["d0"], "ex_date": r["trade_date"], "ratio_num": num, "ratio_den": den,
             "sources": "b3_cotahist", "price_check": check,
+            "_gap": (r["trade_date"] - r["d0"]).days,
             "_exact": max(num, den) in CONVENTIONAL and min(num, den) == 1 and max(s, 1 / s) >= 10
             and abs(check - 1) <= (IMPLIED_EXACT_UP if num < den else IMPLIED_EXACT_DOWN),
         })  # fmt: skip
     if not rows:
         return pl.DataFrame()
     ev = ipe_evidence(zones, pl.DataFrame(rows))
-    ev = ev.filter(pl.col("sources").str.contains("cvm_ipe") | pl.col("_exact")).drop("_exact")
+    exact = pl.col("_exact") & (pl.col("_gap") <= IMPLIED_MAX_GAP_DAYS)
+    ev = ev.filter(pl.col("sources").str.contains("cvm_ipe") | exact).drop("_exact", "_gap")
     return ev.with_columns(pl.lit("confirmed").alias("status"), pl.col("ex_date").alias("ex_date_reported"))
+
+
+EG_MIN_JUMP = 1.5  # a regrouping B3 marks "EG" raises the price; a smaller move is not taken from the marker alone
+EG_FIT = math.log(1.25)  # the move is snapped to the nearest conventional ratio within this (thin lines move a lot)
+EG_NEAR_DAYS = 10  # an EG start this close to a known stock event of the line is that event
+EG_MAX_GAP_DAYS = 60  # the last trade before the EG day is at most this far back
+
+
+def eg_events(zones: Zones, prices: pl.LazyFrame, fac: pl.DataFrame, taken: pl.DataFrame) -> pl.DataFrame:
+    """Regroupings B3 itself marks: from the ex-date COTAHIST's ESPECI field carries "EG" (ex-grupamento) for a
+    while. Measured 2026-11-09 over every first EG session since 1994 (469): 316 fall on a regrouping other sources
+    already prove, the price rising on 308 and falling on none; the 101 with no event behave alike (81 rises, 15
+    flat, 0 falls). A first EG session with a rise of `EG_MIN_JUMP`x or more that no factor adjusts and no known
+    stock event explains is a regrouping, its ratio the conventional one nearest the move (`EG_FIT`), else the simple
+    fraction `_snap` finds within 5 % for ratios under 10 (a large odd ratio is left out: from price alone it would only
+    absorb the move). TIBR5/6 2015, MLFT4 2016, DMMO3 2019 and BBTG12 2017 had none before."""
+    quotes = zones.staging / "b3_cotahist" / "quote"
+    if not quotes.exists():
+        return pl.DataFrame()
+    eg = pl.col("especi").fill_null("").str.contains(r"(^|\s)EG(\s|$)")
+    starts = (
+        pl.scan_parquet(quotes / "**" / "*.parquet", hive_partitioning=False)
+        .filter(pl.col("tpmerc") == 10)
+        .select("ticker", "trade_date", "especi")
+        .unique(["ticker", "trade_date"])
+        .sort("ticker", "trade_date")
+        .with_columns(eg.alias("_eg"))
+        .filter(pl.col("_eg") & ~pl.col("_eg").shift(1).over("ticker").fill_null(False))
+        .select("ticker", "trade_date")
+        .collect()
+    )
+    if not starts.height:
+        return pl.DataFrame()
+    brl = pl.col("brl_num").cast(pl.Float64) / pl.col("brl_den").cast(pl.Float64)
+    day = (
+        prices.filter((pl.col("market_segment") == "lote_padrao")
+                      & pl.col("ticker").is_in(starts["ticker"].unique().implode()))
+        .select("instrument_id", "ticker", "trade_date", (pl.col("close").cast(pl.Float64) * brl).alias("c"))
+        .filter(pl.col("c") > 0)
+        .sort("instrument_id", "trade_date")
+        .with_columns(
+            (pl.col("c") / pl.col("c").shift(1)).over("instrument_id").alias("jump"),
+            pl.col("trade_date").shift(1).over("instrument_id").alias("d0"),
+        )
+        .collect()
+        .join(starts, on=["ticker", "trade_date"])
+        .filter((pl.col("jump") >= EG_MIN_JUMP)
+                & ((pl.col("trade_date") - pl.col("d0")).dt.total_days() <= EG_MAX_GAP_DAYS))
+        .join(fac.select("instrument_id", pl.col("ex_date").alias("trade_date"), "split_factor"),
+              on=["instrument_id", "trade_date"], how="left")
+        .filter(pl.col("split_factor").fill_null(1.0) == 1.0)
+    )  # fmt: skip
+    if taken.height and day.height:
+        near = (
+            day.select("instrument_id", "trade_date")
+            .join(taken.select("instrument_id", pl.col("ex_date").alias("_k")), on="instrument_id")
+            .filter((pl.col("trade_date") - pl.col("_k")).dt.total_days().abs() <= EG_NEAR_DAYS)
+            .select("instrument_id", "trade_date")
+            .unique()
+        )
+        day = day.join(near, on=["instrument_id", "trade_date"], how="anti")
+    rows = []
+    for r in day.iter_rows(named=True):
+        m = r["jump"]  # old shares per new
+        c = min(CONVENTIONAL, key=lambda k: abs(math.log(m / k)))
+        if abs(math.log(m / c)) <= EG_FIT:
+            num, den = 1, c
+        else:
+            snapped = _snap(1 / m)
+            if snapped is None or max(snapped) >= 10:  # a large odd ratio from price alone would absorb the move
+                continue
+            num, den = snapped
+        rows.append({
+            "instrument_id": r["instrument_id"], "event_type": "REVERSE_SPLIT", "data_com": r["d0"],
+            "ex_date": r["trade_date"], "ratio_num": num, "ratio_den": den, "sources": "b3_cotahist_eg",
+            "price_check": (1 / m) / (num / den),
+        })  # fmt: skip
+    if not rows:
+        return pl.DataFrame()
+    ev = ipe_evidence(zones, pl.DataFrame(rows))
+    return ev.with_columns(pl.lit("confirmed").alias("status"), pl.col("ex_date").alias("ex_date_reported"))
+
+
+FILING_FIT = math.log(1.30)  # a filing's stated ratio is taken when it fits the price move within this
+
+
+def filing_ratios(zones: Zones, events: pl.DataFrame) -> pl.DataFrame:
+    """The ratio a CVM filing states (staging `cvm_ipe_docs/ipe_ratio`) over one taken from Yahoo or the price move:
+    for each applied stock event with a filing link and no B3 event list behind it, the stated ratio nearest the
+    move (`price_check` x ratio) of the event's direction, within `FILING_FIT`. Equal to the event's ratio: the
+    sources gain `cvm_ipe_doc`. Different: the corrected event is added and the original becomes `conflicting`
+    (invariant 7)."""
+    stated = _staging(zones, "cvm_ipe_docs", "ipe_ratio")
+    if stated is None or not stated.height or not events.height:
+        return events
+    by_link: dict[str, list[tuple[int, int]]] = {}
+    for link, new, old in stated.select("ipe_link", "new_shares", "old_shares").unique().iter_rows():
+        by_link.setdefault(link, []).append((new, old))
+    idx = events.with_row_index("_r")
+    cand = idx.filter(
+        pl.col("event_type").is_in(["SPLIT", "REVERSE_SPLIT", "BONUS"]) & pl.col("status").is_in(list(APPLIED))
+        & pl.col("ipe_link").is_in(list(by_link)) & ~pl.col("sources").fill_null("").str.contains("b3_company_events")
+        & (pl.col("price_check") > 0) & pl.col("ratio_num").is_not_null()
+    )  # fmt: skip
+    confirm: list[int] = []
+    drop: list[int] = []
+    new_rows: list[dict[str, object]] = []
+    for r in cand.iter_rows(named=True):
+        s = r["price_check"] * r["ratio_num"] / r["ratio_den"]  # new shares per old the move shows
+        options = [(n, o) for n, o in by_link[r["ipe_link"]] if (n > o) == (s > 1)]
+        if not options:
+            continue
+        n, o = min(options, key=lambda no: abs(math.log(no[0] / no[1] / s)))
+        if abs(math.log(n / o / s)) > FILING_FIT:
+            continue
+        g = math.gcd(n, o)
+        n, o = n // g, o // g
+        if (n, o) == (r["ratio_num"], r["ratio_den"]):
+            confirm.append(r["_r"])
+            continue
+        drop.append(r["_r"])
+        fixed = {k: v for k, v in r.items() if k != "_r"}
+        fixed |= {"ratio_num": n, "ratio_den": o, "price_check": s / (n / o), "sources": f"{r['sources']},cvm_ipe_doc",
+                  "event_type": "REVERSE_SPLIT" if n < o else ("BONUS" if n / o < 2 else "SPLIT"),
+                  "event_id": f"{r['event_id']}|ratio_from_filing"}  # fmt: skip
+        new_rows.append(fixed)
+    if not confirm and not drop:
+        return events
+    out = idx.with_columns(
+        pl.when(pl.col("_r").is_in(drop)).then(pl.lit("conflicting")).otherwise(pl.col("status")).alias("status"),
+        pl.when(pl.col("_r").is_in(confirm)).then(pl.col("sources") + ",cvm_ipe_doc").otherwise(pl.col("sources"))
+        .alias("sources"),
+    ).drop("_r")  # fmt: skip
+    if new_rows:
+        out = pl.concat([out, pl.DataFrame(new_rows, schema=out.schema, orient="row")], how="vertical_relaxed")
+    return out
 
 
 REPAIR_OFF = math.log(3.0)  # an applied, filing-backed stock event whose ratio misses the price move by more than this
@@ -1282,6 +1426,11 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
     known = allev.filter(pl.col("event_type").is_in(["SPLIT", "REVERSE_SPLIT", "BONUS", "QUOTE_BASIS"]))
     known = known.select("instrument_id", "ex_date")
     taken = pl.concat([known, implied.select("instrument_id", "ex_date")]) if implied.height else known
+    # regroupings B3 marks "EG" in COTAHIST that no source lists, before the price-only rule below
+    marked = eg_events(zones, prices, fac0, taken)
+    if marked.height:
+        implied = pl.concat([implied, marked], how="diagonal_relaxed") if implied.height else marked
+        taken = pl.concat([taken, marked.select("instrument_id", "ex_date")])
     more = implied_ipe_events(zones, prices, fac0, taken)
     if more.height:
         implied = pl.concat([implied, more], how="diagonal_relaxed") if implied.height else more
@@ -1293,7 +1442,7 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
     if extra.height:
         allev = assemble([*parts, *([fill(implied)] if implied.height else []), fill(extra)])
         good, bad = EVENT.split(allev)
-    good = repair_ratios(resolve_clusters(good, prices))
+    good = filing_ratios(zones, repair_ratios(resolve_clusters(good, prices)))
     write_parquet(good, zones.core / "corporate_event" / "corporate_event.parquet")
     q = zones.quarantine / "core" / "corporate_event.parquet"
     if bad.height:

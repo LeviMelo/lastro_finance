@@ -57,6 +57,7 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `tiingo` | Tiingo | S | daily prices, dividends, splits of 12 US benchmark ETFs and 5 Brazilian ADRs, owner token | parsed | [note](docs/sources/context_global.md) |
 | `binance` | Binance | S | crypto daily klines (BTC/ETH/USDT/SOL in BRL; BTC/ETH in USDT) 2017– | parsed | [note](docs/sources/binance.md) |
 | `b3_bdi_pdf` | B3 | P | Daily bulletin PDF 2022-03→, streamed: index compositions (31 indices), stock lending (loans, open balances) | parsed | [note](docs/sources/b3_bdi_pdf.md) |
+| `cvm_ipe_docs` | CVM | P | IPE filings that prove stock events, read for the ratio they state | parsed | [note](docs/sources/cvm_ipe.md) |
 | `b3_isin` | B3 | P | ISIN database: issuer code → CNPJ (69,803 issuers), all ISINs; daily change files | archiving | [note](docs/sources/b3_isin.md) |
 | `b3_funds_listed` | B3 | P | listed ETFs/FIIs with acronym and Fundos.NET id; ETF report ids (acronym → CNPJ) | archiving | [note](docs/sources/b3_funds_listed.md) |
 | `ipeadata` | IPEA (FGV) | S | IGP-M 1989–, IGP-DI 1944– | archiving | [note](docs/sources/ipeadata.md) |

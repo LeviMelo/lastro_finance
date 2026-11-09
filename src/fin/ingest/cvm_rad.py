@@ -169,7 +169,9 @@ _EQUITY_TEXT = (
     ("outros resultados abrangentes", "Outros Resultados Abrangentes"),
     ("participa", "Participação dos Não Controladores"),
     ("patrimônio líquido consolidado", "Patrimônio Líquido Consolidado"),
+    ("total do patrimônio líquido consolidado", "Patrimônio Líquido Consolidado"),  # 3 filings, 2026-11-08 backfill
     ("patrimônio líquido", "Patrimônio Líquido"),
+    ("total do patrimônio líquido", "Patrimônio Líquido"),
 )
 _EPS_HEADERS = ("3.99", "3.99.01", "3.99.02")  # empty in the XML, 0 in open data
 NAME_WIDTH = 100  # open data cuts DS_CONTA at 100 characters; the archived XML keeps the full text
@@ -678,20 +680,19 @@ def _legacy_capital(members: dict[str, bytes], head: dict[str, Any]) -> pl.DataF
     comp = root.findall("ComposicaoCapitalSocialDemonstracaoFinanceira")
     if not comp:
         return pl.DataFrame(schema=CAPITAL_SCHEMA)
-    if len(comp) != 1:  # some filings repeat the same composition (95 of 2,749 legacy zips): one when they agree
-        tags = ("AcaoOrdinaria", "AcaoPreferencial", "TotalAcao")
-        sig = {
-            tuple(_text(c, f"Quantidade{t}{k}") for t in tags for k in ("CapitalIntegralizado", "Tesouraria"))
-            for c in comp
-        }
-        if len(sig) != 1:
-            raise RadError(f"{len(comp)} capital compositions that differ")
-    c = comp[0]
+    # some filings repeat the composition (95 of 2,749 legacy zips), or repeat it with a field left at 0 in one copy
+    # (41 in the 2026-11-08 backfill: the total 0 in one, 1,835,966,791 in the other): fields are merged, a value set
+    # in one copy and 0 or empty in the others kept; two different values for a field drop the share counts of that
+    # filing (its statements still parse)
     out: dict[str, Any] = {k: head[k] for k in ("form", "cnpj", "reference_date", "version", "company_name")}
     names = {"common": "AcaoOrdinaria", "preferred": "AcaoPreferencial", "total": "TotalAcao"}
     for a, tag in (("paid_in", "CapitalIntegralizado"), ("treasury", "Tesouraria")):
         for b, el in names.items():
-            v = _decimal(_text(c, f"Quantidade{el}{tag}"))
+            vals = {_decimal(_text(c, f"Quantidade{el}{tag}")) for c in comp}
+            nonzero = {v for v in vals if v}
+            if len(nonzero) > 1:
+                return pl.DataFrame(schema=CAPITAL_SCHEMA)
+            v = next(iter(nonzero)) if nonzero else (Decimal(0) if Decimal(0) in vals else None)
             out[f"{b}_{a}"] = int(v) if v is not None else (0 if a == "treasury" else None)
     return pl.DataFrame([out], schema=CAPITAL_SCHEMA)
 

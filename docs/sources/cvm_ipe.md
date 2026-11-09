@@ -44,3 +44,13 @@ Persistent.
   protocol (most of the older years, and some recent ones).
 - Used as evidence for stock events (ADR-0016): subject keywords `bonifica`, `desdobr`, `grupament`; ITUB's bonus
   Fato Relevante of 2025-02-05 has subject "Bonificação de Ações" and no type or species.
+
+## 9. Filing documents (2026-11-09, `ingest/cvm_ipe_docs.py`, ADR-0035)
+- Each filing linked to a stock event whose ratio no B3 list states is fetched once. Formats are read from the
+  bytes: PDF, Word 97 (`D0CF11E0`, text runs in cp1252 or UTF-16), docx, HTML.
+- **The empty shell is a load symptom.** With the restatement backfill running, 255 of 263 first answers were the
+  4.3 KB "ENET Download de Documento" page. Only the shell carries `Content-Type: text/html; charset=utf-8`;
+  documents are plain `text/html`. Retried with curl, 3 of 4 then returned the document. It is handled as a busy
+  answer, never stored; the shells stored by that first run are asked again.
+- Ratio sentences read to staging `ipe_ratio`. Telebras' 2010 AGE call: "10.000 (dez mil) ações para 1 (uma)".
+  BTTL3's 2015 notice: "25 (vinte e cinco) … para 1 (uma)".

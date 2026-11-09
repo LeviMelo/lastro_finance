@@ -40,6 +40,9 @@ class FetchError(RuntimeError):
         self.status = status
 
 
+BUSY_MAX_BYTES = 16384  # a 'busy' page is small: RAD's 297-byte notice, its 4.3 KB empty download shell
+
+
 class PoliteClient:
     def __init__(
         self,
@@ -111,7 +114,7 @@ class PoliteClient:
             if self.stateless:  # no session survives a request (ANBIMA's ima-sh answers the first date of a session)
                 self._client.cookies.clear()
             busy = (
-                self.busy is not None and resp.status_code == 200 and len(resp.content) < 4096
+                self.busy is not None and resp.status_code == 200 and len(resp.content) < BUSY_MAX_BYTES
                 and self.busy in resp.content
             )  # fmt: skip
             if resp.status_code in RETRY_STATUS or busy:

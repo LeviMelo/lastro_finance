@@ -588,3 +588,12 @@ tier = "P"
 ephemeral = false
 status = "parsed"
 recon = "docs/sources/b3_bdi_pdf.md"
+
+[cvm_ipe_docs]
+name = "CVM: documentos IPE que provam eventos de ações (proporções de grupamento, desdobramento, bonificação)"
+institution = "CVM"
+access = "RAD frmDownloadDocumento per filing linked from core corporate_event, no login"
+tier = "P"
+ephemeral = false
+status = "parsed"
+recon = "docs/sources/cvm_ipe.md"

@@ -33,16 +33,17 @@ portfolio file.
 
 - **Exchange-traded:**
   - COTAHIST prices 1986– (8,469 instruments, identity through ISIN and ticker changes);
-  - corporate events 52,933 (ADR-0016), adjusted prices on read. Every stock event is decided:
-    - near-duplicates are resolved against the price move;
-    - regroupings on lines Yahoo lacks are proven by CVM filings or exact ratios;
-    - a filing-backed ratio that misses the move by more than 3x is replaced by the ratio the move shows (TELB4
-      2011: Yahoo 1:10, filing 10,000:1);
+  - corporate events 53,003 (ADR-0016, ADR-0035), adjusted prices on read. Every stock event is decided; a ratio
+    comes from B3's lists, then the filing's own text (`cvm_ipe_docs`), then B3's EG (ex-grupamento) marker in
+    COTAHIST, then the price move (TELB4 2011 10,000:1 from the filing, Yahoo said 1:10; TIBR5/6 2015 1:100 from the
+    EG marker; BTTL3 2015 25:1);
   - B3 Price Report 2018– (2,199 days, 64.5 M rows, 3.2 GB as tar+zstd, ADR-0031): settlements, open interest,
     options and the fixed-income ETFs COTAHIST omits (36 of them priced and verified against NAV, IMAB11 on 1,857 days);
   - B3's listed funds (daily);
   - daily bulletin PDF 2022-03– (ADR-0034), backfill running: index compositions of 31 indices per session, and
-    stock lending (registered loans; open balances by market, the short-interest series).
+    stock lending (registered loans; open balances by market, the short-interest series);
+  - index membership per month (ADR-0036): B3's portfolios from 2022-03, before that the holdings of the ETF
+    measured to track each index (Ibovespa, SMLL, IBrX-50/100, ISE, ICO2, IGCT, IMAT from 2018).
 - **Companies:**
   - issuers linked to their shares through B3 roots, FCA codes, the ISIN issuer code, B3's ISIN registry and name
     history: 1,177 of 1,204 share and unit lines trading since 2010; unlinked volume ~0 from 2013 (ADR-0018);
@@ -96,8 +97,6 @@ portfolio file.
 ## Next (engineering)
 
 1. RAD and bulletin backfills to completion; then the H check, core events, catalog, panel and quality rebuilt.
-2. Index membership 2018–22 from the ETF monthly portfolios, each ETF matched to its index on the bulletin's
-   compositions from 2022.
-3. Panel month-returns flagged `ret_suspect` (67 beyond +300 %/-90 %): mostly real distress; moves with no event
+2. Panel month-returns flagged `ret_suspect` (67 beyond +300 %/-90 %): mostly real distress; moves with no event
    and no filing found (TIBR5/6 2015, BTTL3 2015, PTPA3 2016) stay flagged.
-4. OQ-17 (B3 trade file vs COTAHIST), OQ-19 re-probe on a weekday.
+3. OQ-17 (B3 trade file vs COTAHIST), OQ-19 re-probe on a weekday.

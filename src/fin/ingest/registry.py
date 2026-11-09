@@ -31,6 +31,7 @@ from fin.ingest.base import Connector
 from fin.ingest.binance import BinanceKlines
 from fin.ingest.context import context_connectors
 from fin.ingest.cvm_funds import CvmFiCda, CvmFii, CvmFiInfDiario
+from fin.ingest.cvm_ipe_docs import CvmIpeDocs
 from fin.ingest.cvm_rad import CvmRadVersions
 from fin.ingest.intraday import YahooIntraday
 from fin.ingest.ptax import BcbPtax
@@ -102,6 +103,7 @@ CONNECTORS: dict[str, type[Connector]] = {
         B3FundsListed,
         B3Isin,
         B3BdiPdf,
+        CvmIpeDocs,
         BinanceKlines,
         TiingoDaily,
         SndPuHistorico,

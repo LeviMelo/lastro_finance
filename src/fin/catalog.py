@@ -20,6 +20,8 @@ Views:
 - `price_report_close`: B3 Price Report closes per ticker and day (fixed-income ETFs' only price);
 - `index_composition` / `index_total`: B3 index portfolios per bulletin 2022- (ADR-0034); `lending_trade` /
   `lending_open`: stock lending registered and open balances (short interest) from the same bulletin;
+- `index_member` / `etf_index`: index members per month (B3 2022-03-, the tracking ETF's holdings 2018-) and the
+  ETF matched to each index (ADR-0036);
 - debentures (ADR-0028): `debenture`, `debenture_terms`, `debenture_pu` (SND accrued PU), `debenture_secondary_price`;
 - `intraday_bar`: Yahoo 5-minute bars (tier U);
 - macro `universe(date, asset_class)`: instruments trading in the 30 days up to a date, delisted later or not;
@@ -211,6 +213,9 @@ def views(z: Zones) -> dict[str, str]:
             FROM {_rp(s / "b3_bdi_pdf" / "index_total" / "**" / "*.parquet")}
             QUALIFY row_number() OVER (PARTITION BY bulletin_date, period_start, index_name ORDER BY raw_sha256) = 1
         """,
+        # index membership per month (ADR-0036): B3's portfolios from 2022-03, the tracking ETF's holdings before
+        "index_member": _scan(c / "index_member" / "*.parquet"),
+        "etf_index": _scan(c / "etf_index" / "*.parquet"),
         "lending_trade": f"""
             FROM {_rp(s / "b3_bdi_pdf" / "lending_trade" / "**" / "*.parquet")}
             QUALIFY row_number() OVER (PARTITION BY bulletin_date, ticker, market ORDER BY raw_sha256) = 1

@@ -108,9 +108,11 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `tax/engine.py` | monthly IR per pool, exemption, losses, IRRF, DARF 6015 due date; JCP and dividend withholding |
 | `export/panel.py` | `fin export panel`: monthly point-in-time equity and macro panels with a column dictionary (ADR-0032); reads `derived/fundamental_metric` |
 | `core/etfs.py` | core `etf_nav` (every ETF daily report, Fundos.NET 2018- and CVM 2004-18, latest flag) and `etf_link` (fund CNPJ → quota by trading name and B3 listing, verified by price) |
+| `core/indices.py` | index membership per month (ADR-0036): ETFs matched to indices on their holdings → core `etf_index`, `index_member` |
 | `ingest/tiingo.py` | Tiingo daily prices and metadata → staging `daily`, `meta` (token in a header) |
 | `ingest/binance.py` | Binance bulk daily klines → staging `kline` (ms and µs timestamps) |
 | `ingest/b3_bdi_pdf.py` | B3 daily bulletin PDF streamed (ADR-0034): composition and lending pages kept as zstd PDF → staging `index_composition`, `index_total`, `lending_trade`, `lending_open` |
+| `ingest/cvm_ipe_docs.py` | IPE filings linked to stock events, read for their stated ratio (ADR-0035) → staging `ipe_ratio` |
 | `ingest/b3_isin.py` | B3 ISIN database → staging `emitter` (issuer code → CNPJ); NUMERACA archived as member deltas |
 | `ingest/b3_funds_listed.py` | B3 listed funds → staging `listed_fund` (acronym, Fundos.NET id, daily) and `fund_report` (ETF report doc ids: acronym → CNPJ) |
 | `ingest/fundosnet_cda.py` | Fundos.NET ETF monthly portfolios (CDA XML, two layouts) → staging `position`, `net_assets`, `listing` |

@@ -540,6 +540,11 @@ class B3BdiPdf(Connector):
     def parse(self, blob: bytes, row: dict[str, Any]) -> Iterable[Parsed]:
         return parse_payload(blob, row)
 
+    def derive(self, zones: Zones, run: Any) -> None:
+        from fin.core import indices
+
+        indices.build(zones)  # index membership: B3's portfolios, ETF holdings before them (ADR-0036)
+
 
 def _version() -> str:
     from importlib.metadata import version
