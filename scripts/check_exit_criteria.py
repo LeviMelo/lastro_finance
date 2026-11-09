@@ -120,7 +120,12 @@ pit = con.execute(
                WHERE statement = 'BPA' AND consolidation = 'con' AND account_code = '1' AND period_order = 'ÚLTIMO'),
     r AS (SELECT a.issuer_cnpj, a.form, a.reference_date, a.v v1, b.v v2, a.received_on r1, b.received_on r2
           FROM t a JOIN t b USING (issuer_cnpj, form, reference_date)
-          WHERE a.version = 1 AND b.version = 2 AND a.v <> b.v AND b.received_on > a.received_on),
+          WHERE a.version = 1 AND b.version = 2 AND a.v <> b.v AND b.received_on > a.received_on
+            -- a version superseded the same day it was received is never what a query on that day returns
+            -- (43185362000107 ITR 2013-Q1: v2 in units instead of thousands, v3 the same day)
+            AND NOT EXISTS (SELECT 1 FROM t c WHERE c.issuer_cnpj = b.issuer_cnpj AND c.form = b.form
+                            AND c.reference_date = b.reference_date AND c.received_on = b.received_on
+                            AND c.version > b.version)),
     q AS (  -- the query a user runs: the latest version received on or before the date
         SELECT r.*, (SELECT t.v FROM t WHERE t.issuer_cnpj = r.issuer_cnpj AND t.form = r.form
                        AND t.reference_date = r.reference_date AND t.received_on <= r.r2 - 1

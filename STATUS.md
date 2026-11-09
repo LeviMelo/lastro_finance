@@ -15,8 +15,8 @@ portfolio file.
     - C: calendar against B3 sessions;
     - E: Selic and CDI compounding, 323/323 months;
     - F: look-through 0.0003 %; CVM 175 bridge 19,971/20,217 (ADR-0025);
-    - H: balance identity, the 6 breaks being the companies' own filings; point in time across restatements,
-      21/21 on versions recovered from RAD (ADR-0027);
+    - H: balance identity 29,399/29,408, the 9 breaks being the companies' own filings; point in time across
+      restatements 506/506 on the full RAD history (ADR-0027);
   - measured: G, LTN PU from rate 93.06 % (the rest are Tesouro's own irregularities).
 - **Golden checks:** 9 corporate-event cases exact; the §13.1 portfolio returns +37.38 % (plan +37.2 %).
 - **Data quality** (ADR-0022):
@@ -24,7 +24,7 @@ portfolio file.
   - Quarantine is for broken rows only. Real data a rule rejected is kept and reported instead: COTAHIST
     out-of-range sessions, formatted CNPJs, zero ETF quotas.
 - **Storage** (ADR-0014, ADR-0031):
-  - raw 13 GB, staging 7.1 GB, core 0.25 GB; C: has 35 GB free;
+  - raw 15 GB, staging 7.1 GB, core 0.25 GB; C: has 58 GB free;
   - large sources are streamed: only the used part of each download is kept, with a fingerprint of the whole
     (Price Report tar+zstd, ADR-0031; daily bulletin PDF, ADR-0034);
   - DuckDB connections cap temp files at 4 GB (a view once spilled 38 GB).
@@ -33,22 +33,26 @@ portfolio file.
 
 - **Exchange-traded:**
   - COTAHIST prices 1986– (8,469 instruments, identity through ISIN and ticker changes);
-  - corporate events 53,003 (ADR-0016, ADR-0035), adjusted prices on read. Every stock event is decided; a ratio
-    comes from B3's lists, then the filing's own text (`cvm_ipe_docs`), then B3's EG (ex-grupamento) marker in
-    COTAHIST, then the price move (TELB4 2011 10,000:1 from the filing, Yahoo said 1:10; TIBR5/6 2015 1:100 from the
-    EG marker; BTTL3 2015 25:1);
+  - corporate events 53,030 (ADR-0016, ADR-0035), adjusted prices on read. Every stock event is decided; a ratio
+    comes from B3's lists, then the filing's own text (367 filings read: 170 confirmed, 28 corrected), then B3's EG
+    (ex-grupamento) marker in COTAHIST, then the price move. Examples: TELB4 2011 10,000:1 (Yahoo said 1:10),
+    TIBR5/6 2015 1:100, BTTL3 2015 25:1. Capital returned in another company's shares counts as a spin-off
+    (PCAR3 → Éxito 2023, BRAP → VALE 2021);
   - B3 Price Report 2018– (2,199 days, 64.5 M rows, 3.2 GB as tar+zstd, ADR-0031): settlements, open interest,
     options and the fixed-income ETFs COTAHIST omits (36 of them priced and verified against NAV, IMAB11 on 1,857 days);
   - B3's listed funds (daily);
-  - daily bulletin PDF 2022-03– (ADR-0034), backfill running: index compositions of 31 indices per session, and
-    stock lending (registered loans; open balances by market, the short-interest series);
-  - index membership per month (ADR-0036): B3's portfolios from 2022-03, before that the holdings of the ETF
-    measured to track each index (Ibovespa, SMLL, IBrX-50/100, ISE, ICO2, IGCT, IMAT from 2018).
+  - daily bulletin PDF 2022-03-21 → (ADR-0034), 1,162 of 1,176 sessions; B3 does not serve the other 14:
+    - index compositions of 31 indices per session (2.93 M rows; in-force tables equal B3's totals in 21,226 of
+      21,263);
+    - stock lending: registered loans 2023-07 → (1.91 M rows) and open balances 2022-03 → (2.10 M), the
+      short-interest series;
+  - index membership per month (ADR-0036), 2022-03 → 2026-11 with no month missing. Nine indices go back to 2018
+    through their measured tracking ETF: Ibovespa, SMLL, IBrX-50/100, IDIV, ISE, ICO2, IGCT, IMAT.
 - **Companies:**
   - issuers linked to their shares through B3 roots, FCA codes, the ISIN issuer code, B3's ISIN registry and name
     history: 1,177 of 1,204 share and unit lines trading since 2010; unlinked volume ~0 from 2013 (ADR-0018);
-  - CVM DFP/ITR 2010– plus superseded versions from RAD (backfill running, ~350/h, CVM's server-bound: its
-    'service busy' pages are retried, never read as absent);
+  - CVM DFP/ITR 2010–, plus every superseded version RAD serves (12.56 M statement lines; 1 document fails at CVM;
+    21 of 7,473 left unparsed, raw kept);
   - FRE share counts and treasury, FCA, IPE 2003–;
   - insider trades by role group (VLMO 2018–, 419,707 lines);
   - valuation by date.
@@ -70,8 +74,12 @@ portfolio file.
   - crypto daily klines (Binance, tier S);
   - NEFIN, global rates, commodities, OECD, CFTC;
   - calendar 1986– (ADR-0024).
-- **Model panels** (ADR-0032): `fin export panel`, monthly point-in-time equity (85,932 rows, 2010–) and macro
-  panels with a column dictionary; fundamentals from 2011 (CVM's first statements).
+- **Model panels** (ADR-0032): `fin export panel`, monthly point-in-time equity and macro panels with a column
+  dictionary:
+  - equity: 85,932 rows, 1,160 lines, 2010–2026, fundamentals on 66,196 rows (from 2011, CVM's first
+    statements);
+  - 57 month-returns flagged `ret_suspect`, every one checked: real liquid crashes and rallies (Americanas, PDG,
+    Gol, Azul, TXRX3 2020) or thin-market prints (14 months with fewer than 200 trades).
 - **Ledger and tax** (ADR-0033): `fin ledger` and `fin tax` run on a transactions CSV:
   - average cost, day trade, corporate events from core, double-entry postings;
   - monthly IR per pool with the R$ 20,000 exemption, carried losses and IRRF, DARF 6015 due dates;
@@ -96,7 +104,7 @@ portfolio file.
 
 ## Next (engineering)
 
-1. RAD and bulletin backfills to completion; then the H check, core events, catalog, panel and quality rebuilt.
-2. Panel month-returns flagged `ret_suspect` (67 beyond +300 %/-90 %): mostly real distress; moves with no event
-   and no filing found (TIBR5/6 2015, BTTL3 2015, PTPA3 2016) stay flagged.
-3. OQ-17 (B3 trade file vs COTAHIST), OQ-19 re-probe on a weekday.
+1. `fin ingest daily` each evening after ~21:00 BRT.
+2. OQ-17 (B3 trade file vs COTAHIST, 443 of 42,093 ticker-days differ; COTAHIST stays the price source), OQ-19
+   re-probe on a weekday after 2026-11-10.
+3. Stage I gaps listed above, when the owner's holdings need them.

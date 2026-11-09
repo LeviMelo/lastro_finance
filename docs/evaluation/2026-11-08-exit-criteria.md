@@ -29,5 +29,13 @@ held in two or more versions, 21 of them with a changed consolidated total asset
 as-of query returns version 1 the day before the re-filing and version 2 from it. The rule is also unit-tested
 (`test_restated_statement_is_used_only_from_its_delivery`).
 
+**Re-run 2026-11-09, RAD backfill complete.** Every superseded version RAD serves is held: 12.56 M statement lines, with
+only document 67723 failing on CVM's side.
+- Point in time: 506 of 506 restated filings give the original before the re-filing and the restatement from it. A
+  version superseded on the day it arrived is excluded from the expectation (43185362000107 ITR 2013-Q1: v2 typed in
+  units, v3 the same day), because no query on that day returns it.
+- Balance identity: 29,399 of 29,408 filings hold. All 9 breaks are the companies' own filings, now recorded by
+  `balance_identity`, which reads the RAD versions too.
+
 **F, look-through.** Across funds, holdings sum to within 5 % of net assets for 90.6 % (median ratio 1.0013); the rest
 hold receivables, payables, derivatives or confidential positions that CDA does not list.

@@ -37,7 +37,8 @@ from fin.store.manifest import Manifest
 from fin.store.tables import read_parquet_dir
 
 # the date may carry a time ("027251DFP31-12-2025 00_00_00v2.xml", measured 2026-11-08)
-STATEMENTS_MEMBER = re.compile(r"^\d{6}(?:DFP|ITR)\d{2}-\d{2}-\d{4}(?: \d{2}_\d{2}_\d{2})?v\d+\.xml$", re.IGNORECASE)
+# the time part may have a one-digit hour ("001171DFP31-12-2022 0_00_00v3.xml", 2026-11-09)
+STATEMENTS_MEMBER = re.compile(r"^\d{6}(?:DFP|ITR)\d{2}-\d{2}-\d{4}(?: \d{1,2}_\d{2}_\d{2})?v\d+\.xml$", re.IGNORECASE)
 URL = "https://www.rad.cvm.gov.br/ENETCONSULTA/frmDownloadDocumento.aspx?CodigoInstituicao=1&NumeroSequencialDocumento={doc_id}"
 MIN_BYTES = 100_000  # RAD answers 200 with a ~300-byte HTML stub when it is busy: absent now, tried again next run
 _DOC = re.compile(r"doc=(\d+)")

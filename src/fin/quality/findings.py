@@ -607,10 +607,13 @@ def cash_vs_yahoo(zones: Zones) -> pl.DataFrame:
 def balance_identity(zones: Zones) -> pl.DataFrame:
     """Total assets (BPA 1) = total liabilities and equity (BPP 2) on every consolidated CVM filing, within R$ 1,000.
     A break is the company's own filing (one side filed as zero, or two totals): kept as filed, acknowledged."""
-    root = zones.staging / "cvm_dfp_itr" / "statement_line"
-    if not root.exists():
+    # open data's latest versions and the superseded ones recovered from RAD (ADR-0027), as `fundamental_fact`
+    roots = [zones.staging / src / "statement_line" for src in ("cvm_dfp_itr", "cvm_rad_versions")]
+    roots = [r for r in roots if r.exists() and any(r.rglob("*.parquet"))]
+    if not roots:
         return _frame([])
-    lines = pl.scan_parquet(root / "**" / "*.parquet", hive_partitioning=False).filter(
+    scans = [pl.scan_parquet(r / "**" / "*.parquet", hive_partitioning=False) for r in roots]
+    lines = pl.concat(scans, how="diagonal_relaxed").filter(
         (pl.col("consolidation") == "con") & (pl.col("period_order") == "ÚLTIMO")
         & (((pl.col("statement") == "BPA") & (pl.col("account_code") == "1"))
            | ((pl.col("statement") == "BPP") & (pl.col("account_code") == "2")))
@@ -633,7 +636,7 @@ def balance_identity(zones: Zones) -> pl.DataFrame:
         pl.format("assets {} liabilities+equity {}", "BPA", "BPP").alias("observed"),
         pl.lit("equal within R$ 1,000").alias("expected"),
         pl.format("{}: the filing's two totals differ", "company_name").alias("detail"),
-        pl.lit("staging cvm_dfp_itr/statement_line BPA 1, BPP 2").alias("evidence"),
+        pl.lit("staging cvm_dfp_itr and cvm_rad_versions statement_line BPA 1, BPP 2").alias("evidence"),
         pl.lit("acknowledged").alias("status"),
         pl.lit("rule: the company's own filing (a side filed as zero, or two totals); kept as filed").alias(
             "resolution_note"

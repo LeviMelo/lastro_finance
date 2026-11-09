@@ -53,3 +53,20 @@ Latest versions in open data, received before 2021-10-07, doc 5110 to 103318: 12
 
 ## 8. Ephemerality and open items
 Not ephemeral (RAD keeps every version). Open: the legacy backfill itself (5,605 versions, ~44 GB of download for ~140 MB kept); DFC method direct (code 6) and a DMPL with more than 8 columns were not seen in the 23 filings and are untested against real files; the doc-id boundary of the XML era (108885 / 108951, 65 ids unprobed) no longer matters, the connector reads both layouts.
+
+## 9. Backfill complete (2026-11-09)
+- **Every superseded version RAD serves is held,** all but document 67723 (an ITR v1). RAD answers that one with HTTP 200 and its own .NET error ("Index was out of range…", 109 bytes) on every try.
+- **Under load, RAD answers HTTP 200 with a "busy" page.** It was read as absent until 2026-11-08, which had dropped 3,372 versions; it is now retried.
+- **Two runs died of MemoryError** when another process on the host held about 20 GB of RAM; the retry passes completed the backfill.
+- **Layouts met in the backfill:**
+  - repeated capital compositions with a field left at 0 in one copy (merged field by field);
+  - "Total do Patrimônio Líquido" DMPL labels;
+  - a statements XML named with a one-digit hour ("0_00_00").
+- **Reparse:** 12,561,077 statement lines and 7,469 share-capital rows (4 quarantined). Staging compacted from 95,284
+  files (989 MB) to 848 (65 MB).
+- **Left unparsed, 21 of 7,473 versions (raw kept):**
+  - most are filings whose two periods share both start and end date while their values differ: the filing's own
+    period metadata is broken;
+  - 2 values typed with a point decimal ("-0.05"): refused, never guessed;
+  - 1 DMPL column label not seen before;
+  - 1 filing with no start date for the year before last.

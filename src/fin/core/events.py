@@ -1308,7 +1308,10 @@ def factors(events: pl.DataFrame, prices: pl.LazyFrame) -> pl.DataFrame:
     ).select(FACTOR.names)
 
 
-SPINOFF_LABELS = ("CIS RED CAP",)  # B3: spin-off with capital reduction; factor = new shares per 100 held
+# B3 labels where holders receive shares of another line, `factor` per 100 held: a spin-off with capital reduction,
+# and a capital return paid in another company's shares (GFSA -> TEND 2017, BRAP -> VALE 2021, PCAR -> Éxito BDR
+# EXCO32 2023-08-22: without it PCAR3's adjusted series fell 76 % that month)
+SPINOFF_LABELS = ("CIS RED CAP", "REST CAP ACOES")
 SPINOFF_SESSIONS = 10  # the spun-off line must trade within this many sessions of the ex-date
 
 
