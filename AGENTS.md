@@ -100,6 +100,7 @@ Git-ignored: `data/` (zones of PLAN §4.2), `inbox/` (owner documents).
 |---|---|
 | intent, scope, stages and exit criteria | `PLAN.md` (§4 data layer, §10 stages) |
 | current state and what is next | `STATUS.md` |
+| what data exists, for modelling (views, coverage, caveats) | `docs/DATA_LAYER.md` |
 | module map, persistent objects | `ARCHITECTURE.md` |
 | decisions and their evidence | `DECISIONS.md` → `docs/decisions/` |
 | measurements | `EVALUATION.md` → `docs/evaluation/` |

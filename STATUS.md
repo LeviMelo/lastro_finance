@@ -33,6 +33,8 @@ portfolio file.
 
 ## What the data layer holds
 
+Full catalog for modelling (every view, coverage, columns, caveats): `docs/DATA_LAYER.md`.
+
 - **Exchange-traded:**
   - COTAHIST prices 1986– (8,469 instruments, identity through ISIN and ticker changes);
   - corporate events 53,030 (ADR-0016, ADR-0035), adjusted prices on read. Every stock event is decided; a ratio
