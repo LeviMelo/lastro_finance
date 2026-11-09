@@ -6,7 +6,9 @@
 # Remove:               Unregister-ScheduledTask -TaskName "LASTRO fin ingest daily" -Confirm:$false
 
 $repo = Split-Path -Parent $PSScriptRoot
-$uv = (Get-Command uv -ErrorAction Stop).Source
+$uv = (Get-Command uv -ErrorAction SilentlyContinue).Source
+if (-not $uv) { $uv = Join-Path $env:APPDATA "Python\Python312\Scripts\uv.exe" }  # where uv lives on this machine
+if (-not (Test-Path $uv)) { throw "uv not found on PATH or at $uv" }
 $log = Join-Path $repo "data\logs\scheduler.log"
 $cmd = "/c cd /d `"$repo`" && set PYTHONUTF8=1 && `"$uv`" run fin ingest daily >> `"$log`" 2>&1"
 
