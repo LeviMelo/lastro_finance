@@ -20,6 +20,7 @@ from fin.ingest.alternates import (
     YahooChart,
 )
 from fin.ingest.anbima_calendar import AnbimaCalendar
+from fin.ingest.b3_bdi_pdf import B3BdiPdf
 from fin.ingest.b3_cotahist import B3Cotahist
 from fin.ingest.b3_events import B3CompanyEvents
 from fin.ingest.b3_fixed_income import B3FixedIncome
@@ -100,6 +101,7 @@ CONNECTORS: dict[str, type[Connector]] = {
         B3Holidays,
         B3FundsListed,
         B3Isin,
+        B3BdiPdf,
         BinanceKlines,
         TiingoDaily,
         SndPuHistorico,
@@ -121,6 +123,7 @@ DAILY: tuple[str, ...] = (
     "b3_fixed_income",  # B3 OTC fixed-income trades (drp.b3.com.br): back to 2023-03 only while served
     "b3_instruments",
     "b3_index_portfolio",
+    "b3_bdi_pdf",  # the daily bulletin PDF streamed: index compositions and lending pages kept (ADR-0034)
     "b3_index_levels",
     "b3_pesquisapregao",
     "cvm_cia_cadastro",

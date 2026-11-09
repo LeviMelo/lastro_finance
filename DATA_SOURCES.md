@@ -5,7 +5,7 @@ source, `docs/sources/<source_id>.md` (template `docs/sources/_TEMPLATE.md`, PLA
 keeps the facts that cut across sources. Where a note disagrees with PLAN.md, a brief or a code comment, the note wins
 and the discrepancy is recorded (ADR-0001). Facts are dated by the recon that measured them; a source can change
 without notice. The golden cases of PLAN §4.11.8, verified against three sources each:
-[golden_events](docs/sources/golden_events.md).
+[golden_events](docs/sources/golden_events.md). The legal texts behind the tax rules: [tax_rules](docs/sources/tax_rules.md).
 
 Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness and blockers.
 
@@ -56,6 +56,7 @@ Registry: `src/fin/reference/sources.toml`. `uv run fin status` shows freshness 
 | `fred` | St. Louis Fed | S | 28 US/global series (rates, breakevens, dollar, spreads, oil, macro), owner key | parsed | [note](docs/sources/context_global.md) |
 | `tiingo` | Tiingo | S | daily prices, dividends, splits of 12 US benchmark ETFs and 5 Brazilian ADRs, owner token | parsed | [note](docs/sources/context_global.md) |
 | `binance` | Binance | S | crypto daily klines (BTC/ETH/USDT/SOL in BRL; BTC/ETH in USDT) 2017– | parsed | [note](docs/sources/binance.md) |
+| `b3_bdi_pdf` | B3 | P | Daily bulletin PDF 2022-03→, streamed: index compositions (31 indices), stock lending (loans, open balances) | parsed | [note](docs/sources/b3_bdi_pdf.md) |
 | `b3_isin` | B3 | P | ISIN database: issuer code → CNPJ (69,803 issuers), all ISINs; daily change files | archiving | [note](docs/sources/b3_isin.md) |
 | `b3_funds_listed` | B3 | P | listed ETFs/FIIs with acronym and Fundos.NET id; ETF report ids (acronym → CNPJ) | archiving | [note](docs/sources/b3_funds_listed.md) |
 | `ipeadata` | IPEA (FGV) | S | IGP-M 1989–, IGP-DI 1944– | archiving | [note](docs/sources/ipeadata.md) |

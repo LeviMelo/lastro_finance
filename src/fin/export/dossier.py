@@ -4,7 +4,8 @@ A Markdown report plus Parquet tables in `exports/dossier-<as-of>/`. Every figur
 or method; the numbers are computed here (the reader does no arithmetic on raw series); unreliable items are
 labeled, not hidden. Owner-facing text is pt-BR.
 
-The portfolio file is TOML, until the ledger (Stage I) exists:
+The portfolio is the ledger's position on the as-of date when given a transactions CSV (Stage I, ADR-0033), or a
+TOML file of holdings:
 
     [holdings]          # ticker = quantity
     ITUB4 = 1000
@@ -39,6 +40,16 @@ class Portfolio:
         perf = doc.get("performance", {})
         since = perf.get("since")
         return cls({k: float(v) for k, v in doc.get("holdings", {}).items()}, since)
+
+    @classmethod
+    def from_ledger(cls, zones: Zones, path: Path, as_of: date) -> Portfolio:
+        """Holdings on `as_of` from the transactions file; the window starts at the first transaction."""
+        from fin.ledger.build import run
+
+        res, _, _, _ = run(zones, path)
+        pos = res.positions_on(as_of)
+        first = min((h.date for h in res.history), default=None)
+        return cls({k: float(q) for k, (q, _) in pos.items()}, first)
 
 
 def _q(con: duckdb.DuckDBPyConnection, sql: str, params: list[Any]) -> pl.DataFrame:
@@ -303,7 +314,8 @@ def _brl(x: float | None) -> str:
 
 
 def build(zones: Zones, portfolio_path: Path, as_of: date) -> Path:
-    p = Portfolio.load(portfolio_path)
+    p = (Portfolio.from_ledger(zones, portfolio_path, as_of) if portfolio_path.suffix.lower() == ".csv"
+         else Portfolio.load(portfolio_path))  # fmt: skip
     con = duckdb.connect(str(zones.catalog), read_only=True, config={"max_temp_directory_size": "4GB"})
     con.execute("SET enable_progress_bar = false")
     out = zones.exports / f"dossier-{as_of.isoformat()}"

@@ -579,3 +579,12 @@ tier = "P"
 ephemeral = true
 status = "parsed"
 recon = "docs/sources/b3_isin.md"
+
+[b3_bdi_pdf]
+name = "B3: Boletim Diário do Mercado (PDF), composições de índices e empréstimo de ativos"
+institution = "B3"
+access = "one PDF per session (arquivos.b3.com.br/bdi/download), no login; streamed, only the used pages kept"
+tier = "P"
+ephemeral = false
+status = "parsed"
+recon = "docs/sources/b3_bdi_pdf.md"

@@ -47,6 +47,7 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `staging/tesouro_transparente/price_rate/all/<sha>.parquet` | Tesouro Direto rates and PUs 2004-12-31–, one full snapshot per daily file | rebuildable |
 | `core/series_observation/source=<id>.parquet` | every series value with period, unit and version (ADR-0013) | rebuildable |
 | `core/series_definition/source=<id>.parquet` | latest name, frequency and unit per series | rebuildable |
+| `core/ledger/<table>.parquet` (ledger_position, ledger_realized, ledger_income, ledger_posting, tax_month) | the owner's ledger and monthly IR from the transactions file (stored in raw) | rebuildable (ADR-0033) |
 
 ## 3. Module map (`src/fin/`)
 
@@ -99,10 +100,17 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `ingest/focus.py` | BCB Focus expectations (8 tables) → staging `expectation` |
 | `ingest/fundosnet.py` | Fundos.NET notices → staging `distribution` (per Provento and kind, exact BRL per quota) and `listing` (delivery minute = knowledge time, version) |
 | `ingest/cvm_vlmo.py` | CVM VLMO → staging `document` (filing index, delivery date) and `movement` (insider positions and trades by role group; free text not parsed) |
+| `ledger/transactions.py` | the transactions CSV contract: kinds, Decimal parsing, rejected rows with reasons (ADR-0033) |
+| `ledger/engine.py` | average cost, day-trade pairing, corporate events, Tesouro lots, double-entry postings (ADR-0033) |
+| `ledger/sources.py` | asset classes (B3 listed funds, core instrument) and core corporate events by time-ranged ticker |
+| `ledger/build.py` | `fin ledger` / `fin tax`: raw copy of the file, contracts and writes of the ledger tables |
+| `tax/rules.py` | dated tax rules from `tax/rules.toml` with legal references; overlap check |
+| `tax/engine.py` | monthly IR per pool, exemption, losses, IRRF, DARF 6015 due date; JCP and dividend withholding |
 | `export/panel.py` | `fin export panel`: monthly point-in-time equity and macro panels with a column dictionary (ADR-0032); reads `derived/fundamental_metric` |
 | `core/etfs.py` | core `etf_nav` (every ETF daily report, Fundos.NET 2018- and CVM 2004-18, latest flag) and `etf_link` (fund CNPJ → quota by trading name and B3 listing, verified by price) |
 | `ingest/tiingo.py` | Tiingo daily prices and metadata → staging `daily`, `meta` (token in a header) |
 | `ingest/binance.py` | Binance bulk daily klines → staging `kline` (ms and µs timestamps) |
+| `ingest/b3_bdi_pdf.py` | B3 daily bulletin PDF streamed (ADR-0034): composition and lending pages kept as zstd PDF → staging `index_composition`, `index_total`, `lending_trade`, `lending_open` |
 | `ingest/b3_isin.py` | B3 ISIN database → staging `emitter` (issuer code → CNPJ); NUMERACA archived as member deltas |
 | `ingest/b3_funds_listed.py` | B3 listed funds → staging `listed_fund` (acronym, Fundos.NET id, daily) and `fund_report` (ETF report doc ids: acronym → CNPJ) |
 | `ingest/fundosnet_cda.py` | Fundos.NET ETF monthly portfolios (CDA XML, two layouts) → staging `position`, `net_assets`, `listing` |
@@ -127,6 +135,8 @@ every step inside one store/runs.IngestRun: run id, JSON-lines log, counts in/ou
 | `quality/` | data-quality checks and findings (ADR-0022) |
 | `export/` | exports for the external LLM: the dossier (ADR-0026) |
 | `analytics/` | portfolio analytics: risk and exposure (Stage K) |
+| `ledger/` | Stage I: transactions CSV → average cost, day trade, corporate events, double-entry postings (ADR-0033) |
+| `tax/` | Stage I: monthly IR (DARF 6015), income withholding, Tesouro IOF/IR; dated rules in `rules.toml` (ADR-0033) |
 
 ## 4. Invariants as implemented
 

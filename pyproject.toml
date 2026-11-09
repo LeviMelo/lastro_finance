@@ -15,6 +15,7 @@ dependencies = [
     "zstandard>=0.25.0",
     "openpyxl>=3.1",
     "pytz>=2024.1",  # DuckDB needs it to return TIMESTAMPTZ (intraday_bar) to Python
+    "pypdfium2>=5.15.1",
 ]
 
 [project.scripts]

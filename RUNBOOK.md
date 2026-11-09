@@ -40,6 +40,9 @@ uv run fin export panel                   # monthly model panels (equity, macro)
 uv run fin quality [checks]               # run the data-quality checks → data/quality/dq_finding (the daily job does it)
 uv run python scripts/check_golden_events.py  # golden corporate events vs core (exit 1 on a miss)
 uv run fin export dossier --portfolio examples/portfolio_reference.toml --as-of 2026-10-16  # the dossier (ADR-0026)
+uv run fin ledger [--file inbox/transactions.csv] [--as-of D]  # positions and average cost; writes core/ledger (ADR-0033)
+uv run fin tax [--file inbox/transactions.csv]   # monthly IR, DARF 6015 and due date, losses carried, income IR
+uv run fin export dossier --as-of D              # holdings from the ledger when inbox/transactions.csv exists
 uv run python scripts/check_provenance.py  # invariant 2: every staging row carries its provenance (exit 1 on a gap)
 uv run python scripts/check_exit_criteria.py  # PLAN §10 exit criteria C, E, G, H (exit 1 on a failure)
 uv run python scripts/check_golden_portfolio.py  # PLAN §13.1 portfolio vs the plan's estimate (exit 1 outside tolerance)

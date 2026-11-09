@@ -738,6 +738,50 @@ def implied_ipe_events(zones: Zones, prices: pl.LazyFrame, fac: pl.DataFrame, ta
     return ev.with_columns(pl.lit("confirmed").alias("status"), pl.col("ex_date").alias("ex_date_reported"))
 
 
+REPAIR_OFF = math.log(3.0)  # an applied, filing-backed stock event whose ratio misses the price move by more than this
+REPAIR_FIT = math.log(1.10)  # ...is replaced when a conventional ratio fits the move within this
+
+
+def repair_ratios(events: pl.DataFrame) -> pl.DataFrame:
+    """A stock event a CVM filing proves (`cvm_ipe` in its sources) whose ratio misses B3's price move by more than
+    3x has the wrong ratio from its other source: Yahoo lists TELB4 2011-01-24 and INEP4 2005-08-29 as 1:10 where
+    the filing says 10,000 shares into 1 (Telebras AGE call, IPE protocol 266245; Yahoo's old prices are per lot
+    of 1,000). The ratio the move implies (`price_check` x ratio) is snapped to a `CONVENTIONAL` one within 10 %;
+    the corrected event is added (sources `cvm_ipe,b3_cotahist`) and the original becomes `conflicting`, so both
+    stay visible (invariant 7)."""
+    if not events.height:
+        return events
+    stock = ["SPLIT", "REVERSE_SPLIT", "BONUS"]
+    idx = events.with_row_index("_r")
+    cand = idx.filter(
+        pl.col("event_type").is_in(stock) & pl.col("status").is_in(list(APPLIED)) & pl.col("ratio_num").is_not_null()
+        & pl.col("sources").str.contains("cvm_ipe") & (pl.col("price_check") > 0)
+        & (pl.col("price_check").log().abs() > REPAIR_OFF)
+    )  # fmt: skip
+    if not cand.height:
+        return events
+    drop: list[int] = []
+    new: list[dict[str, object]] = []
+    for r in cand.iter_rows(named=True):
+        s = r["price_check"] * r["ratio_num"] / r["ratio_den"]  # new shares per old that the move implies
+        big = max(s, 1 / s)
+        c = min(CONVENTIONAL, key=lambda k: abs(math.log(big / k)))
+        if abs(math.log(big / c)) > REPAIR_FIT:
+            continue
+        num, den = (c, 1) if s >= 1 else (1, c)
+        drop.append(r["_r"])
+        fixed = {k: v for k, v in r.items() if k != "_r"}
+        fixed |= {"ratio_num": num, "ratio_den": den, "price_check": s / (num / den), "sources": "cvm_ipe,b3_cotahist",
+                  "event_type": "REVERSE_SPLIT" if num < den else ("BONUS" if num / den < 2 else "SPLIT"),
+                  "event_id": f"{r['event_id']}|ratio_from_prices"}  # fmt: skip
+        new.append(fixed)
+    if not drop:
+        return events
+    status = pl.when(pl.col("_r").is_in(drop)).then(pl.lit("conflicting")).otherwise(pl.col("status"))
+    out = idx.with_columns(status.alias("status")).drop("_r")
+    return pl.concat([out, pl.DataFrame(new, schema=out.schema, orient="row")], how="vertical_relaxed")
+
+
 CLUSTER_DAYS = 10  # applied stock events of a line this close together are checked as one move
 CLUSTER_OFF = math.log(1.5)  # the full set must miss the move by more than 1.5x...
 CLUSTER_FIT = 0.3  # ...and a subset must fit it within this (log) for the others to be rejected
@@ -1249,7 +1293,7 @@ def build(zones: Zones, run: IngestRun | None = None) -> dict[str, int]:
     if extra.height:
         allev = assemble([*parts, *([fill(implied)] if implied.height else []), fill(extra)])
         good, bad = EVENT.split(allev)
-    good = resolve_clusters(good, prices)
+    good = repair_ratios(resolve_clusters(good, prices))
     write_parquet(good, zones.core / "corporate_event" / "corporate_event.parquet")
     q = zones.quarantine / "core" / "corporate_event.parquet"
     if bad.height:

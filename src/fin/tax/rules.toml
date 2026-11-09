@@ -1,0 +1,109 @@
+# Tax rules as data (PLAN §5): one row per rule and validity range. Texts read 2026-11-09 (docs/sources/tax_rules.md).
+# value: a decimal string; table rules carry `brackets` instead. vt_to omitted = in force.
+
+[[rule]]
+code = "swing_rate"
+value = "0.15"
+vt_from = 2005-01-01
+ref = "Lei 11.033/2004 art. 2 II; IN RFB 1585/2015 art. 57"
+
+[[rule]]
+code = "day_trade_rate"
+value = "0.20"
+vt_from = 2005-01-01
+ref = "Lei 11.033/2004 art. 2 I; IN RFB 1585/2015 art. 65 §11 I"
+
+[[rule]]
+code = "fii_rate"  # FII and Fiagro quota sales, swing or day trade; losses offset only within the same kind
+value = "0.20"
+vt_from = 1999-01-20
+ref = "Lei 8.668/1993 art. 18 (Lei 9.779/1999) and art. 20-D (Lei 14.130/2021); IN RFB 1585/2015 art. 37 §2"
+
+[[rule]]
+code = "stock_exemption_limit"  # BRL of stock spot sales per month; not day trade, ETFs, FIIs or BDRs
+value = "20000.00"
+vt_from = 2005-01-01
+ref = "Lei 11.033/2004 art. 3 I; IN RFB 1585/2015 art. 59 I and §2"
+
+[[rule]]
+code = "irrf_swing_rate"  # 'dedo-duro' on the sale value of spot sales
+value = "0.00005"
+vt_from = 2005-01-01
+ref = "Lei 11.033/2004 art. 2 §1 IV; IN RFB 1585/2015 art. 63 IV"
+
+[[rule]]
+code = "irrf_swing_dispense"  # monthly withheld total at or below this is not withheld
+value = "1.00"
+vt_from = 2005-01-01
+ref = "Lei 11.033/2004 art. 2 §4-§5; IN RFB 1585/2015 art. 63 §4-§5"
+
+[[rule]]
+code = "irrf_day_trade_rate"  # on the positive day-trade result of the day
+value = "0.01"
+vt_from = 2005-01-01
+ref = "IN RFB 1585/2015 art. 65 caput"
+
+[[rule]]
+code = "darf_minimum"  # a DARF below this is carried to the next month of the same code
+value = "10.00"
+vt_from = 1997-01-01
+ref = "Lei 9.430/1996 art. 68 §1"
+
+[[rule]]
+code = "darf_code_individual"
+value = "6015"
+vt_from = 2005-01-01
+ref = "Receita Federal, 'Cálculo e Pagamento do Imposto' (renda variável, bolsa), updated 2025-11-19"
+
+[[rule]]
+code = "jcp_rate"
+value = "0.15"
+vt_from = 1996-01-01
+vt_to = 2025-12-31
+ref = "Lei 9.249/1995 art. 9 §2"
+
+[[rule]]
+code = "jcp_rate"
+value = "0.175"
+vt_from = 2026-01-01
+ref = "Lei 9.249/1995 art. 9 §2 as amended by LC 224/2025 art. 8 (effects from 2026-01-01, art. 14 III)"
+
+[[rule]]
+code = "dividend_monthly_rate"  # on the whole month's dividends from one payer when above the threshold
+value = "0.10"
+vt_from = 2026-01-01
+ref = "Lei 9.250/1995 art. 6-A (Lei 15.270/2025 art. 2)"
+
+[[rule]]
+code = "dividend_monthly_threshold"
+value = "50000.00"
+vt_from = 2026-01-01
+ref = "Lei 9.250/1995 art. 6-A (Lei 15.270/2025 art. 2)"
+
+[[rule]]
+code = "dividend_grandfather_approved_by"  # dividends approved up to this date are outside art. 6-A (§3 II)
+value = "2025-12-31"
+vt_from = 2026-01-01
+ref = "Lei 9.250/1995 art. 6-A §3 (Lei 15.270/2025 art. 2)"
+
+[[rule]]
+code = "fixed_income_rate"  # by calendar days held: [up to days, rate]
+brackets = [[180, "0.225"], [360, "0.20"], [720, "0.175"], [999999, "0.15"]]
+vt_from = 2005-01-01
+ref = "Lei 11.033/2004 art. 1 I-IV"
+
+[[rule]]
+code = "iof_regressive"  # % of the yield by day 1..29; 0 from day 30
+brackets = [[1, "0.96"], [2, "0.93"], [3, "0.90"], [4, "0.86"], [5, "0.83"], [6, "0.80"], [7, "0.76"], [8, "0.73"],
+            [9, "0.70"], [10, "0.66"], [11, "0.63"], [12, "0.60"], [13, "0.56"], [14, "0.53"], [15, "0.50"],
+            [16, "0.46"], [17, "0.43"], [18, "0.40"], [19, "0.36"], [20, "0.33"], [21, "0.30"], [22, "0.26"],
+            [23, "0.23"], [24, "0.20"], [25, "0.16"], [26, "0.13"], [27, "0.10"], [28, "0.06"], [29, "0.03"],
+            [999999, "0"]]
+vt_from = 2008-01-01
+ref = "Decreto 6.306/2007 art. 32 and Anexo"
+
+[[rule]]
+code = "etf_fixed_income_rate"  # withheld at source; by the fund's average repricing term (days)
+brackets = [[180, "0.25"], [720, "0.20"], [999999, "0.15"]]
+vt_from = 2015-01-01
+ref = "Lei 13.043/2014 art. 2 (in force 2015-01-01, art. 113 II); IN RFB 1585/2015 art. 28 I-III and §4"

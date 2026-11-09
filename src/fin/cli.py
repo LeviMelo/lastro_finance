@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import shutil
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Annotated
 
 import polars as pl
@@ -26,7 +27,10 @@ app.add_typer(export_app, name="export")
 
 @export_app.command("dossier")
 def dossier_cmd(
-    portfolio: Annotated[str, typer.Option(help="arquivo TOML da carteira ([holdings] ticker = quantidade)")],
+    portfolio: Annotated[
+        str,
+        typer.Option(help="transações (CSV, carteira pelo razão) ou TOML da carteira ([holdings] ticker = quantidade)"),
+    ] = "inbox/transactions.csv",
     as_of: Annotated[str | None, typer.Option("--as-of", help="data de referência AAAA-MM-DD (padrão: hoje)")] = None,
 ) -> None:
     """Gera o dossiê (Markdown + tabelas Parquet) em data/exports/dossier-<data>/."""
@@ -50,6 +54,61 @@ def panel_cmd(
     from fin.export.panel import build
 
     typer.echo(f"painéis: {build(zones(), date.fromisoformat(start))}")
+
+
+def _txn_file(path: str) -> Path:
+    from fin.config import REPO_ROOT
+
+    p = Path(path)
+    p = p if p.is_absolute() else REPO_ROOT / p
+    if not p.exists():
+        typer.echo(f"sem arquivo de transações em {p}: nada a apurar (formato em fin/ledger/transactions.py)")
+        raise typer.Exit(0)
+    return p
+
+
+@app.command("ledger")
+def ledger_cmd(
+    file: Annotated[str, typer.Option(help="arquivo CSV de transações")] = "inbox/transactions.csv",
+    as_of: Annotated[str | None, typer.Option("--as-of", help="posição em AAAA-MM-DD (padrão: última)")] = None,
+) -> None:
+    """Razão: posições e preço médio a partir das transações e dos eventos corporativos; grava core/ledger/."""
+    from datetime import date
+
+    from fin.ledger.build import write
+
+    res, _, _ = write(zones(), _txn_file(file))
+    d = date.fromisoformat(as_of) if as_of else date.max
+    pos = res.positions_on(d)
+    typer.echo(f"{len(pos)} posições; {len(res.realized)} vendas; {len(res.income)} proventos")
+    for tk, (q, c) in sorted(pos.items()):
+        typer.echo(f"  {tk:<28} {q:>14,.2f}  custo R$ {c:>14,.2f}  médio R$ {c / q:,.4f}")
+    for line, raw, why in res.rejected:
+        typer.echo(f"  REJEITADA linha {line}: {why}: {raw}")
+    for i in res.issues:
+        typer.echo(f"  AVISO {i}")
+
+
+@app.command("tax")
+def tax_cmd(
+    file: Annotated[str, typer.Option(help="arquivo CSV de transações")] = "inbox/transactions.csv",
+) -> None:
+    """Apuração mensal do IR em bolsa (DARF 6015), prejuízos a compensar e IR sobre proventos."""
+    from fin.ledger.build import write
+
+    _, months, inc = write(zones(), _txn_file(file))
+    for m in months:
+        flag = " (IRRF estimado)" if m.irrf_estimated else ""
+        typer.echo(
+            f"{m.month:%Y-%m}  vendas ações R$ {m.stock_sales:,.2f}{' isento' if m.stock_exempt else ''}  "
+            f"imposto R$ {m.tax_total:,.2f}  IRRF R$ {m.irrf_used:,.2f}{flag}  DARF {m.darf_code} R$ {m.darf:,.2f} "
+            f"vence {m.due:%d/%m/%Y}  prejuízos: comum {m.loss_carry['common']:,.2f} day {m.loss_carry['day']:,.2f} "
+            f"FII {m.loss_carry['fii']:,.2f}"
+        )
+    for i in inc:
+        if i.irrf_expected != i.irrf_recorded:
+            typer.echo(f"{i.month:%Y-%m} {i.kind} {i.payer}: IR esperado R$ {i.irrf_expected:,.2f}, registrado "
+                       f"R$ {i.irrf_recorded:,.2f} ({i.rule})")  # fmt: skip
 
 
 MIN_FREE = 5 * 10**9  # bytes of free disk below which ingest refuses to start

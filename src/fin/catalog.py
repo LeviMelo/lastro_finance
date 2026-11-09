@@ -18,6 +18,8 @@ Views:
   `etf_position`: ETF monthly portfolios; `crypto_daily`: Binance daily klines (tier S);
 - `us_daily_price`: Tiingo daily prices of US benchmarks and Brazilian ADRs (tier S);
 - `price_report_close`: B3 Price Report closes per ticker and day (fixed-income ETFs' only price);
+- `index_composition` / `index_total`: B3 index portfolios per bulletin 2022- (ADR-0034); `lending_trade` /
+  `lending_open`: stock lending registered and open balances (short interest) from the same bulletin;
 - debentures (ADR-0028): `debenture`, `debenture_terms`, `debenture_pu` (SND accrued PU), `debenture_secondary_price`;
 - `intraday_bar`: Yahoo 5-minute bars (tier U);
 - macro `universe(date, asset_class)`: instruments trading in the 30 days up to a date, delisted later or not;
@@ -197,6 +199,25 @@ def views(z: Zones) -> dict[str, str]:
                 SELECT doc_id, min(delivered_at) AS delivered_at
                 FROM {_rp(s / "b3_fundosnet_cda" / "listing" / "**" / "*.parquet")} GROUP BY doc_id
             ) l USING (doc_id)
+        """,
+        # B3 daily bulletin PDF (ADR-0034): index compositions 2022- (one row per bulletin, period, index and asset)
+        # and stock lending (registered loans; open balances, the short-interest series)
+        "index_composition": f"""
+            FROM {_rp(s / "b3_bdi_pdf" / "index_composition" / "**" / "*.parquet")}
+            QUALIFY row_number() OVER (
+                PARTITION BY bulletin_date, period_start, index_name, ticker ORDER BY raw_sha256) = 1
+        """,
+        "index_total": f"""
+            FROM {_rp(s / "b3_bdi_pdf" / "index_total" / "**" / "*.parquet")}
+            QUALIFY row_number() OVER (PARTITION BY bulletin_date, period_start, index_name ORDER BY raw_sha256) = 1
+        """,
+        "lending_trade": f"""
+            FROM {_rp(s / "b3_bdi_pdf" / "lending_trade" / "**" / "*.parquet")}
+            QUALIFY row_number() OVER (PARTITION BY bulletin_date, ticker, market ORDER BY raw_sha256) = 1
+        """,
+        "lending_open": f"""
+            FROM {_rp(s / "b3_bdi_pdf" / "lending_open" / "**" / "*.parquet")}
+            QUALIFY row_number() OVER (PARTITION BY bulletin_date, ticker, market ORDER BY raw_sha256) = 1
         """,
         # insider positions and trades by role group (CVM VLMO), each version with its delivery date (knowledge date)
         # and whether it is the latest version of that company-month
