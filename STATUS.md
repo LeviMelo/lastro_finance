@@ -28,6 +28,8 @@ portfolio file.
   - large sources are streamed: only the used part of each download is kept, with a fingerprint of the whole
     (Price Report tar+zstd, ADR-0031; daily bulletin PDF, ADR-0034);
   - DuckDB connections cap temp files at 4 GB (a view once spilled 38 GB).
+- **Daily snapshot:** the owner registered the Windows task "LASTRO fin ingest daily" (2026-11-09), which runs at 22:30
+  and at logon (`scripts/schedule_daily.ps1`, RUNBOOK).
 
 ## What the data layer holds
 
@@ -90,8 +92,6 @@ portfolio file.
 
 ## Not done
 
-- **Blocked by the harness:** the Windows scheduled task and any in-session loop are refused as persistence.
-  `fin ingest daily` runs by hand; a day not run is lost for the today-only sources.
 - **Stage I gaps** (ADR-0033): come-cotas, crypto, offshore, options, futures and shorts; reconciliation with B3's investor-portal export.
 - **Owner decisions:**
   - B3 HistoricoRF aggregate files (a form with a reCAPTCHA field);
@@ -104,7 +104,7 @@ portfolio file.
 
 ## Next (engineering)
 
-1. `fin ingest daily` each evening after ~21:00 BRT.
+1. Check the scheduled daily job: `Get-ScheduledTaskInfo -TaskName "LASTRO fin ingest daily"`, `data/logs/scheduler.log`.
 2. OQ-17 (B3 trade file vs COTAHIST, 443 of 42,093 ticker-days differ; COTAHIST stays the price source), OQ-19
    re-probe on a weekday after 2026-11-10.
 3. Stage I gaps listed above, when the owner's holdings need them.
