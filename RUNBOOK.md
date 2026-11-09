@@ -51,7 +51,7 @@ uv run fin rebuild --from-raw              # rebuild staging/core/derived/quaran
 
 ## The daily job on Windows
 
-`scripts/schedule_daily.ps1` registers the task "LASTRO fin ingest daily": daily at 22:30 and at logon, start when
+`scripts/schedule_daily.ps1` registers the task (it runs the project's `.venv\Scripts\fin.exe`, no uv needed) "LASTRO fin ingest daily": daily at 22:30 and at logon, start when
 available, no overlap, log to `data/logs/scheduler.log`. Registering it changes the machine's configuration, so the
 owner runs it (or approves it) once:
 
