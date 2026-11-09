@@ -111,3 +111,27 @@ def test_lending_totals_equal_the_markets() -> None:
             by.setdefault(r["ticker"], []).append(r["quantity"])
     complete = [t for t in total if t in by]
     assert complete and all(sum(by[t]) == total[t] for t in complete)
+
+
+@pytest.mark.parametrize(
+    ("text", "value"),
+    [
+        ("4.394.835.131", "4394835131"), ("4,394,835,131", "4394835131"), ("2,5172", "2.5172"), ("2.5172", "2.5172"),
+        ("1.234,56", "1234.56"), ("1,234.56", "1234.56"), ("0,123", "0.123"), ("8.00%", "8.00"), ("125", "125"),
+    ],
+)  # fmt: skip
+def test_numbers_in_either_convention(text: str, value: str) -> None:
+    assert m._dec(text) == Decimal(value)  # pyright: ignore[reportPrivateUsage]  # pt-BR in most bulletins, en-US in some (2023-07-19, 2025-01, 2026-06-25)
+
+
+def test_wrapped_row_date_is_rejoined() -> None:
+    lines = [
+        "06/01/202",
+        "5",
+        "A1ME34 BRA1MEBDR000 AMETEK INC Registro 0 0 0.00 12.00% 12.00% 12.00% 12.00% 12.00% 12.00%",
+    ]
+    trades, _ = m.parse_lending(
+        ["Data Ticker ISIN Empresa ou Fundo Mercado\n" + "\n".join(lines)], [1], date(2025, 1, 6)
+    )
+    assert len(trades) == 1 and trades[0]["trade_date"] == date(2025, 1, 6) and trades[0]["market"] == "Registro"
+    assert trades[0]["lender_rate_avg"] == Decimal("12.00")

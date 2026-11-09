@@ -10,6 +10,8 @@ an ETF can hold a few names outside its index or miss a few inside it).
 
 from __future__ import annotations
 
+from datetime import date
+
 import polars as pl
 
 from fin.config import Zones
@@ -18,7 +20,7 @@ from fin.store.tables import read_parquet_dir, write_parquet
 MATCH_MIN = 0.90  # Jaccard of an ETF's equity tickers with an index's in a month, to count as tracking it
 MATCH_SHARE = 0.80  # ...in at least this share of the months compared
 # one index printed under two names: IBrX 100 is "IBXX" in most bulletins and "IBRX" in some (2022-09-01, 2026-09)
-ALIASES = {"IBRX": "IBXX"}
+ALIASES = {"IBRX": "IBXX", "IAGRO-FFS B3": "AGFS"}  # IAGRO-FFS B3: 2022-09 to 12, AGFS after
 
 
 def _official(zones: Zones) -> pl.DataFrame | None:
@@ -32,8 +34,9 @@ def _official(zones: Zones) -> pl.DataFrame | None:
         comp.with_columns(pl.col("index_name").replace(ALIASES))
         .filter(inforce | pl.col("period_start").is_null())
         .unique(["bulletin_date", "index_name", "ticker"])
-        .select("bulletin_date", "index_name", "ticker", "theoretical_qty", "weight_pct", "raw_sha256")
-    )
+        .select("bulletin_date", "index_name", "ticker", "theoretical_qty", "weight_pct", "period_start", "period_end",
+                "raw_sha256")
+    )  # fmt: skip
 
 
 def _etf_holdings(zones: Zones) -> pl.DataFrame | None:
@@ -80,14 +83,25 @@ def etf_index(official: pl.DataFrame, holdings: pl.DataFrame) -> pl.DataFrame:
 
 
 def membership(official: pl.DataFrame, holdings: pl.DataFrame, mapping: pl.DataFrame) -> pl.DataFrame:
-    """Per index and month, its members: B3's (last bulletin of the month) from the bulletin's first month; before it,
-    the holdings of the best-matched ETF reporting that month."""
-    first = official["bulletin_date"].min()
-    off = (
-        official.with_columns(pl.col("bulletin_date").dt.truncate("1mo").alias("month"))
-        .filter(pl.col("bulletin_date") == pl.col("bulletin_date").max().over("month", "index_name"))
-        .select("month", "index_name", "ticker", "weight_pct", pl.lit("b3_bdi").alias("source"),
-                pl.lit(None, dtype=pl.String).alias("fund_cnpj"), "raw_sha256")
+    """Per index and month, its members: B3's portfolio in force that month from the bulletin's first month, read
+    from the month's last bulletin or, when B3 printed none that month (2023-04, 06, 08, 10, 11: short editions without
+    the section), from the latest earlier bulletin of the same quadrimester (the theoretical portfolio holds for the
+    quadrimester); before the first bulletin, the holdings of the best-matched ETF reporting that month."""
+    first: date = official["bulletin_date"].min()  # type: ignore[assignment]
+    last: date = official["bulletin_date"].max()  # type: ignore[assignment]
+    months = pl.date_range(first.replace(day=1), last.replace(day=1), "1mo", eager=True).alias("month")
+    tables = official.select("bulletin_date", "index_name", "period_start", "period_end").unique()
+    pick = (
+        months.to_frame()
+        .join(tables, how="cross")
+        .filter((pl.col("bulletin_date") <= pl.col("month").dt.month_end())
+                & (pl.col("period_start").is_null() | ((pl.col("period_start") <= pl.col("month"))
+                                                       & (pl.col("month") <= pl.col("period_end")))))
+        .group_by("month", "index_name").agg(pl.col("bulletin_date").max())
+    )  # fmt: skip
+    off = pick.join(official, on=["bulletin_date", "index_name"]).select(
+        "month", "index_name", "ticker", "weight_pct", pl.lit("b3_bdi").alias("source"),
+        pl.lit(None, dtype=pl.String).alias("fund_cnpj"), pl.col("bulletin_date").alias("as_of"), "raw_sha256",
     )  # fmt: skip
     # each month, the best-matched ETF that reported holdings that month (BOVA11 back to 2018, not a 2023 launch)
     proxy = (
@@ -97,7 +111,7 @@ def membership(official: pl.DataFrame, holdings: pl.DataFrame, mapping: pl.DataF
         .filter(pl.col("fund_cnpj") == pl.col("fund_cnpj").min().over("index_name", "reference_month"))
         .select(pl.col("reference_month").alias("month"), "index_name", "ticker",
                 pl.lit(None, dtype=pl.Decimal(38, 6)).alias("weight_pct"), pl.lit("etf_cda").alias("source"),
-                "fund_cnpj", "raw_sha256")
+                "fund_cnpj", pl.col("reference_month").dt.month_end().alias("as_of"), "raw_sha256")
     )  # fmt: skip
     return pl.concat([off, proxy], how="vertical_relaxed").sort("index_name", "month", "ticker")
 

@@ -16,14 +16,19 @@
   - Measured on 2026-02→10: 31 matches, median similarity 0.95–1.0. BOVA11, BOVV11 and XBOV11 match IBOVESPA;
     SMAL11 matches SMLL; PIBB11 IBRX50; BRAX11 IBXX; ISUS11 ISE; ECOO11 ICO2; GOVE11 IGCT; MATB11 IMAT.
 - **Membership** (`index_member`, one row per index, month and ticker):
-  - from the bulletin's first month: B3's portfolio in force on the month's last bulletin (`source` = `b3_bdi`);
+  - from the bulletin's first month: B3's portfolio in force on the month's last bulletin (`source` = `b3_bdi`).
+    In a month with no composition (2023-04, 06, 08, 10 and 11, whose bulletins are short editions without the
+    section), it comes from the latest earlier bulletin of the same quadrimester. `as_of` names the bulletin used;
+    the theoretical portfolio holds for the quadrimester;
   - before it: the holdings of the best-matched ETF that reported that month (`source` = `etf_cda`, `fund_cnpj`
     names it).
-- **Names.** IBrX 100 is printed "IBXX" in most bulletins and "IBRX" in some; both are kept as IBXX.
+- **Names.** IBrX 100 is printed "IBXX" in most bulletins and "IBRX" in some; both are kept as IBXX. AGFS was
+  printed "IAGRO-FFS B3" in 2022-09→12.
 
 **Consequences.**
-- Point-in-time membership of the main indices from 2018 (Ibovespa, SMLL, IBrX-50, IBrX-100, ISE, ICO2, IGCT,
-  IMAT); the other indices from 2022-03.
+- Point-in-time membership of 9 indices from 2018 (Ibovespa, SMLL, IBrX-50, IBrX-100, IDIV, ISE, ICO2, IGCT,
+  IMAT); the other indices from 2022-03. Measured on the full bulletin history: 26 ETF matches, median similarity
+  0.94–1.0; 57 consecutive B3 months, 2022-03 → 2026-11.
 - `etf_cda` rows are a proxy. An ETF can hold a name outside its index (a pending inclusion, a leftover) or miss
   one inside it. Weights come only from B3's rows.
-- Indices without a tracking ETF (IFIX, IDIV, ITAG…) start in 2022-03.
+- Indices without a tracking ETF (IFIX, ITAG, IGCX…) start in 2022-03.

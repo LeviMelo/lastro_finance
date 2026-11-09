@@ -828,6 +828,7 @@ def eg_events(zones: Zones, prices: pl.LazyFrame, fac: pl.DataFrame, taken: pl.D
 
 
 FILING_FIT = math.log(1.30)  # a filing's stated ratio is taken when it fits the price move within this
+FILING_SAME = 1e-3  # a stated ratio this close (log) to the event's is the same ratio
 
 
 def filing_ratios(zones: Zones, events: pl.DataFrame) -> pl.DataFrame:
@@ -861,8 +862,14 @@ def filing_ratios(zones: Zones, events: pl.DataFrame) -> pl.DataFrame:
             continue
         g = math.gcd(n, o)
         n, o = n // g, o // g
-        if (n, o) == (r["ratio_num"], r["ratio_den"]):
-            confirm.append(r["_r"])
+        current = r["ratio_num"] / r["ratio_den"]
+        if abs(math.log(n / o / current)) <= FILING_SAME:  # the same ratio, maybe written with more digits
+            confirm.append(r["_r"])  # ("16,666666667 %" for Yahoo's 7:6): the simpler form stays
+            continue
+        # a ratio guessed from the price (snapped move, EG marker) gives way to the stated one; a ratio another
+        # source states (Yahoo) only to a stated one that fits the move better (the filing may hold other proposals)
+        guessed = str(r["sources"]).startswith("b3_cotahist")
+        if not guessed and abs(math.log(n / o / s)) >= abs(math.log(current / s)):
             continue
         drop.append(r["_r"])
         fixed = {k: v for k, v in r.items() if k != "_r"}

@@ -40,9 +40,10 @@ SECTION = "Composição das Carteiras de Índices"
 HEADER = re.compile(r"^Código(?: IF)? Ação Tipo Quantidade teórica Participação \(%\)\s*$", re.M)  # "IF" from 2025-26
 LENDING = re.compile(r"^Data (?:Ticker|Código IF) (?:Código )?ISIN Empresa ou [Ff]undo", re.M)  # 2022-24 / 2026
 
-ROW = re.compile(r"^([A-Z0-9]{4}\d{1,2}[A-Z]?)\s+(.+?)\s+(\d{1,3}(?:\.\d{3})*)\s+(\d{1,3},\d+)$")
-TOTAL_QTY = re.compile(r"Quantidade teórica total:\s*([\d.]+)")
-REDUCTOR = re.compile(r"Valor do Redutor:\s*([\d.]+,\d+)")
+# numbers are pt-BR in most bulletins (4.394.835.131 / 2,5172) and en-US in some (4,394,835,131 / 2.5172): `_dec`
+ROW = re.compile(r"^([A-Z0-9]{4}\d{1,2}[A-Z]?)\s+(.+?)\s+(\d{1,3}(?:[.,]\d{3})*)\s+(\d{1,3}[.,]\d{4,})$")
+TOTAL_QTY = re.compile(r"Quantidade teórica total:\s*([\d.,]+\d)")
+REDUCTOR = re.compile(r"Valor do Redutor:\s*([\d.,]+\d)")
 PERIOD = re.compile(r"^Para\s+(\w+)\s+a\s+(\w+)\s+de\s+(\d{4})")
 WEIGHTS_ON = re.compile(r"abertura\s+dos\s+negócios\s+do\s+dia\s+(\d{2})/(\d{2})/(\d{4})")
 MONTHS = {m: i for i, m in enumerate(("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto",
@@ -195,7 +196,19 @@ def extract_pages_local(blob: bytes) -> tuple[bytes, str, dict[str, Any]]:
 
 
 def _dec(s: str) -> Decimal:
-    return Decimal(s.replace(".", "").replace(",", "."))
+    """A number in either convention. The last separator is the decimal point unless 3 digits follow it and the
+    number has no other kind of separator (4.394.835.131, 4,394,835,131, 125 are integers; 2,5172, 2.5172, 1.234,56
+    and 1,234.56 are not). A single group of 3 after a "0" is decimal (0,123)."""
+    t = s.strip().rstrip("%")
+    last = max(t.rfind(","), t.rfind("."))
+    if last < 0:
+        return Decimal(t)
+    sep, tail = t[last], t[last + 1 :]
+    other = "," if sep == "." else "."
+    thousands = len(tail) == 3 and other not in t and not (t.count(sep) == 1 and t[:last].lstrip("-") == "0")
+    if thousands:
+        return Decimal(t.replace(sep, ""))
+    return Decimal(t[:last].replace(other, "").replace(sep, "") + "." + tail)
 
 
 def _period(text: str) -> tuple[date | None, date | None]:
@@ -233,7 +246,7 @@ def parse_compositions(
 
     block = 0
     for text, page in zip(texts, pages, strict=True):
-        if LENDING.search(text[:1500]) and not HEADER.search(text):
+        if (LENDING.search(text[:1500]) or LEGACY in text) and not HEADER.search(text):  # lending pages
             continue
         lines = [ln.strip() for ln in text.splitlines() if ln.strip()]
         prev = ""
@@ -280,10 +293,11 @@ def parse_compositions(
 
 
 LEND_START = re.compile(r"^(\d{2})/(\d{2})/(\d{4}) (\S+) (BR[A-Z0-9]{10})\b")
-LEND_NUM = r"(-|\d[\d.]*(?:,\d+)?%?)"
-LEND_MARKET = re.compile(r"\s(Neg\.\s*Eletr\s*[ôo]\s*nica\s*D\s*\+\s*(\d)|Registro|Total|Renda Fixa)$")
-LEND_TRADE_TAIL = re.compile(r"\s(\d[\d.]*)\s(\d[\d.]*)\s(\d[\d.]*,\d+)" + (r"\s" + LEND_NUM) * 6 + r"$")
-LEND_OPEN_TAIL = re.compile(r"\s(\d[\d.]*)\s(-|\d[\d.]*,\d+)\s(-|\d[\d.]*,\d+)$")
+LEND_NUM = r"(-|\d[\d.,]*%?)"
+_ELETRONICA = r"\s*".join("Eletrônica").replace("ô", "[ôo]")  # split anywhere: "Eletr ônica", "Elet rônica"
+LEND_MARKET = re.compile(rf"\s(Neg\.\s*{_ELETRONICA}\s*D\s*\+\s*(\d)|Registro|Total|Renda Fixa)$")
+LEND_TRADE_TAIL = re.compile(r"\s(\d[\d.,]*)\s(\d[\d.,]*)\s(\d[\d.,]*[.,]\d{2})" + (r"\s" + LEND_NUM) * 6 + r"$")
+LEND_OPEN_TAIL = re.compile(r"\s(\d[\d.,]*)\s(-|\d[\d.,]*[.,]\d+)\s(-|\d[\d.,]*[.,]\d{2})$")
 
 
 def _num(s: str | None) -> Decimal | None:
@@ -294,7 +308,7 @@ def _num(s: str | None) -> Decimal | None:
 
 LEGACY = "Ação Empresa Tipo Saldo em número de ações Balanço (R$)"  # "Banco de Títulos", 2022 to 2024
 LEGACY_AS_OF = re.compile(r"ações emprestadas em (\d{2})/(\d{2})/(\d{4})")
-LEGACY_ROW = re.compile(r"^([A-Z0-9]{4}\d{1,2}[A-Z]?)\s+(.+?)\s+(\d[\d.]*)\s+(\d[\d.]*,\d{2})$")
+LEGACY_ROW = re.compile(r"^([A-Z0-9]{4}\d{1,2}[A-Z]?)\s+(.+?)\s+(\d[\d.,]*)\s+(\d[\d.,]*[.,]\d{2})$")
 _NOT_ROW = ("BDI", "Data ", "Boletim Diário", "Clearing", "Banco de Títulos", "Em atenção", "Ação Empresa")
 
 
@@ -308,6 +322,20 @@ def _lend_kind(line: str) -> str | None:
 def _complete(kind: str, rec: str) -> bool:
     tail = (LEND_TRADE_TAIL if kind == "trade" else LEND_OPEN_TAIL).search(rec)
     return bool(tail) and bool(LEND_MARKET.search(" " + rec[: tail.start()].strip()))
+
+
+def _rejoin_dates(lines: list[str]) -> list[str]:
+    """Narrow columns wrap the row date ("06/01/202" then "5", 2025): the pieces are joined back."""
+    out: list[str] = []
+    for ln in lines:
+        t = ln.strip()
+        if out and re.fullmatch(r"\d{2}/\d{2}/\d{1,3}", out[-1].strip()) and re.match(r"^\d{1,3}(\s|$)", t):
+            out[-1] = out[-1].strip() + t
+        elif out and re.fullmatch(r"\d{2}/\d{2}/\d{4}", out[-1].strip()) and t:  # the date alone: its row follows
+            out[-1] = out[-1].strip() + " " + t
+        else:
+            out.append(ln)
+    return out
 
 
 def lending_records(texts: list[str], pages: list[int]) -> list[tuple[str, int, str]]:
@@ -326,7 +354,7 @@ def lending_records(texts: list[str], pages: list[int]) -> list[tuple[str, int, 
         if m:
             as_of = f"{m.group(1)}/{m.group(2)}/{m.group(3)}"
         cur: list[str] | None = None
-        for raw in text.splitlines():
+        for raw in _rejoin_dates(text.splitlines()):
             ln = raw.strip()
             if not ln:
                 continue
@@ -375,6 +403,8 @@ def parse_lending(
     trades: list[dict[str, Any]] = []
     opens: list[dict[str, Any]] = []
     for kind, page, rec in lending_records(texts, pages):
+        # a long value wraps its last digit past the column: "465.650.070,0 9 1,47%" (2025-11-11)
+        rec = re.sub(r"([.,]\d) (\d) (?=\d[\d.,]*%)", r"\1\2 ", rec)
         if kind == "legacy":
             day, _, body = rec.partition("|")
             m = LEGACY_ROW.match(body)

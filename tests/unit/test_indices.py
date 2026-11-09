@@ -19,7 +19,9 @@ def _official(months: list[date]) -> pl.DataFrame:
     b, n, t = zip(*rows, strict=True)
     k = len(b)
     return pl.DataFrame({"bulletin_date": list(b), "index_name": list(n), "ticker": list(t),
-                         "theoretical_qty": [1] * k, "weight_pct": [1.0] * k, "raw_sha256": ["s"] * k})  # fmt: skip
+                         "theoretical_qty": [1] * k, "weight_pct": [1.0] * k, "period_start": [None] * k,
+                         "period_end": [None] * k, "raw_sha256": ["s"] * k},
+                        schema_overrides={"period_start": pl.Date, "period_end": pl.Date})  # fmt: skip
 
 
 def _holdings(fund: str, tickers: list[str], months: list[date]) -> pl.DataFrame:
@@ -51,3 +53,16 @@ def test_membership_uses_b3_then_the_etf_before() -> None:
     assert set(ibov.filter(pl.col("source") == "etf_cda")["month"].to_list()) == set(EARLY)
     assert set(ibov.filter(pl.col("source") == "b3_bdi")["month"].to_list()) == set(BDI)
     assert ibov.filter(pl.col("month") == EARLY[0])["ticker"].sort().to_list() == sorted(IBOV)
+
+
+def test_a_month_without_bulletin_takes_the_quadrimester_portfolio() -> None:
+    off = _official([date(2023, 3, 1)]).with_columns(
+        pl.lit(date(2023, 1, 1)).alias("period_start"), pl.lit(date(2023, 4, 30)).alias("period_end")
+    )
+    may = _official([date(2023, 5, 1)]).with_columns(
+        pl.lit(date(2023, 5, 1)).alias("period_start"), pl.lit(date(2023, 8, 31)).alias("period_end")
+    )
+    h = _holdings("BOVA", IBOV, [date(2023, 3, 1)])
+    mem = indices.membership(pl.concat([off, may]), h, indices.etf_index(off, h))
+    apr = mem.filter((pl.col("index_name") == "IBOVESPA") & (pl.col("month") == date(2023, 4, 1)))
+    assert apr.height == len(IBOV) and apr["as_of"].unique().to_list() == [date(2023, 3, 25)]

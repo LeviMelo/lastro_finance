@@ -53,3 +53,24 @@
   call holds one lock.
 - **pypdf is too slow here:** more than 10 minutes on a 751-page file, against 5 s with PDFium.
 - Page copies repeat each page's resources uncompressed, so the kept PDF is stored zstd-compressed.
+
+## 4. Backfill (2026-11-09)
+- **Coverage.** 1,162 of 1,176 sessions from 2022-03-02 to 2026-11-05 are held: 1.52 GB kept.
+- **Not served by B3:** 2022-03-02 → 03-18 (13 sessions) and 2022-12-30. All answer HTTP 500 to curl with a
+  browser User-Agent, to the English edition (`_en-Us`), and in the in-app browser. The daily series starts
+  2022-03-21. Monthly membership (ADR-0036) is unaffected: it reads the last bulletin of each month.
+- **Number conventions vary.** Most bulletins print pt-BR numbers (`4.394.835.131`, `2,5172`); some print en-US
+  (`4,394,835,131`, `2.5172`, `8.00%`): 2023-07-19, 2023-12-04, 2025-01 and 2025-02 days, 2026-06-25. One reader
+  takes either: the last separator is decimal unless exactly 3 digits follow it.
+- **Wrapping.** Narrow columns wrap:
+  - the row date ("06/01/202" then "5", seen on 2025-01-06);
+  - the market label ("Neg. Elet / rônica" as well as "Eletr / ônica");
+  - a long value's last digit ("465.650.070,0 9").
+
+  Each is joined back before parsing.
+- **Legacy lending pages carry composition-like rows** ("ULEV34 UNILEVER PLC DRN 1 216,07"), which are not
+  compositions. The composition reader skips every lending page. 14,723 such rows had been read as compositions
+  before the fix; they were quarantined, and the reparse removed them.
+- **No trades table before mid-2023.** The 2022–23 "Banco de Títulos" layout prints balances only, with no
+  registered loans.
+
